@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trip-planner-app"
+version = "0.1.0"
+description = "A trip planning application"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = ["trip", "planner", "travel"]
+dependencies = [
+    "dash",
+    "flask",
+    "dash-leaflet",
+    "pandas",
+    "numpy",
+    "plotly",
+    "dash-bootstrap-components",
+    "dash-extensions",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/trip-planner-app"
+Repository = "https://github.com/yourusername/trip-planner-app.git"
+Issues = "https://github.com/yourusername/trip-planner-app/issues"
+
+[tool.setuptools]
+packages = ["trip_planner"]
