@@ -2,8 +2,20 @@ import dash_bootstrap_components as dbc
 from dash import Dash, html, dcc
 import dash
 import dash_leaflet as dl
+import pandas as pd
+
+from dotenv import load_dotenv
+import os
 
 import ids
+
+load_dotenv()
+
+csv_path = os.getenv("MONUMENTS_CSV")
+csv_path = os.path.normpath(csv_path)
+monuments_df = pd.read_csv(csv_path)
+monuments_df.replace("-", pd.NA, inplace=True)
+monuments_df.dropna(subset=['latitude', 'longitude'], inplace=True)
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
@@ -29,6 +41,20 @@ CONTENT_STYLE = {
     "display": "flex",
     "flexDirection": "column",
 }
+
+markers = [
+    dl.Marker(
+        position=[row['latitude'], row['longitude']],
+        children=[
+            dl.Tooltip(row.get('name', 'Monument')),
+            dl.Popup(html.Div([
+                html.H5(row.get('name', 'Monument')),
+                html.A("Learn more", href=row.get('name_link', '#'), target='_blank')
+            ]))
+        ]
+    )
+    for _, row in monuments_df.iterrows()
+]
 
 # Sidebar component
 sidebar = html.Div([
@@ -67,6 +93,7 @@ content = html.Div(
                                         weight=0,
                                         interactive=False,
                                     ),
+                                    *markers
                                 ],
                                 center=[42.7, 25.0],
                                 zoom=7.4,
@@ -74,9 +101,9 @@ content = html.Div(
                                 # restrict panning to Bulgaria bounding box (southWest, northEast)
                                 maxBounds=[[41.0, 22.0], [44.3, 28.6]],
                                 maxBoundsViscosity=1.0,
-                                zoomSnap=0.25,
-                                zoomDelta=0.25,
-                                wheelPxPerZoomLevel=120,
+                                zoomSnap=0.33,
+                                zoomDelta=0.33,
+                                wheelPxPerZoomLevel=140,
                                 zoomAnimation=True,
                                 style={"width": "100%", "height": "100%"},
                             ),
