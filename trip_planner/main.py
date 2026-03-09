@@ -17,6 +17,17 @@ monuments_df = pd.read_csv(csv_path)
 monuments_df.replace("-", pd.NA, inplace=True)
 monuments_df.dropna(subset=['latitude', 'longitude'], inplace=True)
 
+pin_icon = {
+    "iconUrl": "/assets/marker-pin.png",
+    "iconSize": [30, 30],      # size of the icon
+    # "iconAnchor": [15, 40],    # point of the icon which corresponds to marker location
+}
+
+checkbox_icon = {
+    "iconUrl": "/assets/marker-check.png",
+    "iconSize": [30, 30],
+    # "iconAnchor": [12, 12],
+}
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 # Sidebar styles
@@ -53,10 +64,13 @@ markers = [
                 html.A("Learn more", href=row.get('name_link', '#'), target='_blank', style={"display": "block", "text-align": "center"}),
             ]))
         ],
-        id={"type": "marker", "index": index}
+        id={"type": "marker", "index": index},
+        icon=pin_icon
     )
     for index, row in monuments_df.iterrows()
 ]
+
+selected_object_group = dbc.ListGroup(id=ids.SELECTED_OBJECTS_GROUP, children=[], style={"maxHeight": "500px", "overflowY": "auto"})
 
 # Sidebar component
 sidebar = html.Div([
@@ -65,6 +79,8 @@ sidebar = html.Div([
         html.Span("Bulgarian Monuments", style={"fontSize": "1.25rem", "fontWeight": "600"}),
     ], className="d-flex align-items-center justify-content-center mb-4"),
     html.Hr(),
+    html.P("Selected monuments:", className="lead"),
+    selected_object_group
 ], style=SIDEBAR_STYLE, id=ids.SIDEBAR)
 
 # Main content area (simpler: use Bootstrap utilities to manage flex sizing)
@@ -126,25 +142,56 @@ app.layout = html.Div([
     dcc.Location(id="url"),
     sidebar,
     content,
-    dcc.Store(id=ids.DESTINATIONS_LIST, data=[])
+    dcc.Store(id=ids.DESTINATIONS_LIST, data=[]),
 ])
 
 @app.callback(
+    Output({"type": "marker", "index": ALL}, "icon"),
+    Output(ids.SELECTED_OBJECTS_GROUP, "children"),
     Output(ids.DESTINATIONS_LIST, "data"),
     Input({"type": "marker", "index": ALL}, "n_clicks"),
     State(ids.DESTINATIONS_LIST, "data"),
+    State(ids.SELECTED_OBJECTS_GROUP, "children"),
     prevent_initial_call=True
 )
-def toggle_marker(clicks, selected):
+def toggle_marker(n_clicks_list, selected, current_children):
+    if selected is None:
+        selected = []
+    if current_children is None:
+        current_children = []
 
     marker_id = ctx.triggered_id["index"]
+    row = monuments_df.loc[marker_id]
 
+    # Toggle selection
     if marker_id in selected:
         selected.remove(marker_id)
+        # Remove the corresponding ListGroupItem
+        current_children = [
+            child for child in current_children
+            if child["props"]["id"] != f"selected-item-{marker_id}"
+        ]
+        icon = pin_icon
     else:
         selected.append(marker_id)
+        # Append new ListGroupItem
+        item = dbc.ListGroupItem([
+            html.H6(row.get('name', 'Monument'), className="mb-1 small"),
+            html.P(row.get('location', 'Location'), className="mb-1 small"),
+        ], className="p-3", id=f"selected-item-{marker_id}")
+        current_children.append(item)
+        icon = checkbox_icon
 
-    return selected
+    # Update icons: only change clicked marker
+    icons = []
+    for i, m in enumerate(ctx.inputs_list[0]):
+        if m["id"]["index"] == marker_id:
+            icons.append(icon)
+        else:
+            # Keep existing state
+            icons.append(checkbox_icon if m["id"]["index"] in selected else pin_icon)
+
+    return icons, current_children, selected
 
 
 if __name__ == "__main__":
