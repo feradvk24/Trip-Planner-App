@@ -1,5 +1,5 @@
 import dash_bootstrap_components as dbc
-from dash import Dash, html, dcc
+from dash import Dash, Output, html, dcc, Input, State, ALL, ctx
 import dash
 import dash_leaflet as dl
 import pandas as pd
@@ -49,11 +49,13 @@ markers = [
             dl.Tooltip(row.get('name', 'Monument')),
             dl.Popup(html.Div([
                 html.H5(row.get('name', 'Monument')),
-                html.A("Learn more", href=row.get('name_link', '#'), target='_blank')
+                html.H6(row.get('location', 'Location')),
+                html.A("Learn more", href=row.get('name_link', '#'), target='_blank', style={"display": "block", "text-align": "center"}),
             ]))
-        ]
+        ],
+        id={"type": "marker", "index": index}
     )
-    for _, row in monuments_df.iterrows()
+    for index, row in monuments_df.iterrows()
 ]
 
 # Sidebar component
@@ -124,7 +126,25 @@ app.layout = html.Div([
     dcc.Location(id="url"),
     sidebar,
     content,
+    dcc.Store(id=ids.DESTINATIONS_LIST, data=[])
 ])
+
+@app.callback(
+    Output(ids.DESTINATIONS_LIST, "data"),
+    Input({"type": "marker", "index": ALL}, "n_clicks"),
+    State(ids.DESTINATIONS_LIST, "data"),
+    prevent_initial_call=True
+)
+def toggle_marker(clicks, selected):
+
+    marker_id = ctx.triggered_id["index"]
+
+    if marker_id in selected:
+        selected.remove(marker_id)
+    else:
+        selected.append(marker_id)
+
+    return selected
 
 
 if __name__ == "__main__":
