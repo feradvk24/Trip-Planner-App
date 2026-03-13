@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import os
 
 import ids
+from marker_config import Landmark, LandmarkRegistry
 
 load_dotenv()
 
@@ -51,21 +52,43 @@ CONTENT_STYLE = {
     "flexDirection": "column",
 }
 
-markers = [
-    dl.Marker(
-        position=[row['latitude'], row['longitude']],
-        children=[
-            dl.Tooltip(row.get('name', 'Monument')),
-            dl.Popup(html.Div([
-                html.H5(row.get('name', 'Monument')),
-                html.H6(row.get('location', 'Location')),
-                html.A("Learn more", href=row.get('name_link', '#'), target='_blank', style={"display": "block", "text-align": "center"}),
-            ]))
-        ],
-        id={"type": "marker", "index": index},
-        icon=pin_icon
+landmark_list = [
+    Landmark(
+        id=index,
+        name=row.get('name', 'Monument'),
+        location=row.get('location', 'Location'),
+        lat=row['latitude'],
+        lon=row['longitude'],
+        link=row.get('name_link', '#')
     )
     for index, row in monuments_df.iterrows()
+]
+
+# Register them in the singleton
+registry = LandmarkRegistry()
+registry.register_landmarks(landmark_list)
+
+
+markers = [
+    dl.Marker(
+        position=[l.lat, l.lon],
+        children=[
+            dl.Tooltip(l.name),
+            dl.Popup(html.Div([
+                html.H5(l.name),
+                html.H6(l.location),
+                html.A(
+                    "Learn more",
+                    href=l.link,
+                    target='_blank',
+                    style={"display": "block", "text-align": "center"}
+                )
+            ]))
+        ],
+        id={"type": "marker", "index": l.id},
+        icon=pin_icon
+    )
+    for l in registry.landmarks
 ]
 
 selected_object_group = dbc.ListGroup(id=ids.SELECTED_OBJECTS_GROUP, children=[], style={"maxHeight": "500px", "overflowY": "auto"})
@@ -158,36 +181,42 @@ def toggle_marker(n_clicks_list, selected, current_children):
     if current_children is None:
         current_children = []
 
-    marker_id = ctx.triggered_id["index"]
-    row = monuments_df.loc[marker_id]
+    landmark_id = ctx.triggered_id["index"]
+    landmark = registry.get_landmark(landmark_id)
 
     # Toggle selection
-    if marker_id in selected:
-        selected.remove(marker_id)
-        # Remove the corresponding ListGroupItem
+    if landmark_id in selected:
+        selected.remove(landmark_id)
+        # Remove ListGroupItem
         current_children = [
             child for child in current_children
-            if child["props"]["id"] != f"selected-item-{marker_id}"
+            if child["props"]["id"] != f"selected-item-{landmark_id}"
         ]
         icon = pin_icon
     else:
-        selected.append(marker_id)
-        # Append new ListGroupItem
+        selected.append(landmark_id)
+
+        # Create UI element using landmark object
         item = dbc.ListGroupItem([
-            html.H6(row.get('name', 'Monument'), className="mb-1 small"),
-            html.P(row.get('location', 'Location'), className="mb-1 small"),
-        ], className="p-3", id=f"selected-item-{marker_id}")
+            html.H6(landmark.name, className="mb-1 small"),
+            html.P(landmark.location, className="mb-1 small"),
+        ],
+        className="p-3",
+        id=f"selected-item-{landmark_id}")
+
         current_children.append(item)
         icon = checkbox_icon
 
-    # Update icons: only change clicked marker
     icons = []
-    for i, m in enumerate(ctx.inputs_list[0]):
-        if m["id"]["index"] == marker_id:
+    for l in ctx.inputs_list[0]:
+        idx = l["id"]["index"]
+
+        if idx == landmark_id:
             icons.append(icon)
         else:
-            # Keep existing state
-            icons.append(checkbox_icon if m["id"]["index"] in selected else pin_icon)
+            icons.append(
+                checkbox_icon if idx in selected else pin_icon
+            )
 
     return icons, current_children, selected
 
