@@ -28,7 +28,7 @@ checkbox_icon = {
     "iconSize": [30, 30],
     # "iconAnchor": [12, 12],
 }
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP])
 
 # Sidebar styles
 SIDEBAR_STYLE = {
@@ -45,8 +45,6 @@ SIDEBAR_STYLE = {
 # Main content styles
 CONTENT_STYLE = {
     "marginLeft": "18rem",
-    # make the content fill the viewport height and use flex layout so
-    # the map can grow to take available space
     "height": "100vh",
     "overflow": "hidden",
     "display": "flex",
@@ -92,8 +90,8 @@ content = html.Div(
             dbc.Row(className="h-100 flex-grow-1 p-0", children=[
                 dbc.Col(
                     [
-                        html.H1("Welcome to Trip Planner", className="mb-4", style={"margin-left": "1rem"}),
-                        html.P("Select an option from the sidebar to get started.", className="lead", style={"margin-left": "1rem"}),
+                        # html.H1("Welcome to Trip Planner", className="mb-4", style={"margin-left": "1rem"}),
+                        # html.P("Select an option from the sidebar to get started.", className="lead", style={"margin-left": "1rem"}),
                         # map wrapper: Bootstrap flex utility lets this fill remaining space
                         html.Div(
                             dl.Map(
@@ -119,9 +117,9 @@ content = html.Div(
                                 # restrict panning to Bulgaria bounding box (southWest, northEast)
                                 maxBounds=[[41.0, 22.0], [44.3, 28.6]],
                                 maxBoundsViscosity=1.0,
-                                zoomSnap=0.33,
-                                zoomDelta=0.33,
-                                wheelPxPerZoomLevel=140,
+                                zoomSnap=1,
+                                zoomDelta=0.66,
+                                wheelPxPerZoomLevel=200,
                                 zoomAnimation=True,
                                 style={"width": "100%", "height": "100%"},
                             ),
