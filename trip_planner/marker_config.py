@@ -1,11 +1,16 @@
+from dataclasses import dataclass
+
+@dataclass
 class Landmark:
-    def __init__(self, id, name, location, lat, lon, link="#"):
-        self.id = id
-        self.name = name
-        self.location = location
-        self.lat = lat
-        self.lon = lon
-        self.link = link
+    id: int
+    name: str
+    location: str
+    lat: float
+    lon: float
+    link: str = "#" 
+
+    def __repr__(self):
+        return f"Landmark(id={self.id}, name='{self.name}', location='{self.location}', lat={self.lat}, lon={self.lon})"
 
 class LandmarkRegistry:
     _instance = None

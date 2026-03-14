@@ -9,6 +9,7 @@ import os
 
 import ids
 from marker_config import Landmark, LandmarkRegistry
+from backend.tsp_formulas import solve_tsp
 
 load_dotenv()
 
@@ -57,8 +58,8 @@ landmark_list = [
         id=index,
         name=row.get('name', 'Monument'),
         location=row.get('location', 'Location'),
-        lat=row['latitude'],
-        lon=row['longitude'],
+        lat=float(row['latitude']),
+        lon=float(row['longitude']),
         link=row.get('name_link', '#')
     )
     for index, row in monuments_df.iterrows()
@@ -93,6 +94,22 @@ markers = [
 
 selected_object_group = dbc.ListGroup(id=ids.SELECTED_OBJECTS_GROUP, children=[], style={"maxHeight": "500px", "overflowY": "auto"})
 
+optimize_route_btn = dbc.Button("Optimize Route", color="primary", className="mt-3", id=ids.OPTIMIZE_ROUTE_BTN)
+destinations_list = dcc.Store(id=ids.DESTINATIONS_LIST, data=[])
+
+@app.callback(
+    Output(ids.OPTIMIZE_ROUTE_BTN, "children"),
+    Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
+    State(ids.DESTINATIONS_LIST, "data"),
+    prevent_initial_call=True
+)
+def optimize_tsp(n_clicks, destination_ids):
+    print("Optimize TSP called")
+    print(destination_ids)
+    landmarks = registry.get_landmarks(destination_ids)
+    print(solve_tsp(landmarks))
+    return "Optimize Route"
+
 # Sidebar component
 sidebar = html.Div([
     html.Div([
@@ -101,7 +118,8 @@ sidebar = html.Div([
     ], className="d-flex align-items-center justify-content-center mb-4"),
     html.Hr(),
     html.P("Selected monuments:", className="lead"),
-    selected_object_group
+    selected_object_group,
+    optimize_route_btn
 ], style=SIDEBAR_STYLE, id=ids.SIDEBAR)
 
 # Main content area (simpler: use Bootstrap utilities to manage flex sizing)
@@ -163,7 +181,7 @@ app.layout = html.Div([
     dcc.Location(id="url"),
     sidebar,
     content,
-    dcc.Store(id=ids.DESTINATIONS_LIST, data=[]),
+    destinations_list,
 ])
 
 @app.callback(
