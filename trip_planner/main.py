@@ -9,7 +9,7 @@ import os
 
 import ids
 from marker_config import Landmark, LandmarkRegistry
-from backend.tsp_formulas import solve_tsp
+from backend.tsp_formulas import fetch_route, solve_tsp
 
 load_dotenv()
 
@@ -97,19 +97,6 @@ selected_object_group = dbc.ListGroup(id=ids.SELECTED_OBJECTS_GROUP, children=[]
 optimize_route_btn = dbc.Button("Optimize Route", color="primary", className="mt-3", id=ids.OPTIMIZE_ROUTE_BTN)
 destinations_list = dcc.Store(id=ids.DESTINATIONS_LIST, data=[])
 
-@app.callback(
-    Output(ids.OPTIMIZE_ROUTE_BTN, "children"),
-    Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
-    State(ids.DESTINATIONS_LIST, "data"),
-    prevent_initial_call=True
-)
-def optimize_tsp(n_clicks, destination_ids):
-    print("Optimize TSP called")
-    print(destination_ids)
-    landmarks = registry.get_landmarks(destination_ids)
-    print(solve_tsp(landmarks))
-    return "Optimize Route"
-
 # Sidebar component
 sidebar = html.Div([
     html.Div([
@@ -150,6 +137,7 @@ content = html.Div(
                                         weight=0,
                                         interactive=False,
                                     ),
+                                    dl.LayerGroup(id="trip-polyline"),
                                     *markers
                                 ],
                                 center=[42.7, 25.0],
@@ -175,6 +163,21 @@ content = html.Div(
         ])
     ]
 )
+
+@app.callback(
+    Output("trip-polyline", "children"),
+    Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
+    State(ids.DESTINATIONS_LIST, "data"),
+    prevent_initial_call=True
+)
+def optimize_tsp(n_clicks, destination_ids):
+    print("Optimize TSP called")
+    print(destination_ids)
+    landmarks = registry.get_landmarks(destination_ids)
+    visit_order = solve_tsp(landmarks)
+    road_coordinates = fetch_route(visit_order)
+    return dl.Polyline(positions=road_coordinates, color="red", weight=4)
+
 
 # App layout
 app.layout = html.Div([
