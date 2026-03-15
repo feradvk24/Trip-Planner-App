@@ -106,28 +106,42 @@ def two_opt(route, distance_func, fix_start=True, fix_end=False):
     return route
 
 
-def fetch_route(waypoints: List[Landmark]) -> List[Tuple[float, float]]:
+from typing import List, Tuple
+import requests
+
+def fetch_route_steps(waypoints: List[Landmark]) -> List[List[Tuple[float, float]]]:
+    """
+    Returns a list of road segments (each segment = list of [lat, lon] coordinates)
+    """
     if len(waypoints) < 2:
         return []
 
+    # Build OSRM coordinates string
     coords = ";".join(f"{w.lon},{w.lat}" for w in waypoints)
     url = (
         f"https://router.project-osrm.org/route/v1/driving/"
-        f"{coords}?overview=full&geometries=geojson"
+        f"{coords}?overview=full&geometries=geojson&steps=true"
     )
 
     res = requests.get(url)
     if res.status_code != 200:
-        raise Exception("Failed to fetch route")
+        raise Exception(f"Failed to fetch route: {res.status_code}")
 
     data = res.json()
     if "routes" not in data or len(data["routes"]) == 0:
         raise Exception("No route found")
 
-    coordinates = data["routes"][0]["geometry"]["coordinates"]
+    route = data["routes"][0]
+    road_segments = []
 
-    # Convert [lon, lat] -> [lat, lon]
-    return [(c[1], c[0]) for c in coordinates]
+    # Iterate over each leg (between consecutive waypoints)
+    for leg in route["legs"]:
+        # Iterate over each step (road segment)
+        for step in leg["steps"]:
+            coords_step = [(c[1], c[0]) for c in step["geometry"]["coordinates"]]  # lat, lon
+            road_segments.append(coords_step)
+
+    return road_segments
 
 
 def solve_tsp(
@@ -144,9 +158,9 @@ def generate_route(
         points: List[Landmark],
         start_point: Optional[Landmark] = None,
         end_point: Optional[Landmark] = None
-) -> List[Tuple[float, float]]:
+) -> List[List[Tuple[float, float]]]:
     if len(points) < 2:
         return []
 
     route = solve_tsp(points, start_point, end_point)
-    return fetch_route(route)
+    return fetch_route_steps(route)

@@ -3,13 +3,15 @@ from dash import Dash, Output, html, dcc, Input, State, ALL, ctx
 import dash
 import dash_leaflet as dl
 import pandas as pd
+import matplotlib.cm as cm
+import matplotlib.colors as mcolors
 
 from dotenv import load_dotenv
 import os
 
 import ids
 from marker_config import Landmark, LandmarkRegistry
-from backend.tsp_formulas import fetch_route, solve_tsp
+from backend.tsp_formulas import fetch_route_steps, solve_tsp
 
 load_dotenv()
 
@@ -175,8 +177,16 @@ def optimize_tsp(n_clicks, destination_ids):
     print(destination_ids)
     landmarks = registry.get_landmarks(destination_ids)
     visit_order = solve_tsp(landmarks)
-    road_coordinates = fetch_route(visit_order)
-    return dl.Polyline(positions=road_coordinates, color="red", weight=4)
+    road_segments = fetch_route_steps(visit_order)
+
+    # Choose a colormap
+    colormap = cm.get_cmap("viridis", len(road_segments))  # n discrete colors
+
+    # Convert to hex colors for Leaflet
+    colors = [mcolors.to_hex(colormap(i)) for i in range(len(road_segments))]
+
+    polylines = [dl.Polyline(positions=segment, color=color, weight=5) for segment, color in zip(road_segments, colors)]
+    return polylines
 
 
 # App layout
