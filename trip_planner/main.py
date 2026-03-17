@@ -12,6 +12,7 @@ import os
 import ids
 from marker_config import Landmark, LandmarkRegistry
 from backend.tsp_formulas import fetch_route_steps, solve_tsp
+from styles import pin_icon, checkbox_icon, SIDEBAR_STYLE, CONTENT_STYLE
 
 load_dotenv()
 
@@ -21,39 +22,7 @@ monuments_df = pd.read_csv(csv_path)
 monuments_df.replace("-", pd.NA, inplace=True)
 monuments_df.dropna(subset=['latitude', 'longitude'], inplace=True)
 
-pin_icon = {
-    "iconUrl": "/assets/marker-pin.png",
-    "iconSize": [30, 30],      # size of the icon
-    # "iconAnchor": [15, 40],    # point of the icon which corresponds to marker location
-}
-
-checkbox_icon = {
-    "iconUrl": "/assets/marker-check.png",
-    "iconSize": [30, 30],
-    # "iconAnchor": [12, 12],
-}
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP])
-
-# Sidebar styles
-SIDEBAR_STYLE = {
-    "position": "fixed",
-    "top": 0,
-    "left": 0,
-    "bottom": 0,
-    "width": "18rem",
-    "padding": "2rem 1rem",
-    "backgroundColor": "#f8f9fa",
-    "borderRight": "1px solid #dee2e6",
-}
-
-# Main content styles
-CONTENT_STYLE = {
-    "marginLeft": "18rem",
-    "height": "100vh",
-    "overflow": "hidden",
-    "display": "flex",
-    "flexDirection": "column",
-}
 
 landmark_list = [
     Landmark(
@@ -189,14 +158,6 @@ def optimize_tsp(n_clicks, destination_ids):
     return polylines
 
 
-# App layout
-app.layout = html.Div([
-    dcc.Location(id="url"),
-    sidebar,
-    content,
-    destinations_list,
-])
-
 @app.callback(
     Output({"type": "marker", "index": ALL}, "icon"),
     Output(ids.SELECTED_OBJECTS_GROUP, "children"),
@@ -251,6 +212,13 @@ def toggle_marker(n_clicks_list, selected, current_children):
 
     return icons, current_children, selected
 
+# App layout
+app.layout = html.Div([
+    dcc.Location(id="url"),
+    sidebar,
+    content,
+    destinations_list,
+])
 
 if __name__ == "__main__":
     app.run(debug=True)
