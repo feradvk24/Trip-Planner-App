@@ -19,6 +19,11 @@ dependencies = [
     "plotly",
     "dash-bootstrap-components",
     "dash-extensions",
+    "matplotlib",
+    "sqlalchemy",
+    "psycopg2-binary",
+    "requests",
+    "dotenv",
 ]
 
 [project.urls]
