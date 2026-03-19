@@ -85,6 +85,17 @@ warn_modal = dbc.Modal([
     dbc.ModalFooter(dbc.Button("OK", id="warn-modal-close", color="primary")),
 ], id=ids.WARN_MODAL, is_open=False)
 
+success_toast = dbc.Toast(
+    "Route Optimized",
+    id=ids.SUCCESS_TOAST,
+    header="Success!",
+    icon="success",
+    is_open=False,
+    dismissable=True,
+    duration=2000,
+    style={"position": "fixed", "bottom": "1rem", "right": "1rem", "zIndex": 9999, "minWidth": "auto"},
+)
+
 # App layout
 app.layout = html.Div([
     dcc.Location(id="url"),
@@ -92,6 +103,7 @@ app.layout = html.Div([
     content,
     destinations_list,
     warn_modal,
+    success_toast,
 ])
 
 register_callbacks(app, registry)
