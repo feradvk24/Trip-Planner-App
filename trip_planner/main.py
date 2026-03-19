@@ -79,12 +79,19 @@ content = html.Div(
     ]
 )
 
+warn_modal = dbc.Modal([
+    dbc.ModalHeader(dbc.ModalTitle("Cannot optimize route")),
+    dbc.ModalBody("Please select at least 2 monuments before optimizing the route."),
+    dbc.ModalFooter(dbc.Button("OK", id="warn-modal-close", color="primary")),
+], id=ids.WARN_MODAL, is_open=False)
+
 # App layout
 app.layout = html.Div([
     dcc.Location(id="url"),
     sidebar,
     content,
     destinations_list,
+    warn_modal,
 ])
 
 register_callbacks(app, registry)

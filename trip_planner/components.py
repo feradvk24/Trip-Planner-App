@@ -48,7 +48,10 @@ def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn):
             html.Hr(style={"margin": 0}),
         ], style={"display": "flex", "flexDirection": "column", "gap": "0.25rem"}),
         route_endpoints,
-        html.P("Selected monuments:", className="lead", style={"marginBottom": 0}),
+        html.Div([
+            html.P("Selected monuments:", className="lead", style={"marginBottom": 0}),
+            html.Span("Clear all", id=ids.CLEAR_ALL_BTN, style={"fontSize": "0.75rem", "color": "#dc3545", "cursor": "pointer", "userSelect": "none", "alignSelf": "center"}),
+        ], style={"display": "flex", "justifyContent": "space-between", "alignItems": "baseline"}),
         selected_object_group,
         optimize_route_btn
     ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)

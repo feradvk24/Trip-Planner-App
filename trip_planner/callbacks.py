@@ -12,13 +12,20 @@ import dash_leaflet as dl
 def register_callbacks(app, registry):
     @app.callback(
         Output("trip-polyline", "children"),
+        Output(ids.WARN_MODAL, "is_open"),
         Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
+        Input("warn-modal-close", "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
         State(ids.START_POINT_DROPDOWN, "value"),
         State(ids.END_POINT_DROPDOWN, "value"),
         prevent_initial_call=True
     )
-    def optimize_tsp(n_clicks, destination_ids, start_point_id, end_point_id):
+    def optimize_tsp(n_clicks, close_clicks, destination_ids, start_point_id, end_point_id):
+        from dash import no_update
+        if ctx.triggered_id == "warn-modal-close":
+            return no_update, False
+        if not destination_ids or len(destination_ids) < 2:
+            return no_update, True
         landmarks = registry.get_landmarks(destination_ids)
         start_landmark = None
         end_landmark = None
@@ -34,7 +41,7 @@ def register_callbacks(app, registry):
             html.Div(dl.Polyline(positions=segment, color=color, weight=5))
             for segment, color in zip(road_segments, colors)
         ]
-        return polylines
+        return polylines, False
 
     @app.callback(
         Output({"type": "marker", "index": ALL}, "icon"),
@@ -75,6 +82,18 @@ def register_callbacks(app, registry):
             else:
                 icons.append(checkbox_icon if idx in selected else pin_icon)
         return icons, current_children, selected
+
+    @app.callback(
+        Output({"type": "marker", "index": ALL}, "icon", allow_duplicate=True),
+        Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
+        Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
+        Input(ids.CLEAR_ALL_BTN, "n_clicks"),
+        State({"type": "marker", "index": ALL}, "id"),
+        prevent_initial_call=True
+    )
+    def clear_all(n_clicks, marker_ids):
+        icons = [pin_icon for _ in marker_ids]
+        return icons, [], []
 
     @app.callback(
         Output(ids.START_POINT_DROPDOWN, "options"),
