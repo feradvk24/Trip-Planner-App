@@ -17,7 +17,7 @@ def create_trip_endpoints():
             html.Div([
                 html.Label("Start:", style={"fontSize": "12px", "marginBottom": "1px"}),
                 dbc.Select(
-                    options=[],
+                    options=[{"label": "Автоматично", "value": "auto"}],
                     placeholder="Select a start point",
                     id=ids.START_POINT_DROPDOWN,
                     className="format-dropdown",
@@ -27,7 +27,7 @@ def create_trip_endpoints():
             html.Div([
                 html.Label("End:", style={"fontSize": "12px", "marginBottom": "1px"}),
                 dbc.Select(
-                    options=[],
+                    options=[{"label": "Автоматично", "value": "auto"}],
                     placeholder="Select an end point",
                     id=ids.END_POINT_DROPDOWN,
                     className="format-dropdown",

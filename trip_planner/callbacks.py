@@ -20,8 +20,12 @@ def register_callbacks(app, registry):
     )
     def optimize_tsp(n_clicks, destination_ids, start_point_id, end_point_id):
         landmarks = registry.get_landmarks(destination_ids)
-        start_landmark = registry.get_landmark(int(start_point_id)) if start_point_id else None
-        end_landmark = registry.get_landmark(int(end_point_id)) if end_point_id else None
+        start_landmark = None
+        end_landmark = None
+        if start_point_id and start_point_id != "auto":
+            start_landmark = registry.get_landmark(int(start_point_id))
+        if end_point_id and end_point_id != "auto":
+            end_landmark = registry.get_landmark(int(end_point_id))
         visit_order = solve_tsp(landmarks, start_point=start_landmark, end_point=end_landmark)
         road_segments = fetch_route_steps(visit_order)
         colormap = cm.get_cmap("viridis", len(road_segments))
@@ -84,8 +88,9 @@ def register_callbacks(app, registry):
     )
     def update_dropdown_options(destination_ids, start_point_id, end_point_id):
         landmarks = registry.get_landmarks(destination_ids)
-        options = [{"label": l.name, "value": str(l.id)} for l in landmarks]
+        auto_option = {"label": "Автоматично", "value": "auto"}
+        options = [auto_option] + [{"label": l.name, "value": str(l.id)} for l in landmarks]
         option_values = {option["value"] for option in options}
-        start_point_value = start_point_id if start_point_id in option_values else None
-        end_point_value = end_point_id if end_point_id in option_values else None
+        start_point_value = start_point_id if start_point_id in option_values else "auto"
+        end_point_value = end_point_id if end_point_id in option_values else "auto"
         return options, options, start_point_value, end_point_value
