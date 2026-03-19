@@ -63,22 +63,56 @@ markers = [
     for l in registry.landmarks
 ]
 
-selected_object_group = dbc.ListGroup(id=ids.SELECTED_OBJECTS_GROUP, children=[], style={"maxHeight": "500px", "overflowY": "auto"})
+selected_object_group = dbc.ListGroup(
+    id=ids.SELECTED_OBJECTS_GROUP,
+    children=[],
+    style={"flex": "1 1 auto", "minHeight": 0, "overflowY": "auto"},
+)
 
-optimize_route_btn = dbc.Button("Optimize Route", color="primary", className="mt-3", id=ids.OPTIMIZE_ROUTE_BTN)
+route_endpoints = html.Div(
+    [
+        html.Div([
+            html.Label("Start:", style={"fontSize": "12px", "marginBottom": "1px"}),
+            dbc.Select(
+                options=[],
+                placeholder="Select a start point",
+                id=ids.START_POINT_DROPDOWN,
+                className="format-dropdown",
+                size=5,
+            )
+        ]),
+        html.Div([
+            html.Label("End:", style={"fontSize": "12px", "marginBottom": "1px"}),
+            dbc.Select(
+                options=[],
+                placeholder="Select an end point",
+                id=ids.END_POINT_DROPDOWN,
+                className="format-dropdown",
+                size=5,
+            )
+        ])
+    ],
+    # style={"marginBottom": "1rem", "display": "flex", "gap": "0.5rem", "flexDirection": "row", "width": "100%"}
+    style={"marginBottom": 0, "backgroundColor": "#E1E1E1", "border": "1px solid black", "padding": "0.5rem", "borderRadius": "0.25rem"}
+)
+
+optimize_route_btn = dbc.Button("Optimize Route", color="primary", className="mt-2", id=ids.OPTIMIZE_ROUTE_BTN)
 destinations_list = dcc.Store(id=ids.DESTINATIONS_LIST, data=[])
 
 # Sidebar component
 sidebar = html.Div([
     html.Div([
-        html.Img(src="/assets/icon.svg", style={"height": "24px", "marginRight": "0.5rem"}),
-        html.Span("Bulgarian Monuments", style={"fontSize": "1.25rem", "fontWeight": "600"}),
-    ], className="d-flex align-items-center justify-content-center mb-4"),
-    html.Hr(),
-    html.P("Selected monuments:", className="lead"),
+        html.Div([
+            html.Img(src="/assets/icon.svg", style={"height": "24px", "marginRight": "0.5rem"}),
+            html.Span("Bulgarian Monuments", style={"fontSize": "1.25rem", "fontWeight": "600"}),
+        ], className="d-flex align-items-center justify-content-center"),
+        html.Hr(style={"margin": 0}),
+    ], style={"display": "flex", "flexDirection": "column", "gap": "0.25rem"}),
+    route_endpoints,
+    html.P("Selected monuments:", className="lead", style={"marginBottom": 0}),
     selected_object_group,
     optimize_route_btn
-], style=SIDEBAR_STYLE, id=ids.SIDEBAR)
+], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
 
 # Main content area (simpler: use Bootstrap utilities to manage flex sizing)
 content = html.Div(
@@ -139,13 +173,22 @@ content = html.Div(
     Output("trip-polyline", "children"),
     Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
     State(ids.DESTINATIONS_LIST, "data"),
+    State(ids.START_POINT_DROPDOWN, "value"),
+    State(ids.END_POINT_DROPDOWN, "value"),
     prevent_initial_call=True
 )
-def optimize_tsp(n_clicks, destination_ids):
+def optimize_tsp(n_clicks, destination_ids, start_point_id, end_point_id):
     print("Optimize TSP called")
     print(destination_ids)
     landmarks = registry.get_landmarks(destination_ids)
-    visit_order = solve_tsp(landmarks)
+    start_landmark = registry.get_landmark(int(start_point_id)) if start_point_id else None
+    end_landmark = registry.get_landmark(int(end_point_id)) if end_point_id else None
+
+    visit_order = solve_tsp(
+        landmarks,
+        start_point=start_landmark,
+        end_point=end_landmark,
+    )
     road_segments = fetch_route_steps(visit_order)
 
     # Choose a colormap
@@ -211,6 +254,26 @@ def toggle_marker(n_clicks_list, selected, current_children):
             )
 
     return icons, current_children, selected
+
+@app.callback(
+    Output(ids.START_POINT_DROPDOWN, "options"),
+    Output(ids.END_POINT_DROPDOWN, "options"),
+    Output(ids.START_POINT_DROPDOWN, "value"),
+    Output(ids.END_POINT_DROPDOWN, "value"),
+    Input(ids.DESTINATIONS_LIST, "data"),
+    State(ids.START_POINT_DROPDOWN, "value"),
+    State(ids.END_POINT_DROPDOWN, "value"),
+    prevent_initial_call=True
+)
+def update_dropdown_options(destination_ids, start_point_id, end_point_id):
+    landmarks = registry.get_landmarks(destination_ids)
+    options = [{"label": l.name, "value": str(l.id)} for l in landmarks]
+    option_values = {option["value"] for option in options}
+
+    start_point_value = start_point_id if start_point_id in option_values else None
+    end_point_value = end_point_id if end_point_id in option_values else None
+
+    return options, options, start_point_value, end_point_value
 
 # App layout
 app.layout = html.Div([

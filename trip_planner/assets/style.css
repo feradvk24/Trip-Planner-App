@@ -1,0 +1,17 @@
+.dash-dropdown-content {
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.format-dropdown > .Select-option {
+    font-size: 8px !important;
+    font-family: Arial, sans-serif !important;
+}
+
+/* assets/custom-dropdown.css */
+.Select-menu-outer {
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+}

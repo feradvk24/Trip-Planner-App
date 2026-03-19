@@ -20,6 +20,9 @@ SIDEBAR_STYLE = {
     "padding": "2rem 1rem",
     "backgroundColor": "#f8f9fa",
     "borderRight": "1px solid #dee2e6",
+    "display": "flex",
+    "flexDirection": "column",
+    "overflow": "hidden",
 }
 
 # Main content styles
