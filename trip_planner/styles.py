@@ -10,9 +10,20 @@ checkbox_icon = {
     # "iconAnchor": [12, 12],
 }
 
+import base64 as _b64
+
+
+def _svg_to_icon(svg: str, size: int) -> dict:
+    encoded = _b64.b64encode(svg.encode()).decode()
+    half = size // 2
+    return {
+        "iconUrl": f"data:image/svg+xml;base64,{encoded}",
+        "iconSize": [size, size],
+        "iconAnchor": [half, half],
+    }
+
+
 def number_icon(n: int) -> dict:
-    """A circular SVG icon showing visit order number n, encoded as a data URL."""
-    import base64
     svg = (
         f'<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28">'
         f'<circle cx="14" cy="14" r="13" fill="#1a6fcf" stroke="white" stroke-width="2"/>'
@@ -20,12 +31,16 @@ def number_icon(n: int) -> dict:
         f'font-family="Arial,sans-serif" fill="white">{n}</text>'
         f'</svg>'
     )
-    encoded = base64.b64encode(svg.encode()).decode()
-    return {
-        "iconUrl": f"data:image/svg+xml;base64,{encoded}",
-        "iconSize": [28, 28],
-        "iconAnchor": [14, 14],
-    }
+    return _svg_to_icon(svg, 28)
+
+
+def location_dot_icon() -> dict:
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22">'
+        '<circle cx="11" cy="11" r="9" fill="#1a6fcf" stroke="white" stroke-width="3"/>'
+        '</svg>'
+    )
+    return _svg_to_icon(svg, 22)
 
 # Sidebar styles
 SIDEBAR_STYLE = {

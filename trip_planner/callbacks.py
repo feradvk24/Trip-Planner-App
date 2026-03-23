@@ -4,7 +4,7 @@ from dash import html
 import ids
 ## registry will be passed as a parameter
 from backend.tsp_formulas import fetch_route_steps, solve_tsp
-from styles import pin_icon, checkbox_icon, number_icon
+from styles import pin_icon, checkbox_icon, number_icon, location_dot_icon
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import dash_leaflet as dl
@@ -185,7 +185,7 @@ def register_callbacks(app, registry):
         lat, lon = position["lat"], position["lon"]
         accuracy = position.get("accuracy", 0)
         return [
-            # Accuracy circle
+            # Accuracy circle (vector layer — stays behind landmark markers)
             dl.Circle(
                 center=[lat, lon],
                 radius=accuracy,
@@ -194,14 +194,11 @@ def register_callbacks(app, registry):
                 fillOpacity=0.15,
                 weight=1,
             ),
-            # Location dot
-            dl.CircleMarker(
-                center=[lat, lon],
-                radius=8,
-                color="white",
-                fillColor="#1a6fcf",
-                fillOpacity=1,
-                weight=2,
+            # Location dot — Marker renders in the markerPane (above all vector layers)
+            dl.Marker(
+                position=[lat, lon],
+                icon=location_dot_icon(),
+                zIndexOffset=1000,
                 children=dl.Tooltip("Your location"),
             ),
         ]

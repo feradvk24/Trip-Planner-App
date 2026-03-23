@@ -130,7 +130,7 @@ def serve_layout():
     if current_user.is_authenticated:
         return html.Div([
             dcc.Location(id="url"),
-            dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True),
+            dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0),
             sidebar,
             content,
             create_user_menu(),
