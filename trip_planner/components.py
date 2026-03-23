@@ -111,6 +111,7 @@ def create_map(markers):
                 interactive=False,
             ),
             dl.LayerGroup(id="trip-polyline"),
+            dl.LayerGroup(id=ids.USER_LOCATION_LAYER),
             *markers
         ],
         center=[42.7, 25.0],

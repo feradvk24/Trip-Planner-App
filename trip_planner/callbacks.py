@@ -173,3 +173,35 @@ def register_callbacks(app, registry):
         from flask_login import logout_user as _logout
         _logout()
         return "/login"
+
+    @app.callback(
+        Output(ids.USER_LOCATION_LAYER, "children"),
+        Input(ids.GEOLOCATION, "position"),
+        prevent_initial_call=True,
+    )
+    def update_user_location(position):
+        if not position:
+            return []
+        lat, lon = position["lat"], position["lon"]
+        accuracy = position.get("accuracy", 0)
+        return [
+            # Accuracy circle
+            dl.Circle(
+                center=[lat, lon],
+                radius=accuracy,
+                color="#1a6fcf",
+                fillColor="#1a6fcf",
+                fillOpacity=0.15,
+                weight=1,
+            ),
+            # Location dot
+            dl.CircleMarker(
+                center=[lat, lon],
+                radius=8,
+                color="white",
+                fillColor="#1a6fcf",
+                fillOpacity=1,
+                weight=2,
+                children=dl.Tooltip("Your location"),
+            ),
+        ]

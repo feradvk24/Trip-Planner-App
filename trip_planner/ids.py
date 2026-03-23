@@ -18,3 +18,7 @@ LOGOUT_BUTTON = "logout-button"
 USER_MENU = "user-menu"
 LOGIN_ALERT = "login-alert"
 PAGE_CONTENT = "page-content"
+
+# Geolocation
+GEOLOCATION = "geolocation"
+USER_LOCATION_LAYER = "user-location-layer"
