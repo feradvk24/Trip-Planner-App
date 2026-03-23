@@ -5,6 +5,8 @@ import dash_leaflet as dl
 import pandas as pd
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
+from flask import Flask, redirect, request, session
+from flask_login import current_user, logout_user
 
 from dotenv import load_dotenv
 import os
@@ -13,9 +15,12 @@ import ids
 from marker_config import Landmark, LandmarkRegistry
 from backend.tsp_formulas import fetch_route_steps, solve_tsp
 from styles import pin_icon, checkbox_icon, SIDEBAR_STYLE, CONTENT_STYLE
-from components import create_sidebar, create_trip_endpoints, create_selected_object_group, create_map
+from components import (
+    create_sidebar, create_trip_endpoints, create_selected_object_group,
+    create_map, create_login_layout, create_markers,
+)
 from callbacks import register_callbacks
-from components import create_markers
+from auth import init_login_manager
 
 load_dotenv()
 
@@ -25,7 +30,31 @@ monuments_df = pd.read_csv(csv_path)
 monuments_df.replace("-", pd.NA, inplace=True)
 monuments_df.dropna(subset=['latitude', 'longitude'], inplace=True)
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP])
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP],
+           suppress_callback_exceptions=True)
+server = app.server
+
+# Initialize Flask-Login
+init_login_manager(server)
+
+# Protect all Dash views — redirect unauthenticated users to /login
+@server.before_request
+def require_login():
+    # Allow static assets, the login page itself, and Dash's internal routes
+    allowed_paths = {"/login", "/_dash-layout", "/_dash-dependencies", "/_reload-hash"}
+    if (
+        request.path.startswith("/assets/")
+        or request.path.startswith("/_dash-update-component")
+        or request.path in allowed_paths
+    ):
+        return
+    if not current_user.is_authenticated:
+        return redirect("/login")
+
+@server.route("/logout", methods=["POST"])
+def logout():
+    logout_user()
+    return redirect("/login")
 
 landmark_list = [
     Landmark(
@@ -96,15 +125,23 @@ success_toast = dbc.Toast(
     style={"position": "fixed", "bottom": "1rem", "right": "1rem", "zIndex": 9999, "minWidth": "auto"},
 )
 
-# App layout
-app.layout = html.Div([
-    dcc.Location(id="url"),
-    sidebar,
-    content,
-    destinations_list,
-    warn_modal,
-    success_toast,
-])
+# App layout — dynamic: shows login form or main app based on auth state
+def serve_layout():
+    if current_user.is_authenticated:
+        return html.Div([
+            dcc.Location(id="url"),
+            sidebar,
+            content,
+            destinations_list,
+            warn_modal,
+            success_toast,
+        ])
+    return html.Div([
+        dcc.Location(id="url"),
+        create_login_layout(),
+    ])
+
+app.layout = serve_layout
 
 register_callbacks(app, registry)
 

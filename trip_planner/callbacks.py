@@ -1,4 +1,4 @@
-from dash import Output, Input, State, ALL, ctx
+from dash import Output, Input, State, ALL, ctx, no_update
 import dash_bootstrap_components as dbc
 from dash import html
 import ids
@@ -8,6 +8,8 @@ from styles import pin_icon, checkbox_icon
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import dash_leaflet as dl
+from flask_login import login_user
+from auth import verify_user, create_user, User
 
 def register_callbacks(app, registry):
     @app.callback(
@@ -114,3 +116,49 @@ def register_callbacks(app, registry):
         start_point_value = start_point_id if start_point_id in option_values else "auto"
         end_point_value = end_point_id if end_point_id in option_values else "auto"
         return options, options, start_point_value, end_point_value
+
+    @app.callback(
+        Output("url", "href", allow_duplicate=True),
+        Output(ids.LOGIN_ALERT, "children"),
+        Output(ids.LOGIN_ALERT, "is_open"),
+        Input(ids.LOGIN_BUTTON, "n_clicks"),
+        State(ids.LOGIN_USERNAME, "value"),
+        State(ids.LOGIN_PASSWORD, "value"),
+        prevent_initial_call=True,
+    )
+    def handle_login(n_clicks, username, password):
+        if not username or not password:
+            return no_update, "Please enter both username and password.", True
+        if verify_user(username, password):
+            login_user(User(username))
+            return "/", "", False
+        return no_update, "Invalid username or password.", True
+
+    @app.callback(
+        Output("url", "href", allow_duplicate=True),
+        Output(ids.LOGIN_ALERT, "children", allow_duplicate=True),
+        Output(ids.LOGIN_ALERT, "is_open", allow_duplicate=True),
+        Input(ids.REGISTER_BUTTON, "n_clicks"),
+        State(ids.LOGIN_USERNAME, "value"),
+        State(ids.LOGIN_PASSWORD, "value"),
+        prevent_initial_call=True,
+    )
+    def handle_register(n_clicks, username, password):
+        if not username or not password:
+            return no_update, "Please enter both username and password.", True
+        if len(password) < 6:
+            return no_update, "Password must be at least 6 characters.", True
+        if create_user(username, password):
+            login_user(User(username))
+            return "/", "", False
+        return no_update, "Username already exists.", True
+
+    @app.callback(
+        Output("url", "href", allow_duplicate=True),
+        Input(ids.LOGOUT_BUTTON, "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def handle_logout(n_clicks):
+        from flask_login import logout_user as _logout
+        _logout()
+        return "/login"

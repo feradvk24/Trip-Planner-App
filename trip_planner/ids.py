@@ -8,3 +8,12 @@ END_POINT_DROPDOWN = "end-point-dropdown"
 CLEAR_ALL_BTN = "clear-all-btn"
 WARN_MODAL = "warn-modal"
 SUCCESS_TOAST = "success-toast"
+
+# Auth IDs
+LOGIN_USERNAME = "login-username"
+LOGIN_PASSWORD = "login-password"
+LOGIN_BUTTON = "login-button"
+REGISTER_BUTTON = "register-button"
+LOGOUT_BUTTON = "logout-button"
+LOGIN_ALERT = "login-alert"
+PAGE_CONTENT = "page-content"

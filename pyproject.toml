@@ -24,6 +24,7 @@ dependencies = [
     "psycopg2-binary",
     "requests",
     "dotenv",
+    "flask-login",
 ]
 
 [project.urls]

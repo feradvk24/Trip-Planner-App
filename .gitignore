@@ -1,5 +1,8 @@
 data_extraction/
 
+# User credentials store
+users.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
