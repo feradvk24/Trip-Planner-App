@@ -75,9 +75,25 @@ def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn):
         ], style={"display": "flex", "justifyContent": "space-between", "alignItems": "baseline"}),
         selected_object_group,
         optimize_route_btn,
-        html.Hr(style={"margin": "0.25rem 0"}),
-        dbc.Button("Logout", id=ids.LOGOUT_BUTTON, color="danger", outline=True, size="sm", className="w-100"),
     ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
+
+def create_user_menu():
+    return dbc.DropdownMenu(
+        id=ids.USER_MENU,
+        label=html.I(className="bi bi-person-circle", style={"fontSize": "1.25rem", "color": "black"}),
+        children=[
+            dbc.DropdownMenuItem("Logout", id=ids.LOGOUT_BUTTON, style={"color": "#dc3545"}),
+        ],
+        direction="down",
+        align_end=True,
+        toggle_style={"background": "none", "border": "none", "boxShadow": "none", "padding": "0.25rem 0.5rem", "color": "black"},
+        style={
+            "position": "fixed",
+            "top": "0.75rem",
+            "right": "1rem",
+            "zIndex": 1050,
+        },
+    )
 
 def create_map(markers):
     return dl.Map(

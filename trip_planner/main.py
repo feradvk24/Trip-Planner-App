@@ -17,7 +17,7 @@ from backend.tsp_formulas import fetch_route_steps, solve_tsp
 from styles import pin_icon, checkbox_icon, SIDEBAR_STYLE, CONTENT_STYLE
 from components import (
     create_sidebar, create_trip_endpoints, create_selected_object_group,
-    create_map, create_login_layout, create_markers,
+    create_map, create_login_layout, create_markers, create_user_menu,
 )
 from callbacks import register_callbacks
 from auth import init_login_manager
@@ -132,6 +132,7 @@ def serve_layout():
             dcc.Location(id="url"),
             sidebar,
             content,
+            create_user_menu(),
             destinations_list,
             warn_modal,
             success_toast,
