@@ -41,7 +41,8 @@ def nearest_neighbor(
     route = [remaining.pop(first_idx)]
 
     end_landmark = None
-    if end_point:
+    is_round_trip = end_point and start_point and end_point.id == start_point.id
+    if end_point and not is_round_trip:
         for i, m in enumerate(remaining):
             if m.id == end_point.id:
                 end_landmark = remaining.pop(i)
@@ -63,6 +64,9 @@ def nearest_neighbor(
 
     if end_landmark:
         route.append(end_landmark)
+    elif is_round_trip:
+        # Close the loop: return to the start landmark
+        route.append(route[0])
 
     return route
 

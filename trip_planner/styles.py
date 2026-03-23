@@ -10,6 +10,23 @@ checkbox_icon = {
     # "iconAnchor": [12, 12],
 }
 
+def number_icon(n: int) -> dict:
+    """A circular SVG icon showing visit order number n, encoded as a data URL."""
+    import base64
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28">'
+        f'<circle cx="14" cy="14" r="13" fill="#1a6fcf" stroke="white" stroke-width="2"/>'
+        f'<text x="14" y="19" text-anchor="middle" font-size="13" font-weight="bold" '
+        f'font-family="Arial,sans-serif" fill="white">{n}</text>'
+        f'</svg>'
+    )
+    encoded = base64.b64encode(svg.encode()).decode()
+    return {
+        "iconUrl": f"data:image/svg+xml;base64,{encoded}",
+        "iconSize": [28, 28],
+        "iconAnchor": [14, 14],
+    }
+
 # Sidebar styles
 SIDEBAR_STYLE = {
     "position": "fixed",

@@ -4,7 +4,7 @@ from dash import html
 import ids
 ## registry will be passed as a parameter
 from backend.tsp_formulas import fetch_route_steps, solve_tsp
-from styles import pin_icon, checkbox_icon
+from styles import pin_icon, checkbox_icon, number_icon
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import dash_leaflet as dl
@@ -16,19 +16,20 @@ def register_callbacks(app, registry):
         Output("trip-polyline", "children"),
         Output(ids.WARN_MODAL, "is_open"),
         Output(ids.SUCCESS_TOAST, "is_open"),
+        Output({"type": "marker", "index": ALL}, "icon", allow_duplicate=True),
         Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
         Input("warn-modal-close", "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
         State(ids.START_POINT_DROPDOWN, "value"),
         State(ids.END_POINT_DROPDOWN, "value"),
+        State({"type": "marker", "index": ALL}, "id"),
         prevent_initial_call=True
     )
-    def optimize_tsp(n_clicks, close_clicks, destination_ids, start_point_id, end_point_id):
-        from dash import no_update
+    def optimize_tsp(n_clicks, close_clicks, destination_ids, start_point_id, end_point_id, marker_ids):
         if ctx.triggered_id == "warn-modal-close":
-            return no_update, False, no_update
+            return no_update, False, no_update, no_update
         if not destination_ids or len(destination_ids) < 2:
-            return no_update, True, no_update
+            return no_update, True, no_update, no_update
         landmarks = registry.get_landmarks(destination_ids)
         start_landmark = None
         end_landmark = None
@@ -44,7 +45,17 @@ def register_callbacks(app, registry):
             html.Div(dl.Polyline(positions=segment, color=color, weight=5))
             for segment, color in zip(road_segments, colors)
         ]
-        return polylines, False, True
+        # Build visit-order map (deduplicated — round-trip duplicates the start at end)
+        visit_num = {}
+        for i, lm in enumerate(visit_order):
+            if lm.id not in visit_num:
+                visit_num[lm.id] = i + 1
+        icons = [
+            number_icon(visit_num[m["index"]]) if m["index"] in visit_num
+            else (checkbox_icon if m["index"] in destination_ids else pin_icon)
+            for m in marker_ids
+        ]
+        return polylines, False, True, icons
 
     @app.callback(
         Output({"type": "marker", "index": ALL}, "icon"),
