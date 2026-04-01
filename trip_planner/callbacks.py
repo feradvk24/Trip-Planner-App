@@ -1,4 +1,5 @@
 from dash import Output, Input, State, ALL, ctx, no_update
+from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from dash import html
 import ids
@@ -17,19 +18,25 @@ def register_callbacks(app, registry):
         Output(ids.WARN_MODAL, "is_open"),
         Output(ids.SUCCESS_TOAST, "is_open"),
         Output({"type": "marker", "index": ALL}, "icon", allow_duplicate=True),
+        Output({"type": "marker", "index": ALL}, "opacity", allow_duplicate=True),
+        Output(ids.OPTIMIZE_ROUTE_BTN, "children"),
+        Output(ids.OPTIMIZE_ROUTE_BTN, "color"),
         Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
         Input("warn-modal-close", "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
         State(ids.START_POINT_DROPDOWN, "value"),
         State(ids.END_POINT_DROPDOWN, "value"),
         State({"type": "marker", "index": ALL}, "id"),
+        State(ids.OPTIMIZE_ROUTE_BTN, "children"),
         prevent_initial_call=True
     )
-    def optimize_tsp(n_clicks, close_clicks, destination_ids, start_point_id, end_point_id, marker_ids):
+    def optimize_tsp(n_clicks, close_clicks, destination_ids, start_point_id, end_point_id, marker_ids, btn_label):
         if ctx.triggered_id == "warn-modal-close":
-            return no_update, False, no_update, no_update
+            return no_update, False, no_update, [no_update] * len(marker_ids), [no_update] * len(marker_ids), no_update, no_update
+        if btn_label == "Modify Route":
+            raise PreventUpdate
         if not destination_ids or len(destination_ids) < 2:
-            return no_update, True, no_update, no_update
+            return no_update, True, no_update, [no_update] * len(marker_ids), [no_update] * len(marker_ids), no_update, no_update
         landmarks = registry.get_landmarks(destination_ids)
         start_landmark = None
         end_landmark = None
@@ -45,7 +52,6 @@ def register_callbacks(app, registry):
             html.Div(dl.Polyline(positions=segment, color=color, weight=5))
             for segment, color in zip(road_segments, colors)
         ]
-        # Build visit-order map (deduplicated — round-trip duplicates the start at end)
         visit_num = {}
         for i, lm in enumerate(visit_order):
             if lm.id not in visit_num:
@@ -55,7 +61,27 @@ def register_callbacks(app, registry):
             else (checkbox_icon if m["index"] in destination_ids else pin_icon)
             for m in marker_ids
         ]
-        return polylines, False, True, icons
+        opacities = [1 if m["index"] in destination_ids else 0 for m in marker_ids]
+        return polylines, False, True, icons, opacities, "Modify Route", "success"
+
+    @app.callback(
+        Output("trip-polyline", "children", allow_duplicate=True),
+        Output({"type": "marker", "index": ALL}, "icon", allow_duplicate=True),
+        Output({"type": "marker", "index": ALL}, "opacity", allow_duplicate=True),
+        Output(ids.OPTIMIZE_ROUTE_BTN, "children", allow_duplicate=True),
+        Output(ids.OPTIMIZE_ROUTE_BTN, "color", allow_duplicate=True),
+        Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
+        State({"type": "marker", "index": ALL}, "id"),
+        State(ids.DESTINATIONS_LIST, "data"),
+        State(ids.OPTIMIZE_ROUTE_BTN, "children"),
+        prevent_initial_call=True
+    )
+    def modify_route(n_clicks, marker_ids, destination_ids, btn_label):
+        if btn_label != "Modify Route":
+            raise PreventUpdate
+        icons = [checkbox_icon if m["index"] in (destination_ids or []) else pin_icon for m in marker_ids]
+        opacities = [1 for _ in marker_ids]
+        return [], icons, opacities, "Optimize Route", "primary"
 
     @app.callback(
         Output({"type": "marker", "index": ALL}, "icon"),
@@ -99,15 +125,19 @@ def register_callbacks(app, registry):
 
     @app.callback(
         Output({"type": "marker", "index": ALL}, "icon", allow_duplicate=True),
+        Output({"type": "marker", "index": ALL}, "opacity", allow_duplicate=True),
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
+        Output(ids.OPTIMIZE_ROUTE_BTN, "children", allow_duplicate=True),
+        Output(ids.OPTIMIZE_ROUTE_BTN, "color", allow_duplicate=True),
         Input(ids.CLEAR_ALL_BTN, "n_clicks"),
         State({"type": "marker", "index": ALL}, "id"),
         prevent_initial_call=True
     )
     def clear_all(n_clicks, marker_ids):
         icons = [pin_icon for _ in marker_ids]
-        return icons, [], []
+        opacities = [1 for _ in marker_ids]
+        return icons, opacities, [], [], "Optimize Route", "primary"
 
     @app.callback(
         Output(ids.START_POINT_DROPDOWN, "options"),
