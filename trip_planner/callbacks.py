@@ -6,6 +6,7 @@ import ids
 ## registry will be passed as a parameter
 from backend.tsp_formulas import fetch_route_steps, solve_tsp
 from styles import pin_icon, checkbox_icon, number_icon, location_dot_icon
+from marker_config import Landmark
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import dash_leaflet as dl
@@ -28,9 +29,10 @@ def register_callbacks(app, registry):
         State(ids.END_POINT_DROPDOWN, "value"),
         State({"type": "marker", "index": ALL}, "id"),
         State(ids.OPTIMIZE_ROUTE_BTN, "children"),
+        State(ids.GEOLOCATION, "position"),
         prevent_initial_call=True
     )
-    def optimize_tsp(n_clicks, close_clicks, destination_ids, start_point_id, end_point_id, marker_ids, btn_label):
+    def optimize_tsp(n_clicks, close_clicks, destination_ids, start_point_id, end_point_id, marker_ids, btn_label, position):
         if ctx.triggered_id == "warn-modal-close":
             return no_update, False, no_update, [no_update] * len(marker_ids), [no_update] * len(marker_ids), no_update, no_update
         if btn_label == "Modify Route":
@@ -40,9 +42,15 @@ def register_callbacks(app, registry):
         landmarks = registry.get_landmarks(destination_ids)
         start_landmark = None
         end_landmark = None
-        if start_point_id and start_point_id != "auto":
+        if start_point_id == "my_location":
+            if position:
+                start_landmark = Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"])
+        elif start_point_id and start_point_id != "auto":
             start_landmark = registry.get_landmark(int(start_point_id))
-        if end_point_id and end_point_id != "auto":
+        if end_point_id == "my_location":
+            if position:
+                end_landmark = Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"])
+        elif end_point_id and end_point_id != "auto":
             end_landmark = registry.get_landmark(int(end_point_id))
         visit_order = solve_tsp(landmarks, start_point=start_landmark, end_point=end_landmark)
         road_segments = fetch_route_steps(visit_order)
@@ -52,10 +60,11 @@ def register_callbacks(app, registry):
             html.Div(dl.Polyline(positions=segment, color=color, weight=5))
             for segment, color in zip(road_segments, colors)
         ]
+        start_is_my_location = start_landmark is not None and start_landmark.id == -1
         visit_num = {}
         for i, lm in enumerate(visit_order):
             if lm.id not in visit_num:
-                visit_num[lm.id] = i + 1
+                visit_num[lm.id] = i if start_is_my_location else i + 1
         icons = [
             number_icon(visit_num[m["index"]]) if m["index"] in visit_num
             else (checkbox_icon if m["index"] in destination_ids else pin_icon)
@@ -145,14 +154,18 @@ def register_callbacks(app, registry):
         Output(ids.START_POINT_DROPDOWN, "value"),
         Output(ids.END_POINT_DROPDOWN, "value"),
         Input(ids.DESTINATIONS_LIST, "data"),
+        Input(ids.GEOLOCATION, "position"),
         State(ids.START_POINT_DROPDOWN, "value"),
         State(ids.END_POINT_DROPDOWN, "value"),
         prevent_initial_call=True
     )
-    def update_dropdown_options(destination_ids, start_point_id, end_point_id):
-        landmarks = registry.get_landmarks(destination_ids)
+    def update_dropdown_options(destination_ids, position, start_point_id, end_point_id):
+        landmarks = registry.get_landmarks(destination_ids or [])
         auto_option = {"label": "Автоматично", "value": "auto"}
-        options = [auto_option] + [{"label": l.name, "value": str(l.id)} for l in landmarks]
+        base_options = [auto_option]
+        if position:
+            base_options.append({"label": "My location", "value": "my_location"})
+        options = base_options + [{"label": l.name, "value": str(l.id)} for l in landmarks]
         option_values = {option["value"] for option in options}
         start_point_value = start_point_id if start_point_id in option_values else "auto"
         end_point_value = end_point_id if end_point_id in option_values else "auto"

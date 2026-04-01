@@ -30,19 +30,26 @@ def nearest_neighbor(
     end_point: Optional[Landmark] = None
 ) -> List[Landmark]:
     remaining = points.copy()
-    first_idx = 0
 
-    if start_point:
+    is_round_trip = end_point and start_point and end_point.id == start_point.id
+
+    remaining_ids = {m.id for m in remaining}
+    start_in_list = start_point and start_point.id in remaining_ids
+    end_in_list = end_point and not is_round_trip and end_point.id in remaining_ids
+
+    if start_in_list:
         for i, m in enumerate(remaining):
             if m.id == start_point.id:
-                first_idx = i
+                route = [remaining.pop(i)]
                 break
-
-    route = [remaining.pop(first_idx)]
+    elif start_point:
+        # External start point (e.g. user's current location) — not a destination
+        route = [start_point]
+    else:
+        route = [remaining.pop(0)]
 
     end_landmark = None
-    is_round_trip = end_point and start_point and end_point.id == start_point.id
-    if end_point and not is_round_trip:
+    if end_in_list:
         for i, m in enumerate(remaining):
             if m.id == end_point.id:
                 end_landmark = remaining.pop(i)
@@ -62,11 +69,14 @@ def nearest_neighbor(
 
         route.append(remaining.pop(nearest_idx))
 
-    if end_landmark:
+    if end_in_list and end_landmark:
         route.append(end_landmark)
     elif is_round_trip:
-        # Close the loop: return to the start landmark
+        # Close the loop: return to the start point
         route.append(route[0])
+    elif end_point and not end_in_list:
+        # External end point (e.g. user's current location) — not a destination
+        route.append(end_point)
 
     return route
 
