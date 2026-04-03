@@ -2,7 +2,6 @@ import dash_bootstrap_components as dbc
 from dash import Dash, Output, html, dcc, Input, State, ALL, ctx
 import dash
 import dash_leaflet as dl
-import pandas as pd
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from flask import Flask, redirect, request, session
@@ -10,6 +9,8 @@ from flask_login import current_user, logout_user
 
 from dotenv import load_dotenv
 import os
+
+load_dotenv()
 
 import ids
 from marker_config import Landmark, LandmarkRegistry
@@ -21,14 +22,8 @@ from components import (
 )
 from callbacks import register_callbacks
 from auth import init_login_manager
-
-load_dotenv()
-
-csv_path = os.getenv("MONUMENTS_CSV")
-csv_path = os.path.normpath(csv_path)
-monuments_df = pd.read_csv(csv_path)
-monuments_df.replace("-", pd.NA, inplace=True)
-monuments_df.dropna(subset=['latitude', 'longitude'], inplace=True)
+from backend.database import init_db, shutdown_session, SessionLocal, create_database_if_missing
+from backend.models import Landmark as LandmarkModel
 
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP],
            suppress_callback_exceptions=True)
@@ -36,6 +31,11 @@ server = app.server
 
 # Initialize Flask-Login
 init_login_manager(server)
+
+# Initialize database (creates the DB and tables if they don't exist)
+create_database_if_missing()
+init_db()
+server.teardown_appcontext(shutdown_session)
 
 # Protect all Dash views — redirect unauthenticated users to /login
 @server.before_request
@@ -56,17 +56,22 @@ def logout():
     logout_user()
     return redirect("/login")
 
-landmark_list = [
-    Landmark(
-        id=index,
-        name=row.get('name', 'Monument'),
-        location=row.get('location', 'Location'),
-        lat=float(row['latitude']),
-        lon=float(row['longitude']),
-        link=row.get('name_link', '#')
-    )
-    for index, row in monuments_df.iterrows()
-]
+db = SessionLocal()
+try:
+    db_landmarks = db.query(LandmarkModel).all()
+    landmark_list = [
+        Landmark(
+            id=row.id,
+            name=row.name,
+            location=row.location or 'Location',
+            lat=row.latitude,
+            lon=row.longitude,
+            link=row.link or '#'
+        )
+        for row in db_landmarks
+    ]
+finally:
+    db.close()
 
 # Register them in the singleton
 registry = LandmarkRegistry()
