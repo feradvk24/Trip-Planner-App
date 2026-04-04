@@ -112,7 +112,8 @@ def create_map(markers):
             ),
             dl.LayerGroup(id="trip-polyline"),
             dl.LayerGroup(id=ids.USER_LOCATION_LAYER),
-            *markers
+            dl.LayerGroup(id="all-markers-layer", children=markers),
+            dl.LayerGroup(id="tour-markers-layer", children=[]),
         ],
         center=[42.7, 25.0],
         zoom=7.4,
