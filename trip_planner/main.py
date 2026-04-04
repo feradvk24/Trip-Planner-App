@@ -85,10 +85,25 @@ selected_object_group = create_selected_object_group()
 trip_endpoints = create_trip_endpoints()
 
 optimize_route_btn = dbc.Button("Optimize Route", color="primary", className="mt-2", id=ids.OPTIMIZE_ROUTE_BTN)
+save_trip_btn = dbc.Button("Save Trip", color="secondary", className="mt-1", id=ids.SAVE_TRIP_BTN, disabled=True, style={"opacity": "0.45"})
 destinations_list = dcc.Store(id=ids.DESTINATIONS_LIST, data=[])
+visit_order_store = dcc.Store(id=ids.VISIT_ORDER_STORE, data=[])
+
+save_trip_modal = dbc.Modal([
+    dbc.ModalHeader(dbc.ModalTitle("Save Trip")),
+    dbc.ModalBody([
+        dbc.Alert(id=ids.SAVE_TRIP_ALERT, is_open=False, color="danger", duration=4000),
+        dbc.Label("Trip name"),
+        dbc.Input(id=ids.SAVE_TRIP_NAME_INPUT, placeholder="e.g. Summer Rhodope trip", maxLength=200),
+    ]),
+    dbc.ModalFooter([
+        dbc.Button("Save", id=ids.SAVE_TRIP_CONFIRM_BTN, color="info"),
+        dbc.Button("Cancel", id="save-trip-cancel-btn", color="secondary", outline=True, className="ms-2"),
+    ]),
+], id=ids.SAVE_TRIP_MODAL, is_open=False)
 
 # Sidebar component
-sidebar = create_sidebar(trip_endpoints, selected_object_group, optimize_route_btn)
+sidebar = create_sidebar(trip_endpoints, selected_object_group, optimize_route_btn, save_trip_btn)
 
 # Main content area (simpler: use Bootstrap utilities to manage flex sizing)
 content = html.Div(
@@ -140,8 +155,10 @@ def serve_layout():
             content,
             create_user_menu(),
             destinations_list,
+            visit_order_store,
             warn_modal,
             success_toast,
+            save_trip_modal,
         ])
     return html.Div([
         dcc.Location(id="url"),

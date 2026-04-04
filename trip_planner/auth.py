@@ -1,14 +1,8 @@
-import os
 import hashlib
+import os
 import secrets
-from pathlib import Path
 
 from flask_login import LoginManager, UserMixin
-
-# Simple JSON-file based user store
-import json
-
-USERS_FILE = Path(__file__).parent / "users.json"
 
 
 class User(UserMixin):
@@ -16,42 +10,45 @@ class User(UserMixin):
         self.id = username
 
 
-def _hash_password(password, salt):
+def _hash_password(password: str, salt: str) -> str:
     return hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 100_000).hex()
 
 
-def _load_users():
-    if not USERS_FILE.exists():
-        return {}
-    with open(USERS_FILE, "r") as f:
-        return json.load(f)
+def create_user(username: str, password: str, first_name: str, last_name: str) -> bool:
+    """Register a new user in the DB. Returns True on success, False if username taken."""
+    from backend.database import SessionLocal
+    from backend.models import User as UserModel
+    db = SessionLocal()
+    try:
+        if db.query(UserModel).filter(UserModel.username == username).first():
+            return False
+        salt = secrets.token_hex(16)
+        hashed = _hash_password(password, salt)
+        user = UserModel(username=username, first_name=first_name, last_name=last_name,
+                         salt=salt, password=hashed)
+        db.add(user)
+        db.commit()
+        return True
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
-def _save_users(users):
-    with open(USERS_FILE, "w") as f:
-        json.dump(users, f, indent=2)
-
-
-def create_user(username, password):
-    """Register a new user. Returns True on success, False if user exists."""
-    users = _load_users()
-    if username in users:
-        return False
-    salt = secrets.token_hex(16)
-    hashed = _hash_password(password, salt)
-    users[username] = {"salt": salt, "password": hashed}
-    _save_users(users)
-    return True
-
-
-def verify_user(username, password):
-    """Check credentials. Returns True if valid."""
-    users = _load_users()
-    if username not in users:
-        return False
-    record = users[username]
-    hashed = _hash_password(password, record["salt"])
-    return secrets.compare_digest(hashed, record["password"])
+def verify_user(username: str, password: str) -> bool:
+    """Check credentials against the DB. Returns True if valid."""
+    from backend.database import SessionLocal
+    from backend.models import User as UserModel
+    db = SessionLocal()
+    try:
+        user = db.query(UserModel).filter(UserModel.username == username).first()
+        if not user:
+            return False
+        hashed = _hash_password(password, user.salt)
+        return secrets.compare_digest(hashed, user.password)
+    finally:
+        db.close()
 
 
 def init_login_manager(server):
@@ -64,9 +61,14 @@ def init_login_manager(server):
 
     @login_manager.user_loader
     def load_user(username):
-        users = _load_users()
-        if username in users:
-            return User(username)
-        return None
+        from backend.database import SessionLocal
+        from backend.models import User as UserModel
+        db = SessionLocal()
+        try:
+            if db.query(UserModel).filter(UserModel.username == username).first():
+                return User(username)
+            return None
+        finally:
+            db.close()
 
     return login_manager

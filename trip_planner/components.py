@@ -16,6 +16,12 @@ def create_login_layout():
                     dbc.Input(id=ids.LOGIN_USERNAME, placeholder="Enter username", className="mb-3"),
                     dbc.Label("Password"),
                     dbc.Input(id=ids.LOGIN_PASSWORD, type="password", placeholder="Enter password", className="mb-3"),
+                    html.Div(id=ids.REGISTER_FIELDS, style={"display": "none"}, children=[
+                        dbc.Label("First name"),
+                        dbc.Input(id=ids.REGISTER_FIRST_NAME, placeholder="Enter first name", className="mb-3"),
+                        dbc.Label("Last name"),
+                        dbc.Input(id=ids.REGISTER_LAST_NAME, placeholder="Enter last name", className="mb-3"),
+                    ]),
                     dbc.Button("Login", id=ids.LOGIN_BUTTON, color="primary", className="w-100 mb-2"),
                     dbc.Button("Register", id=ids.REGISTER_BUTTON, color="secondary", outline=True, className="w-100"),
                 ]), className="shadow"),
@@ -59,7 +65,7 @@ def create_trip_endpoints():
         style={"marginBottom": 0, "backgroundColor": "#E1E1E1", "border": "1px solid black", "padding": "0.5rem", "borderRadius": "0.25rem"}
     )
 
-def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn):
+def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn, save_trip_btn):
     return html.Div([
         html.Div([
             html.Div([
@@ -75,6 +81,7 @@ def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn):
         ], style={"display": "flex", "justifyContent": "space-between", "alignItems": "baseline"}),
         selected_object_group,
         optimize_route_btn,
+        save_trip_btn,
     ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
 
 def create_user_menu():
