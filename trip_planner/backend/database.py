@@ -30,8 +30,6 @@ def create_database_if_missing():
             if not cur.fetchone():
                 cur.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(db_name)))
                 print(f"Database '{db_name}' created.")
-            else:
-                print(f"Database '{db_name}' already exists.")
     finally:
         conn.close()
 

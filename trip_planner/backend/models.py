@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Float, Integer, String
+from sqlalchemy import Column, Float, Integer, String, Boolean, DateTime, ForeignKey, JSON
+from datetime import datetime, timezone
 
 from backend.database import Base
 
@@ -21,3 +22,16 @@ class Landmark(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     link = Column(String(500), nullable=True)
+
+
+class UserTrip(Base):
+    __tablename__ = "user_trips"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    name = Column(String(200), nullable=False)
+    landmark_ids = Column(JSON, nullable=False)
+    visit_order = Column(JSON, nullable=False)
+    used_user_location_start = Column(Boolean, default=False, nullable=False)
+    used_user_location_end = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
