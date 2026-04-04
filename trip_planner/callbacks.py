@@ -11,7 +11,7 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import dash_leaflet as dl
 from flask_login import login_user
-from auth import verify_user, create_user, User
+from backend.auth import verify_user, create_user, User
 
 def register_callbacks(app, registry):
     def _build_all_markers(destination_ids):
@@ -345,3 +345,63 @@ def register_callbacks(app, registry):
                 children=dl.Tooltip("Your location"),
             ),
         ]
+
+    # ─── Load Trip ───────────────────────────────────────────────
+    @app.callback(
+        Output(ids.LOAD_TRIP_MODAL, "is_open"),
+        Output(ids.LOAD_TRIP_LIST, "children"),
+        Input(ids.LOAD_TRIP_BTN, "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def open_load_trip_modal(n_clicks):
+        from flask_login import current_user
+        from backend.crud import get_user_trips
+        trips = get_user_trips(current_user.id)
+        if not trips:
+            items = [dbc.ListGroupItem("No saved trips yet.", disabled=True)]
+        else:
+            items = [
+                dbc.ListGroupItem(
+                    [
+                        html.Div(t["name"], style={"fontWeight": "600"}),
+                        html.Small(t["created_at"], className="text-muted"),
+                    ],
+                    id={"type": "load-trip-item", "index": t["id"]},
+                    action=True,
+                    style={"cursor": "pointer"},
+                )
+                for t in trips
+            ]
+        return True, items
+
+    @app.callback(
+        Output(ids.LOAD_TRIP_MODAL, "is_open", allow_duplicate=True),
+        Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
+        Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
+        Output("all-markers-layer", "children", allow_duplicate=True),
+        Input({"type": "load-trip-item", "index": ALL}, "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def load_selected_trip(n_clicks_list):
+        if not ctx.triggered_id or not any(n_clicks_list):
+            raise PreventUpdate
+        trip_id = ctx.triggered_id["index"]
+        from flask_login import current_user
+        from backend.crud import get_user_trips
+        trips = get_user_trips(current_user.id)
+        trip = next((t for t in trips if t["id"] == trip_id), None)
+        if not trip:
+            raise PreventUpdate
+        landmark_ids = trip["landmark_ids"]
+        selected_items = []
+        for lid in landmark_ids:
+            lm = registry.get_landmark(lid)
+            if lm:
+                selected_items.append(
+                    dbc.ListGroupItem([
+                        html.H6(lm.name, className="mb-1 small"),
+                        html.P(lm.location, className="mb-1 small"),
+                    ], className="p-3", id=f"selected-item-{lid}")
+                )
+        markers = _build_all_markers(landmark_ids)
+        return False, landmark_ids, selected_items, markers

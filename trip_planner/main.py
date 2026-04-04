@@ -21,7 +21,7 @@ from components import (
     create_map, create_login_layout, create_markers, create_user_menu,
 )
 from callbacks import register_callbacks
-from auth import init_login_manager
+from backend.auth import init_login_manager
 from backend.database import init_db, shutdown_session, SessionLocal, create_database_if_missing
 from backend.models import Landmark as LandmarkModel
 
@@ -86,6 +86,7 @@ trip_endpoints = create_trip_endpoints()
 
 optimize_route_btn = dbc.Button("Optimize Route", color="primary", className="mt-2", id=ids.OPTIMIZE_ROUTE_BTN)
 save_trip_btn = dbc.Button("Save Trip", color="secondary", className="mt-1", id=ids.SAVE_TRIP_BTN, disabled=True, style={"opacity": "0.45"})
+load_trip_btn = dbc.Button("Load Trip", color="primary", outline=True, className="mt-1", id=ids.LOAD_TRIP_BTN)
 destinations_list = dcc.Store(id=ids.DESTINATIONS_LIST, data=[])
 visit_order_store = dcc.Store(id=ids.VISIT_ORDER_STORE, data=[])
 
@@ -102,8 +103,16 @@ save_trip_modal = dbc.Modal([
     ]),
 ], id=ids.SAVE_TRIP_MODAL, is_open=False)
 
+load_trip_modal = dbc.Modal([
+    dbc.ModalHeader(dbc.ModalTitle("Load Trip")),
+    dbc.ModalBody(
+        dbc.ListGroup(id=ids.LOAD_TRIP_LIST, children=[], flush=True),
+        style={"maxHeight": "60vh", "overflowY": "auto"},
+    ),
+], id=ids.LOAD_TRIP_MODAL, is_open=False, centered=True, scrollable=True)
+
 # Sidebar component
-sidebar = create_sidebar(trip_endpoints, selected_object_group, optimize_route_btn, save_trip_btn)
+sidebar = create_sidebar(trip_endpoints, selected_object_group, optimize_route_btn, save_trip_btn, load_trip_btn)
 
 # Main content area (simpler: use Bootstrap utilities to manage flex sizing)
 content = html.Div(
@@ -159,6 +168,7 @@ def serve_layout():
             warn_modal,
             success_toast,
             save_trip_modal,
+            load_trip_modal,
         ])
     return html.Div([
         dcc.Location(id="url"),

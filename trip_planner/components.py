@@ -65,7 +65,7 @@ def create_trip_endpoints():
         style={"marginBottom": 0, "backgroundColor": "#E1E1E1", "border": "1px solid black", "padding": "0.5rem", "borderRadius": "0.25rem"}
     )
 
-def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn, save_trip_btn):
+def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn, save_trip_btn, load_trip_btn):
     return html.Div([
         html.Div([
             html.Div([
@@ -81,7 +81,7 @@ def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn, s
         ], style={"display": "flex", "justifyContent": "space-between", "alignItems": "baseline"}),
         selected_object_group,
         optimize_route_btn,
-        save_trip_btn,
+        html.Div([save_trip_btn, load_trip_btn], className="d-flex gap-2"),
     ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
 
 def create_user_menu():

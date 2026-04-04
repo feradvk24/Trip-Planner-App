@@ -26,3 +26,32 @@ def save_trip(username: str, name: str, landmark_ids: list, visit_order: list,
         raise
     finally:
         db.close()
+
+
+def get_user_trips(username: str) -> list[dict]:
+    """Return all trips for a user, newest first."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            return []
+        trips = (
+            db.query(UserTrip)
+            .filter(UserTrip.user_id == user.id)
+            .order_by(UserTrip.created_at.desc())
+            .all()
+        )
+        return [
+            {
+                "id": t.id,
+                "name": t.name,
+                "landmark_ids": t.landmark_ids,
+                "visit_order": t.visit_order,
+                "used_user_location_start": t.used_user_location_start,
+                "used_user_location_end": t.used_user_location_end,
+                "created_at": t.created_at.strftime("%d %b %Y, %H:%M"),
+            }
+            for t in trips
+        ]
+    finally:
+        db.close()
