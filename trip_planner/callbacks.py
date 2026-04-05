@@ -13,6 +13,14 @@ import dash_leaflet as dl
 from flask_login import login_user
 from backend.auth import verify_user, create_user, User
 
+def resolve_endpoint(registry, point_id, position):
+    if point_id == "my_location" and position:
+        return Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"])
+    if point_id and point_id != "auto":
+        return registry.get_landmark(int(point_id))
+    return None
+
+
 def register_callbacks(app, registry):
     def _build_all_markers(destination_ids):
         destination_ids = destination_ids or []
@@ -35,8 +43,37 @@ def register_callbacks(app, registry):
         ]
 
     @app.callback(
-        Output("trip-polyline", "children"),
         Output(ids.WARN_MODAL, "is_open"),
+        Input("warn-modal-close", "n_clicks"),
+        prevent_initial_call=True
+    )
+    def close_warn_modal(n_clicks):
+        return False
+
+    @app.callback(
+        Output(ids.VISIT_ORDER_STORE, "data"),
+        Output(ids.WARN_MODAL, "is_open", allow_duplicate=True),
+        Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
+        State(ids.DESTINATIONS_LIST, "data"),
+        State(ids.START_POINT_DROPDOWN, "value"),
+        State(ids.END_POINT_DROPDOWN, "value"),
+        State(ids.OPTIMIZE_ROUTE_BTN, "children"),
+        State(ids.GEOLOCATION, "position"),
+        prevent_initial_call=True
+    )
+    def compute_route(n_clicks, destination_ids, start_point_id, end_point_id, btn_label, position):
+        if btn_label == "Modify Route":
+            raise PreventUpdate
+        if not destination_ids or len(destination_ids) < 2:
+            return no_update, True
+        landmarks = registry.get_landmarks(destination_ids)
+        start_landmark = resolve_endpoint(registry, start_point_id, position)
+        end_landmark = resolve_endpoint(registry, end_point_id, position)
+        visit_order = solve_tsp(landmarks, start_point=start_landmark, end_point=end_landmark)
+        return [lm.id for lm in visit_order], False
+
+    @app.callback(
+        Output("trip-polyline", "children"),
         Output(ids.SUCCESS_TOAST, "is_open"),
         Output("all-markers-layer", "children"),
         Output("tour-markers-layer", "children"),
@@ -46,37 +83,21 @@ def register_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "disabled"),
         Output(ids.SAVE_TRIP_BTN, "color"),
         Output(ids.SAVE_TRIP_BTN, "style"),
-        Output(ids.VISIT_ORDER_STORE, "data"),
-        Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
-        Input("warn-modal-close", "n_clicks"),
-        State(ids.DESTINATIONS_LIST, "data"),
-        State(ids.START_POINT_DROPDOWN, "value"),
-        State(ids.END_POINT_DROPDOWN, "value"),
-        State(ids.OPTIMIZE_ROUTE_BTN, "children"),
+        Input(ids.VISIT_ORDER_STORE, "data"),
         State(ids.GEOLOCATION, "position"),
         prevent_initial_call=True
     )
-    def optimize_tsp(n_clicks, close_clicks, destination_ids, start_point_id, end_point_id, btn_label, position):
-        if ctx.triggered_id == "warn-modal-close":
-            return no_update, False, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update
-        if btn_label == "Modify Route":
+    def render_route(visit_order_ids, position):
+        if not visit_order_ids:
             raise PreventUpdate
-        if not destination_ids or len(destination_ids) < 2:
-            return no_update, True, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update
-        landmarks = registry.get_landmarks(destination_ids)
-        start_landmark = None
-        end_landmark = None
-        if start_point_id == "my_location":
-            if position:
-                start_landmark = Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"])
-        elif start_point_id and start_point_id != "auto":
-            start_landmark = registry.get_landmark(int(start_point_id))
-        if end_point_id == "my_location":
-            if position:
-                end_landmark = Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"])
-        elif end_point_id and end_point_id != "auto":
-            end_landmark = registry.get_landmark(int(end_point_id))
-        visit_order = solve_tsp(landmarks, start_point=start_landmark, end_point=end_landmark)
+        visit_order = []
+        for lid in visit_order_ids:
+            if lid == -1 and position:
+                visit_order.append(Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"]))
+            else:
+                lm = registry.get_landmark(lid)
+                if lm:
+                    visit_order.append(lm)
         road_segments = fetch_route_steps(visit_order)
         colormap = cm.get_cmap("viridis", len(road_segments))
         colors = [mcolors.to_hex(colormap(i)) for i in range(len(road_segments))]
@@ -84,7 +105,7 @@ def register_callbacks(app, registry):
             html.Div(dl.Polyline(positions=segment, color=color, weight=5))
             for segment, color in zip(road_segments, colors)
         ]
-        start_is_my_location = start_landmark is not None and start_landmark.id == -1
+        start_is_my_location = visit_order_ids[0] == -1
         visit_num = {}
         for i, lm in enumerate(visit_order):
             if lm.id not in visit_num:
@@ -106,8 +127,7 @@ def register_callbacks(app, registry):
             for lm in visit_order
             if lm.id in visit_num
         ]
-        visit_order_ids = [lm.id for lm in visit_order]
-        return polylines, False, True, [], tour_markers, "Modify Route", "success", True, False, "info", {"flex": "1"}, visit_order_ids
+        return polylines, True, [], tour_markers, "Modify Route", "success", True, False, "info", {"flex": "1"}
 
     @app.callback(
         Output("trip-polyline", "children", allow_duplicate=True),
@@ -381,7 +401,7 @@ def register_callbacks(app, registry):
         Output(ids.LOAD_TRIP_MODAL, "is_open", allow_duplicate=True),
         Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
-        Output("all-markers-layer", "children", allow_duplicate=True),
+        Output(ids.VISIT_ORDER_STORE, "data", allow_duplicate=True),
         Input({"type": "load-trip-item", "index": ALL}, "n_clicks"),
         prevent_initial_call=True,
     )
@@ -406,5 +426,4 @@ def register_callbacks(app, registry):
                         html.P(lm.location, className="mb-1 small"),
                     ], className="p-3", id=f"selected-item-{lid}")
                 )
-        markers = _build_all_markers(landmark_ids)
-        return False, landmark_ids, selected_items, markers
+        return False, landmark_ids, selected_items, trip["visit_order"]
