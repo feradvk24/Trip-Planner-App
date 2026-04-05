@@ -34,3 +34,5 @@ PAGE_CONTENT = "page-content"
 # Geolocation
 GEOLOCATION = "geolocation"
 USER_LOCATION_LAYER = "user-location-layer"
+
+ROUTE_STATS_PANEL = "route-stats-panel"

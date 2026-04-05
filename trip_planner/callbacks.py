@@ -83,6 +83,8 @@ def register_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "disabled"),
         Output(ids.SAVE_TRIP_BTN, "color"),
         Output(ids.SAVE_TRIP_BTN, "style"),
+        Output(ids.ROUTE_STATS_PANEL, "children"),
+        Output(ids.ROUTE_STATS_PANEL, "style"),
         Input(ids.VISIT_ORDER_STORE, "data"),
         State(ids.GEOLOCATION, "position"),
         prevent_initial_call=True
@@ -98,12 +100,12 @@ def register_callbacks(app, registry):
                 lm = registry.get_landmark(lid)
                 if lm:
                     visit_order.append(lm)
-        road_segments = fetch_route_steps(visit_order)
-        colormap = cm.get_cmap("viridis", len(road_segments))
-        colors = [mcolors.to_hex(colormap(i)) for i in range(len(road_segments))]
+        result = fetch_route_steps(visit_order)
+        colormap = cm.get_cmap("viridis", len(result.segments))
+        colors = [mcolors.to_hex(colormap(i)) for i in range(len(result.segments))]
         polylines = [
             html.Div(dl.Polyline(positions=segment, color=color, weight=5))
-            for segment, color in zip(road_segments, colors)
+            for segment, color in zip(result.segments, colors)
         ]
         start_is_my_location = visit_order_ids[0] == -1
         visit_num = {}
@@ -127,7 +129,29 @@ def register_callbacks(app, registry):
             for lm in visit_order
             if lm.id in visit_num
         ]
-        return polylines, True, [], tour_markers, "Modify Route", "success", True, False, "info", {"flex": "1"}
+        distance_km = result.distance_m / 1000
+        hours, remainder = divmod(int(result.duration_s), 3600)
+        minutes = remainder // 60
+        duration_str = f"{hours}h {minutes}min" if hours else f"{minutes} min"
+        stats_content = [
+            html.Div([html.B("\U0001f3ce\ufe0f Distance: "), f"{distance_km:.1f} km"]),
+            html.Div([html.B("\u23f1\ufe0f Travel time: "), duration_str]),
+        ]
+        stats_style = {
+            "display": "block",
+            "position": "absolute",
+            "bottom": "1.5rem",
+            "left": "1rem",
+            "zIndex": 1000,
+            "background": "rgba(255,255,255,0.92)",
+            "borderRadius": "0.375rem",
+            "padding": "0.5rem 0.75rem",
+            "boxShadow": "0 1px 5px rgba(0,0,0,0.3)",
+            "fontSize": "0.85rem",
+            "lineHeight": "1.6",
+            "pointerEvents": "none",
+        }
+        return polylines, True, [], tour_markers, "Modify Route", "success", True, False, "info", {"flex": "1"}, stats_content, stats_style
 
     @app.callback(
         Output("trip-polyline", "children", allow_duplicate=True),
@@ -139,6 +163,7 @@ def register_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "disabled", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "color", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "style", allow_duplicate=True),
+        Output(ids.ROUTE_STATS_PANEL, "style", allow_duplicate=True),
         Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
         State(ids.OPTIMIZE_ROUTE_BTN, "children"),
@@ -147,7 +172,7 @@ def register_callbacks(app, registry):
     def modify_route(n_clicks, destination_ids, btn_label):
         if btn_label != "Modify Route":
             raise PreventUpdate
-        return [], _build_all_markers(destination_ids), [], "Optimize Route", "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}
+        return [], _build_all_markers(destination_ids), [], "Optimize Route", "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}
 
     @app.callback(
         Output({"type": "marker", "index": ALL}, "icon"),
@@ -203,11 +228,12 @@ def register_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "disabled", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "color", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "style", allow_duplicate=True),
+        Output(ids.ROUTE_STATS_PANEL, "style", allow_duplicate=True),
         Input(ids.CLEAR_ALL_BTN, "n_clicks"),
         prevent_initial_call=True
     )
     def clear_all(n_clicks):
-        return _build_all_markers([]), [], [], [], [], "Optimize Route", "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}
+        return _build_all_markers([]), [], [], [], [], "Optimize Route", "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}
 
     @app.callback(
         Output(ids.START_POINT_DROPDOWN, "options"),

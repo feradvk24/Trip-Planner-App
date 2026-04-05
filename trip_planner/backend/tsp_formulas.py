@@ -1,8 +1,9 @@
 import requests
 import math
-
+import requests
 from math import radians, cos, sin, asin, sqrt
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, NamedTuple
+
 from marker_config import Landmark
 
 def haversine(a: Landmark, b: Landmark) -> float:
@@ -119,16 +120,17 @@ def two_opt(route, distance_func, fix_start=True, fix_end=False):
 
     return route
 
+class RouteResult(NamedTuple):
+    segments: List[List[Tuple[float, float]]]
+    distance_m: float   # total distance in metres
+    duration_s: float   # total duration in seconds
 
-from typing import List, Tuple
-import requests
-
-def fetch_route_steps(waypoints: List[Landmark]) -> List[List[Tuple[float, float]]]:
+def fetch_route_steps(waypoints: List[Landmark]) -> RouteResult:
     """
-    Returns a list of road segments (each segment = list of [lat, lon] coordinates)
+    Returns road segments together with total distance and duration from OSRM.
     """
     if len(waypoints) < 2:
-        return []
+        return RouteResult(segments=[], distance_m=0, duration_s=0)
 
     # Build OSRM coordinates string
     coords = ";".join(f"{w.lon},{w.lat}" for w in waypoints)
@@ -155,7 +157,11 @@ def fetch_route_steps(waypoints: List[Landmark]) -> List[List[Tuple[float, float
             coords_step = [(c[1], c[0]) for c in step["geometry"]["coordinates"]]  # lat, lon
             road_segments.append(coords_step)
 
-    return road_segments
+    return RouteResult(
+        segments=road_segments,
+        distance_m=route.get("distance", 0),
+        duration_s=route.get("duration", 0),
+    )
 
 
 def solve_tsp(
