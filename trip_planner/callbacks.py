@@ -42,6 +42,7 @@ def register_callbacks(app, registry):
         Output("tour-markers-layer", "children"),
         Output(ids.OPTIMIZE_ROUTE_BTN, "children"),
         Output(ids.OPTIMIZE_ROUTE_BTN, "color"),
+        Output(ids.OPTIMIZE_ROUTE_BTN, "outline"),
         Output(ids.SAVE_TRIP_BTN, "disabled"),
         Output(ids.SAVE_TRIP_BTN, "color"),
         Output(ids.SAVE_TRIP_BTN, "style"),
@@ -57,11 +58,11 @@ def register_callbacks(app, registry):
     )
     def optimize_tsp(n_clicks, close_clicks, destination_ids, start_point_id, end_point_id, btn_label, position):
         if ctx.triggered_id == "warn-modal-close":
-            return no_update, False, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update
+            return no_update, False, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update
         if btn_label == "Modify Route":
             raise PreventUpdate
         if not destination_ids or len(destination_ids) < 2:
-            return no_update, True, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update
+            return no_update, True, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update, no_update
         landmarks = registry.get_landmarks(destination_ids)
         start_landmark = None
         end_landmark = None
@@ -106,7 +107,7 @@ def register_callbacks(app, registry):
             if lm.id in visit_num
         ]
         visit_order_ids = [lm.id for lm in visit_order]
-        return polylines, False, True, [], tour_markers, "Modify Route", "success", False, "info", {}, visit_order_ids
+        return polylines, False, True, [], tour_markers, "Modify Route", "success", True, False, "info", {"flex": "1"}, visit_order_ids
 
     @app.callback(
         Output("trip-polyline", "children", allow_duplicate=True),
@@ -114,6 +115,7 @@ def register_callbacks(app, registry):
         Output("tour-markers-layer", "children", allow_duplicate=True),
         Output(ids.OPTIMIZE_ROUTE_BTN, "children", allow_duplicate=True),
         Output(ids.OPTIMIZE_ROUTE_BTN, "color", allow_duplicate=True),
+        Output(ids.OPTIMIZE_ROUTE_BTN, "outline", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "disabled", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "color", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "style", allow_duplicate=True),
@@ -125,7 +127,7 @@ def register_callbacks(app, registry):
     def modify_route(n_clicks, destination_ids, btn_label):
         if btn_label != "Modify Route":
             raise PreventUpdate
-        return [], _build_all_markers(destination_ids), [], "Optimize Route", "primary", True, "secondary", {"opacity": "0.45"}
+        return [], _build_all_markers(destination_ids), [], "Optimize Route", "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}
 
     @app.callback(
         Output({"type": "marker", "index": ALL}, "icon"),
@@ -177,6 +179,7 @@ def register_callbacks(app, registry):
         Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
         Output(ids.OPTIMIZE_ROUTE_BTN, "children", allow_duplicate=True),
         Output(ids.OPTIMIZE_ROUTE_BTN, "color", allow_duplicate=True),
+        Output(ids.OPTIMIZE_ROUTE_BTN, "outline", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "disabled", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "color", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "style", allow_duplicate=True),
@@ -184,7 +187,7 @@ def register_callbacks(app, registry):
         prevent_initial_call=True
     )
     def clear_all(n_clicks):
-        return _build_all_markers([]), [], [], [], [], "Optimize Route", "primary", True, "secondary", {"opacity": "0.45"}
+        return _build_all_markers([]), [], [], [], [], "Optimize Route", "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}
 
     @app.callback(
         Output(ids.START_POINT_DROPDOWN, "options"),

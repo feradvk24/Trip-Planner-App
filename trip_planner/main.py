@@ -84,9 +84,9 @@ markers = create_markers(registry.landmarks, pin_icon)
 selected_object_group = create_selected_object_group()
 trip_endpoints = create_trip_endpoints()
 
-optimize_route_btn = dbc.Button("Optimize Route", color="primary", className="mt-2", id=ids.OPTIMIZE_ROUTE_BTN)
-save_trip_btn = dbc.Button("Save Trip", color="secondary", className="mt-1", id=ids.SAVE_TRIP_BTN, disabled=True, style={"opacity": "0.45"})
-load_trip_btn = dbc.Button("Load Trip", color="primary", outline=True, className="mt-1", id=ids.LOAD_TRIP_BTN)
+optimize_route_btn = dbc.Button("Optimize Route", color="success", className="mt-2", id=ids.OPTIMIZE_ROUTE_BTN)
+save_trip_btn = dbc.Button("Save Trip", color="secondary", className="mt-1", id=ids.SAVE_TRIP_BTN, disabled=True, style={"opacity": "0.45", "flex": "1"})
+load_trip_btn = dbc.Button("Load Trip", color="info", className="mt-1", id=ids.LOAD_TRIP_BTN, style={"flex": "1"})
 destinations_list = dcc.Store(id=ids.DESTINATIONS_LIST, data=[])
 visit_order_store = dcc.Store(id=ids.VISIT_ORDER_STORE, data=[])
 

@@ -81,7 +81,7 @@ def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn, s
         ], style={"display": "flex", "justifyContent": "space-between", "alignItems": "baseline"}),
         selected_object_group,
         optimize_route_btn,
-        html.Div([save_trip_btn, load_trip_btn], className="d-flex gap-2"),
+        html.Div([save_trip_btn, load_trip_btn], className="d-flex gap-2 w-100"),
     ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
 
 def create_user_menu():
