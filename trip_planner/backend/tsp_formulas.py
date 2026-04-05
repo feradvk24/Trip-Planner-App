@@ -134,7 +134,7 @@ def fetch_route_steps(waypoints: List[Landmark]) -> List[List[Tuple[float, float
     coords = ";".join(f"{w.lon},{w.lat}" for w in waypoints)
     url = (
         f"https://router.project-osrm.org/route/v1/driving/"
-        f"{coords}?overview=full&geometries=geojson&steps=true"
+        f"{coords}?overview=false&geometries=geojson&steps=true"
     )
 
     res = requests.get(url)
