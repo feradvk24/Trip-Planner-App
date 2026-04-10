@@ -44,6 +44,7 @@ def require_login():
     allowed_paths = {"/login", "/_dash-layout", "/_dash-dependencies", "/_reload-hash"}
     if (
         request.path.startswith("/assets/")
+        or request.path.startswith("/_dash-component-suites/")
         or request.path.startswith("/_dash-update-component")
         or request.path in allowed_paths
     ):
