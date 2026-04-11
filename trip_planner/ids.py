@@ -36,3 +36,10 @@ GEOLOCATION = "geolocation"
 USER_LOCATION_LAYER = "user-location-layer"
 
 ROUTE_STATS_PANEL = "route-stats-panel"
+
+# Mode toggle
+MODE_STORE = "mode-store"
+MODE_BTN_EXPLORE = "mode-btn-explore"
+MODE_BTN_TRIP = "mode-btn-trip"
+EXPLORE_PANEL = "explore-panel"
+TRIP_PANEL = "trip-panel"

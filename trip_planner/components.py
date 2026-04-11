@@ -66,6 +66,29 @@ def create_trip_endpoints():
     )
 
 def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn, save_trip_btn, load_trip_btn):
+    mode_toggle = dbc.ButtonGroup(
+        [
+            dbc.Button("Explore", id=ids.MODE_BTN_EXPLORE, color="primary", outline=True, active=True, size="sm", style={"flex": "1"}),
+            dbc.Button("Trip", id=ids.MODE_BTN_TRIP, color="primary", outline=True, active=False, size="sm", style={"flex": "1"}),
+        ],
+        className="w-100",
+    )
+
+    explore_panel = html.Div([
+        route_endpoints,
+        html.Div([
+            html.P("Selected monuments:", className="lead", style={"marginBottom": 0}),
+            html.Span("Clear all", id=ids.CLEAR_ALL_BTN, style={"fontSize": "0.75rem", "color": "#dc3545", "cursor": "pointer", "userSelect": "none", "alignSelf": "center"}),
+        ], style={"display": "flex", "justifyContent": "space-between", "alignItems": "baseline"}),
+        selected_object_group,
+        optimize_route_btn,
+        html.Div([save_trip_btn], className="d-flex gap-2 w-100"),
+    ], id=ids.EXPLORE_PANEL, style={"display": "flex", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0})
+
+    trip_panel = html.Div([
+        load_trip_btn,
+    ], id=ids.TRIP_PANEL, style={"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0})
+
     return html.Div([
         html.Div([
             html.Div([
@@ -74,14 +97,9 @@ def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn, s
             ], className="d-flex align-items-center justify-content-center"),
             html.Hr(style={"margin": 0}),
         ], style={"display": "flex", "flexDirection": "column", "gap": "0.25rem"}),
-        route_endpoints,
-        html.Div([
-            html.P("Selected monuments:", className="lead", style={"marginBottom": 0}),
-            html.Span("Clear all", id=ids.CLEAR_ALL_BTN, style={"fontSize": "0.75rem", "color": "#dc3545", "cursor": "pointer", "userSelect": "none", "alignSelf": "center"}),
-        ], style={"display": "flex", "justifyContent": "space-between", "alignItems": "baseline"}),
-        selected_object_group,
-        optimize_route_btn,
-        html.Div([save_trip_btn, load_trip_btn], className="d-flex gap-2 w-100"),
+        mode_toggle,
+        explore_panel,
+        trip_panel,
     ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
 
 def create_user_menu():

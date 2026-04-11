@@ -454,3 +454,29 @@ def register_callbacks(app, registry):
                     ], className="p-3", id=f"selected-item-{lid}")
                 )
         return False, landmark_ids, selected_items, trip["visit_order"]
+
+    # ─── Mode Toggle ─────────────────────────────────────────────
+    @app.callback(
+        Output(ids.MODE_STORE, "data"),
+        Input(ids.MODE_BTN_EXPLORE, "n_clicks"),
+        Input(ids.MODE_BTN_TRIP, "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def switch_mode(explore_clicks, trip_clicks):
+        if ctx.triggered_id == ids.MODE_BTN_TRIP:
+            return "trip"
+        return "explore"
+
+    @app.callback(
+        Output(ids.EXPLORE_PANEL, "style"),
+        Output(ids.TRIP_PANEL, "style"),
+        Output(ids.MODE_BTN_EXPLORE, "active"),
+        Output(ids.MODE_BTN_TRIP, "active"),
+        Input(ids.MODE_STORE, "data"),
+    )
+    def update_mode_panels(mode):
+        show = {"display": "flex", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0}
+        hide = {"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0}
+        if mode == "trip":
+            return hide, show, False, True
+        return show, hide, True, False

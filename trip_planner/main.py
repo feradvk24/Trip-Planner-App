@@ -87,9 +87,10 @@ trip_endpoints = create_trip_endpoints()
 
 optimize_route_btn = dbc.Button("Optimize Route", color="success", className="mt-2", id=ids.OPTIMIZE_ROUTE_BTN)
 save_trip_btn = dbc.Button("Save Trip", color="secondary", className="mt-1", id=ids.SAVE_TRIP_BTN, disabled=True, style={"opacity": "0.45", "flex": "1"})
-load_trip_btn = dbc.Button("Load Trip", color="info", className="mt-1", id=ids.LOAD_TRIP_BTN, style={"flex": "1"})
+load_trip_btn = dbc.Button("Load Trip", color="info", className="mt-1 w-100", id=ids.LOAD_TRIP_BTN)
 destinations_list = dcc.Store(id=ids.DESTINATIONS_LIST, data=[])
 visit_order_store = dcc.Store(id=ids.VISIT_ORDER_STORE, data=[])
+mode_store = dcc.Store(id=ids.MODE_STORE, data="explore")
 
 save_trip_modal = dbc.Modal([
     dbc.ModalHeader(dbc.ModalTitle("Save Trip")),
@@ -160,12 +161,13 @@ def serve_layout():
     if current_user.is_authenticated:
         return html.Div([
             dcc.Location(id="url"),
-            dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0),
+            dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0, update_now=True, timeout=10000),
             sidebar,
             content,
             create_user_menu(),
             destinations_list,
             visit_order_store,
+            mode_store,
             warn_modal,
             success_toast,
             save_trip_modal,
