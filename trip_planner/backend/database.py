@@ -3,7 +3,7 @@ import os
 import psycopg2
 from psycopg2 import sql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import scoped_session, sessionmaker, declarative_base
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -44,6 +44,19 @@ def init_db():
     """Create all tables that are defined in models (safe to call on startup)."""
     import backend.models  # noqa: F401 — registers ORM models with Base
     Base.metadata.create_all(bind=engine)
+    _migrate_user_trips()
+
+
+def _migrate_user_trips():
+    """Add columns introduced after initial schema creation (idempotent)."""
+    migrations = [
+        "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS current_point_index INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS visited_indices JSON NOT NULL DEFAULT '[]'",
+    ]
+    with engine.connect() as conn:
+        for stmt in migrations:
+            conn.execute(text(stmt))
+        conn.commit()
 
 
 def shutdown_session(exception=None):

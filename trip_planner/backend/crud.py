@@ -49,9 +49,31 @@ def get_user_trips(username: str) -> list[dict]:
                 "visit_order": t.visit_order,
                 "used_user_location_start": t.used_user_location_start,
                 "used_user_location_end": t.used_user_location_end,
+                "current_point_index": t.current_point_index,
+                "visited_indices": t.visited_indices or [],
                 "created_at": t.created_at.strftime("%d %b %Y, %H:%M"),
             }
             for t in trips
         ]
+    finally:
+        db.close()
+
+
+def update_trip_progress(trip_id: int, new_current_index: int, newly_visited_index: int) -> None:
+    """Advance a trip's current point and record the just-visited index."""
+    db = SessionLocal()
+    try:
+        trip = db.query(UserTrip).filter(UserTrip.id == trip_id).first()
+        if trip is None:
+            raise ValueError(f"Trip {trip_id} not found.")
+        visited = list(trip.visited_indices or [])
+        if newly_visited_index not in visited:
+            visited.append(newly_visited_index)
+        trip.visited_indices = visited
+        trip.current_point_index = new_current_index
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()

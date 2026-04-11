@@ -37,4 +37,6 @@ class UserTrip(Base):
     visit_order = Column(JSON, nullable=False)
     used_user_location_start = Column(Boolean, default=False, nullable=False)
     used_user_location_end = Column(Boolean, default=False, nullable=False)
+    current_point_index = Column(Integer, default=0, nullable=False)
+    visited_indices = Column(JSON, default=list, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
