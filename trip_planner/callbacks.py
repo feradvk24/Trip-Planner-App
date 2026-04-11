@@ -552,6 +552,7 @@ def register_callbacks(app, registry):
         Output("tour-markers-layer", "children", allow_duplicate=True),
         Output("trip-polyline", "children", allow_duplicate=True),
         Output(ids.TRIP_MODE_LAYER, "children", allow_duplicate=True),
+        Output(ids.ROUTE_STATS_PANEL, "style", allow_duplicate=True),
         Input(ids.MODE_STORE, "data"),
         State(ids.ACTIVE_TRIP_STORE, "data"),
         State(ids.EXPLORE_MAP_CACHE, "data"),
@@ -564,11 +565,11 @@ def register_callbacks(app, registry):
         hide = {"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0}
         if mode == "trip":
             trip_markers, trip_polylines = _build_trip_content(active_trip, position) if active_trip else ([], [])
-            return hide, show, False, True, [], [], trip_polylines, trip_markers
+            return hide, show, False, True, [], [], trip_polylines, trip_markers, {"display": "none"}
         # Explore mode — restore from cache if a route was computed, else show all markers
         if explore_cache:
-            return show, hide, True, False, [], explore_cache["tour_markers"], explore_cache["polylines"], []
-        return show, hide, True, False, _build_all_markers(destination_ids or []), [], [], []
+            return show, hide, True, False, [], explore_cache["tour_markers"], explore_cache["polylines"], [], no_update
+        return show, hide, True, False, _build_all_markers(destination_ids or []), [], [], [], {"display": "none"}
 
     # ─── Trip Mode: render markers from ACTIVE_TRIP_STORE ────────
     @app.callback(
