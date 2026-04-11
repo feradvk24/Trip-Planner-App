@@ -59,7 +59,7 @@ def register_callbacks(app, registry):
         State(ids.END_POINT_DROPDOWN, "value"),
         State(ids.OPTIMIZE_ROUTE_BTN, "children"),
         State(ids.GEOLOCATION, "position"),
-        prevent_initial_call=True
+        prevent_initial_call=True,
     )
     def compute_route(n_clicks, destination_ids, start_point_id, end_point_id, btn_label, position):
         if btn_label == "Modify Route":
@@ -87,7 +87,8 @@ def register_callbacks(app, registry):
         Output(ids.ROUTE_STATS_PANEL, "style"),
         Input(ids.VISIT_ORDER_STORE, "data"),
         State(ids.GEOLOCATION, "position"),
-        prevent_initial_call=True
+        prevent_initial_call=True,
+        running=[(Output(ids.OPTIMIZE_ROUTE_BTN, "disabled"), True, False)],
     )
     def render_route(visit_order_ids, position):
         if not visit_order_ids:
@@ -375,7 +376,7 @@ def register_callbacks(app, registry):
         if not position:
             return []
         lat, lon = position["lat"], position["lon"]
-        accuracy = position.get("accuracy", 0)
+        accuracy = min(position.get("accuracy", 0), 500)
         return [
             # Accuracy circle (vector layer — stays behind landmark markers)
             dl.Circle(

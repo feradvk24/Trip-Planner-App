@@ -1,6 +1,7 @@
 import requests
 import math
 import requests
+from functools import lru_cache
 from math import radians, cos, sin, asin, sqrt
 from typing import List, Optional, Tuple, NamedTuple
 
@@ -125,15 +126,13 @@ class RouteResult(NamedTuple):
     distance_m: float   # total distance in metres
     duration_s: float   # total duration in seconds
 
-def fetch_route_steps(waypoints: List[Landmark]) -> RouteResult:
+@lru_cache(maxsize=128)
+def _fetch_route_cached(coord_pairs: tuple) -> RouteResult:
     """
-    Returns road segments together with total distance and duration from OSRM.
+    Cached OSRM call. coord_pairs is a tuple of (lat, lon) tuples so it is
+    hashable and safe to use as an lru_cache key.
     """
-    if len(waypoints) < 2:
-        return RouteResult(segments=[], distance_m=0, duration_s=0)
-
-    # Build OSRM coordinates string
-    coords = ";".join(f"{w.lon},{w.lat}" for w in waypoints)
+    coords = ";".join(f"{lon},{lat}" for lat, lon in coord_pairs)
     url = (
         f"https://router.project-osrm.org/route/v1/driving/"
         f"{coords}?overview=false&geometries=geojson&steps=true"
@@ -150,9 +149,7 @@ def fetch_route_steps(waypoints: List[Landmark]) -> RouteResult:
     route = data["routes"][0]
     road_segments = []
 
-    # Iterate over each leg (between consecutive waypoints)
     for leg in route["legs"]:
-        # Iterate over each step (road segment)
         for step in leg["steps"]:
             coords_step = [(c[1], c[0]) for c in step["geometry"]["coordinates"]]  # lat, lon
             road_segments.append(coords_step)
@@ -162,6 +159,18 @@ def fetch_route_steps(waypoints: List[Landmark]) -> RouteResult:
         distance_m=route.get("distance", 0),
         duration_s=route.get("duration", 0),
     )
+
+
+def fetch_route_steps(waypoints: List[Landmark]) -> RouteResult:
+    """
+    Returns road segments together with total distance and duration from OSRM.
+    Results are cached by waypoint coordinates — repeated calls with the same
+    visit order skip the HTTP request entirely.
+    """
+    if len(waypoints) < 2:
+        return RouteResult(segments=[], distance_m=0, duration_s=0)
+    coord_pairs = tuple((w.lat, w.lon) for w in waypoints)
+    return _fetch_route_cached(coord_pairs)
 
 
 def solve_tsp(
