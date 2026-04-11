@@ -34,6 +34,28 @@ def number_icon(n: int) -> dict:
     return _svg_to_icon(svg, 28)
 
 
+def grayed_number_icon(n: int) -> dict:
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28">'
+        f'<circle cx="14" cy="14" r="13" fill="#9e9e9e" stroke="white" stroke-width="2"/>'
+        f'<text x="14" y="19" text-anchor="middle" font-size="13" font-weight="bold" '
+        f'font-family="Arial,sans-serif" fill="white">{n}</text>'
+        f'</svg>'
+    )
+    return _svg_to_icon(svg, 28)
+
+
+def current_point_icon(n: int) -> dict:
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">'
+        f'<circle cx="18" cy="18" r="16" fill="#e53935" stroke="white" stroke-width="2.5"/>'
+        f'<text x="18" y="24" text-anchor="middle" font-size="14" font-weight="bold" '
+        f'font-family="Arial,sans-serif" fill="white">{n}</text>'
+        f'</svg>'
+    )
+    return _svg_to_icon(svg, 36)
+
+
 def location_dot_icon() -> dict:
     svg = (
         '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22">'

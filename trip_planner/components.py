@@ -139,6 +139,7 @@ def create_map(markers):
             dl.LayerGroup(id=ids.USER_LOCATION_LAYER),
             dl.LayerGroup(id="all-markers-layer", children=markers),
             dl.LayerGroup(id="tour-markers-layer", children=[]),
+            dl.LayerGroup(id=ids.TRIP_MODE_LAYER, children=[]),
             html.Div(
                 id=ids.ROUTE_STATS_PANEL,
                 style={

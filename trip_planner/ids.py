@@ -43,3 +43,7 @@ MODE_BTN_EXPLORE = "mode-btn-explore"
 MODE_BTN_TRIP = "mode-btn-trip"
 EXPLORE_PANEL = "explore-panel"
 TRIP_PANEL = "trip-panel"
+
+# Active trip (Trip mode)
+ACTIVE_TRIP_STORE = "active-trip-store"
+TRIP_MODE_LAYER = "trip-mode-layer"

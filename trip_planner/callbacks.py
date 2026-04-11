@@ -5,7 +5,7 @@ from dash import html
 import ids
 ## registry will be passed as a parameter
 from backend.tsp_formulas import fetch_route_steps, solve_tsp
-from styles import pin_icon, checkbox_icon, number_icon, location_dot_icon
+from styles import pin_icon, checkbox_icon, number_icon, location_dot_icon, grayed_number_icon, current_point_icon
 from marker_config import Landmark
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
@@ -426,9 +426,7 @@ def register_callbacks(app, registry):
 
     @app.callback(
         Output(ids.LOAD_TRIP_MODAL, "is_open", allow_duplicate=True),
-        Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
-        Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
-        Output(ids.VISIT_ORDER_STORE, "data", allow_duplicate=True),
+        Output(ids.ACTIVE_TRIP_STORE, "data"),
         Input({"type": "load-trip-item", "index": ALL}, "n_clicks"),
         prevent_initial_call=True,
     )
@@ -442,18 +440,13 @@ def register_callbacks(app, registry):
         trip = next((t for t in trips if t["id"] == trip_id), None)
         if not trip:
             raise PreventUpdate
-        landmark_ids = trip["landmark_ids"]
-        selected_items = []
-        for lid in landmark_ids:
-            lm = registry.get_landmark(lid)
-            if lm:
-                selected_items.append(
-                    dbc.ListGroupItem([
-                        html.H6(lm.name, className="mb-1 small"),
-                        html.P(lm.location, className="mb-1 small"),
-                    ], className="p-3", id=f"selected-item-{lid}")
-                )
-        return False, landmark_ids, selected_items, trip["visit_order"]
+        active_trip = {
+            "trip_id": trip["id"],
+            "visit_order": trip["visit_order"],
+            "current_point_index": trip["current_point_index"],
+            "visited_indices": trip["visited_indices"],
+        }
+        return False, active_trip
 
     # ─── Mode Toggle ─────────────────────────────────────────────
     @app.callback(
@@ -467,16 +460,154 @@ def register_callbacks(app, registry):
             return "trip"
         return "explore"
 
+    # ─── Helper: build trip map content ─────────────────────────
+    def _build_trip_content(active_trip, position):
+        """Returns (trip_markers, polylines) for a given active_trip dict."""
+        visit_order_ids = active_trip["visit_order"]
+        current_idx = active_trip["current_point_index"]
+        visited = set(active_trip["visited_indices"])
+
+        visit_order_lms = []
+        for lid in visit_order_ids:
+            if lid == -1 and position:
+                visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"]))
+            elif lid != -1:
+                lm = registry.get_landmark(lid)
+                if lm:
+                    visit_order_lms.append(lm)
+
+        result = fetch_route_steps(visit_order_lms)
+        colormap = cm.get_cmap("viridis", len(result.segments))
+        colors = [mcolors.to_hex(colormap(i)) for i in range(len(result.segments))]
+        polylines = [
+            html.Div(dl.Polyline(positions=segment, color=color, weight=5))
+            for segment, color in zip(result.segments, colors)
+        ]
+
+        markers = []
+        display_num = 0
+        for i, lid in enumerate(visit_order_ids):
+            if lid == -1:
+                continue
+            lm = registry.get_landmark(lid)
+            if not lm:
+                continue
+            display_num += 1
+            if i in visited:
+                icon = grayed_number_icon(display_num)
+                popup_extra = html.Div(
+                    "\u2713 Visited",
+                    style={"textAlign": "center", "color": "#9e9e9e", "marginTop": "0.5rem"},
+                )
+            elif i == current_idx:
+                icon = current_point_icon(display_num)
+                popup_extra = html.Div(
+                    "\U0001f4cd Current stop",
+                    style={"textAlign": "center", "color": "#e53935", "fontWeight": "bold", "marginTop": "0.5rem"},
+                )
+            elif i == current_idx + 1:
+                icon = number_icon(display_num)
+                popup_extra = dbc.Button(
+                    "Visited",
+                    id={"type": "visit-btn", "index": i},
+                    color="success",
+                    size="sm",
+                    className="mt-2 w-100",
+                )
+            else:
+                icon = number_icon(display_num)
+                popup_extra = dbc.Button(
+                    "Visited",
+                    id={"type": "visit-btn", "index": i},
+                    color="success",
+                    size="sm",
+                    className="mt-2 w-100",
+                    disabled=True,
+                )
+            markers.append(
+                dl.Marker(
+                    position=[lm.lat, lm.lon],
+                    icon=icon,
+                    children=[
+                        dl.Tooltip(lm.name),
+                        dl.Popup(html.Div([
+                            html.H5(lm.name),
+                            html.H6(lm.location),
+                            html.A("Learn more", href=lm.link, target="_blank",
+                                   style={"display": "block", "textAlign": "center"}),
+                            popup_extra,
+                        ])),
+                    ],
+                )
+            )
+        return markers, polylines
+
     @app.callback(
         Output(ids.EXPLORE_PANEL, "style"),
         Output(ids.TRIP_PANEL, "style"),
         Output(ids.MODE_BTN_EXPLORE, "active"),
         Output(ids.MODE_BTN_TRIP, "active"),
+        Output("all-markers-layer", "children", allow_duplicate=True),
+        Output("tour-markers-layer", "children", allow_duplicate=True),
+        Output("trip-polyline", "children", allow_duplicate=True),
+        Output(ids.TRIP_MODE_LAYER, "children", allow_duplicate=True),
         Input(ids.MODE_STORE, "data"),
+        State(ids.ACTIVE_TRIP_STORE, "data"),
+        State(ids.GEOLOCATION, "position"),
+        prevent_initial_call="initial_duplicate",
     )
-    def update_mode_panels(mode):
+    def update_mode_panels(mode, active_trip, position):
         show = {"display": "flex", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0}
         hide = {"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0}
         if mode == "trip":
-            return hide, show, False, True
-        return show, hide, True, False
+            trip_markers, polylines = _build_trip_content(active_trip, position) if active_trip else ([], [])
+            return hide, show, False, True, [], [], polylines, trip_markers
+        # Explore mode — restore all landmark markers, clear trip layers
+        return show, hide, True, False, _build_all_markers([]), [], [], []
+
+    # ─── Trip Mode: render markers from ACTIVE_TRIP_STORE ────────
+    @app.callback(
+        Output(ids.TRIP_MODE_LAYER, "children"),
+        Output("trip-polyline", "children", allow_duplicate=True),
+        Output("all-markers-layer", "children", allow_duplicate=True),
+        Output("tour-markers-layer", "children", allow_duplicate=True),
+        Input(ids.ACTIVE_TRIP_STORE, "data"),
+        State(ids.GEOLOCATION, "position"),
+        prevent_initial_call=True,
+    )
+    def render_trip_markers(active_trip, position):
+        if not active_trip:
+            raise PreventUpdate
+        trip_markers, polylines = _build_trip_content(active_trip, position)
+        return trip_markers, polylines, [], []
+
+    # ─── Trip Mode: Visit button ──────────────────────────────────
+    @app.callback(
+        Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),
+        Input({"type": "visit-btn", "index": ALL}, "n_clicks"),
+        State(ids.ACTIVE_TRIP_STORE, "data"),
+        prevent_initial_call=True,
+    )
+    def handle_visit_btn(n_clicks_list, active_trip):
+        if not ctx.triggered_id or not any(n for n in n_clicks_list if n):
+            raise PreventUpdate
+        if not active_trip:
+            raise PreventUpdate
+        clicked_index = ctx.triggered_id["index"]
+        current_idx = active_trip["current_point_index"]
+        if clicked_index != current_idx + 1:
+            raise PreventUpdate
+        from backend.crud import update_trip_progress
+        update_trip_progress(
+            trip_id=active_trip["trip_id"],
+            new_current_index=clicked_index,
+            newly_visited_index=current_idx,
+        )
+        visited = list(active_trip["visited_indices"])
+        if current_idx not in visited:
+            visited.append(current_idx)
+        return {
+            **active_trip,
+            "current_point_index": clicked_index,
+            "visited_indices": visited,
+        }

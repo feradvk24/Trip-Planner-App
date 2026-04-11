@@ -91,6 +91,7 @@ load_trip_btn = dbc.Button("Load Trip", color="info", className="mt-1 w-100", id
 destinations_list = dcc.Store(id=ids.DESTINATIONS_LIST, data=[])
 visit_order_store = dcc.Store(id=ids.VISIT_ORDER_STORE, data=[])
 mode_store = dcc.Store(id=ids.MODE_STORE, data="explore")
+active_trip_store = dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=None)
 
 save_trip_modal = dbc.Modal([
     dbc.ModalHeader(dbc.ModalTitle("Save Trip")),
@@ -168,6 +169,7 @@ def serve_layout():
             destinations_list,
             visit_order_store,
             mode_store,
+            active_trip_store,
             warn_modal,
             success_toast,
             save_trip_modal,
