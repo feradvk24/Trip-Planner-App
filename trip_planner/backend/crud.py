@@ -3,7 +3,7 @@ from backend.models import User, UserTrip
 
 
 def save_trip(username: str, name: str, landmark_ids: list, visit_order: list,
-              used_user_location_start: bool = False, used_user_location_end: bool = False) -> UserTrip:
+              user_location_start: dict = None, user_location_end: dict = None) -> UserTrip:
     db = SessionLocal()
     try:
         user = db.query(User).filter(User.username == username).first()
@@ -14,8 +14,8 @@ def save_trip(username: str, name: str, landmark_ids: list, visit_order: list,
             name=name,
             landmark_ids=landmark_ids,
             visit_order=visit_order,
-            used_user_location_start=used_user_location_start,
-            used_user_location_end=used_user_location_end,
+            user_location_start=user_location_start,
+            user_location_end=user_location_end,
         )
         db.add(trip)
         db.commit()
@@ -47,8 +47,8 @@ def get_user_trips(username: str) -> list[dict]:
                 "name": t.name,
                 "landmark_ids": t.landmark_ids,
                 "visit_order": t.visit_order,
-                "used_user_location_start": t.used_user_location_start,
-                "used_user_location_end": t.used_user_location_end,
+                "user_location_start": t.user_location_start,
+                "user_location_end": t.user_location_end,
                 "current_point_index": t.current_point_index,
                 "visited_indices": t.visited_indices or [],
                 "created_at": t.created_at.strftime("%d %b %Y, %H:%M"),

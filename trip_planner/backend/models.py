@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Float, Integer, String, Boolean, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, Float, Integer, String, DateTime, ForeignKey, JSON
 from datetime import datetime, timezone
 
 from backend.database import Base
@@ -35,8 +35,8 @@ class UserTrip(Base):
     name = Column(String(200), nullable=False)
     landmark_ids = Column(JSON, nullable=False)
     visit_order = Column(JSON, nullable=False)
-    used_user_location_start = Column(Boolean, default=False, nullable=False)
-    used_user_location_end = Column(Boolean, default=False, nullable=False)
+    user_location_start = Column(JSON, nullable=True)  # None or {"lat": ..., "lon": ...}
+    user_location_end = Column(JSON, nullable=True)    # None or {"lat": ..., "lon": ...}
     current_point_index = Column(Integer, default=0, nullable=False)
     visited_indices = Column(JSON, default=list, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)

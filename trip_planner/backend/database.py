@@ -52,6 +52,14 @@ def _migrate_user_trips():
     migrations = [
         "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS current_point_index INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS visited_indices JSON NOT NULL DEFAULT '[]'",
+        "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS user_location_start JSON",
+        "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS user_location_end JSON",
+        "ALTER TABLE user_trips DROP COLUMN IF EXISTS used_user_location_start",
+        "ALTER TABLE user_trips DROP COLUMN IF EXISTS used_user_location_end",
+        "ALTER TABLE user_trips DROP COLUMN IF EXISTS saved_start_lat",
+        "ALTER TABLE user_trips DROP COLUMN IF EXISTS saved_start_lon",
+        "ALTER TABLE user_trips DROP COLUMN IF EXISTS saved_end_lat",
+        "ALTER TABLE user_trips DROP COLUMN IF EXISTS saved_end_lon",
     ]
     with engine.connect() as conn:
         for stmt in migrations:

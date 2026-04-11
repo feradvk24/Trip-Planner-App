@@ -348,21 +348,24 @@ def register_callbacks(app, registry):
         State(ids.VISIT_ORDER_STORE, "data"),
         State(ids.START_POINT_DROPDOWN, "value"),
         State(ids.END_POINT_DROPDOWN, "value"),
+        State(ids.GEOLOCATION, "position"),
         prevent_initial_call=True,
     )
-    def confirm_save_trip(n_clicks, name, landmark_ids, visit_order, start_value, end_value):
+    def confirm_save_trip(n_clicks, name, landmark_ids, visit_order, start_value, end_value, position):
         from flask_login import current_user
         from backend.crud import save_trip
         if not name or not name.strip():
             return True, "Please enter a trip name.", True
+        user_location_start = {"lat": position["lat"], "lon": position["lon"]} if start_value == "my_location" and position else None
+        user_location_end = {"lat": position["lat"], "lon": position["lon"]} if end_value == "my_location" and position else None
         try:
             save_trip(
                 username=current_user.id,
                 name=name.strip(),
                 landmark_ids=landmark_ids or [],
                 visit_order=visit_order or [],
-                used_user_location_start=(start_value == "my_location"),
-                used_user_location_end=(end_value == "my_location"),
+                user_location_start=user_location_start,
+                user_location_end=user_location_end,
             )
         except Exception as e:
             return True, f"Failed to save trip: {e}", True
@@ -446,6 +449,8 @@ def register_callbacks(app, registry):
             "visit_order": trip["visit_order"],
             "current_point_index": trip["current_point_index"],
             "visited_indices": trip["visited_indices"],
+            "user_location_start": trip["user_location_start"],
+            "user_location_end": trip["user_location_end"],
         }
         return False, active_trip
 
@@ -462,28 +467,49 @@ def register_callbacks(app, registry):
         return "explore"
 
     # ─── Helper: build trip map content ─────────────────────────
-    def _build_trip_content(active_trip, position):
+    def _build_trip_content(active_trip, position=None):
         """Returns (trip_markers, polylines) for a given active_trip dict."""
         visit_order_ids = active_trip["visit_order"]
         current_idx = active_trip["current_point_index"]
         visited = set(active_trip["visited_indices"])
+        loc_start = active_trip.get("user_location_start")  # {"lat", "lon"} or None
+        loc_end = active_trip.get("user_location_end")      # {"lat", "lon"} or None
 
         visit_order_lms = []
-        for lid in visit_order_ids:
-            if lid == -1 and position:
-                visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"]))
-            elif lid != -1:
+        n = len(visit_order_ids)
+        for idx, lid in enumerate(visit_order_ids):
+            if lid == -1:
+                # Resolve to saved coords; fall back to live GPS if unavailable
+                if idx == 0 and loc_start:
+                    visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=loc_start["lat"], lon=loc_start["lon"]))
+                elif idx == n - 1 and loc_end:
+                    visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=loc_end["lat"], lon=loc_end["lon"]))
+                elif position:
+                    visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"]))
+            else:
                 lm = registry.get_landmark(lid)
                 if lm:
                     visit_order_lms.append(lm)
 
         result = fetch_route_steps(visit_order_lms)
-        colormap = cm.get_cmap("viridis", len(result.segments))
-        colors = [mcolors.to_hex(colormap(i)) for i in range(len(result.segments))]
-        polylines = [
-            html.Div(dl.Polyline(positions=segment, color=color, weight=5))
-            for segment, color in zip(result.segments, colors)
-        ]
+        polylines = []
+        for i, segment in enumerate(result.segments):
+            if i < current_idx:
+                # Passed road — gray, low opacity
+                polylines.append(html.Div(dl.Polyline(
+                    positions=segment, color="#888888", weight=5, opacity=0.35,
+                )))
+            elif i == current_idx:
+                # Active road — blue
+                polylines.append(html.Div(dl.Polyline(
+                    positions=segment, color="#1a6fcf", weight=5,
+                )))
+            else:
+                # Future road — asphalt (wide dark gray + thin white dashes on top)
+                polylines.append(html.Div([
+                    dl.Polyline(positions=segment, color="#333333", weight=8),
+                    dl.Polyline(positions=segment, color="white", weight=2, dashArray="10 8"),
+                ]))
 
         markers = []
         display_num = 0
