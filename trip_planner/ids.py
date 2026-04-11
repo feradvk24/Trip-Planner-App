@@ -47,3 +47,4 @@ TRIP_PANEL = "trip-panel"
 # Active trip (Trip mode)
 ACTIVE_TRIP_STORE = "active-trip-store"
 TRIP_MODE_LAYER = "trip-mode-layer"
+EXPLORE_MAP_CACHE = "explore-map-cache"
