@@ -150,9 +150,11 @@ def _fetch_route_cached(coord_pairs: tuple) -> RouteResult:
     road_segments = []
 
     for leg in route["legs"]:
+        leg_coords = []
         for step in leg["steps"]:
-            coords_step = [(c[1], c[0]) for c in step["geometry"]["coordinates"]]  # lat, lon
-            road_segments.append(coords_step)
+            leg_coords.extend((c[1], c[0]) for c in step["geometry"]["coordinates"])  # lat, lon
+        if leg_coords:
+            road_segments.append(leg_coords)
 
     return RouteResult(
         segments=road_segments,

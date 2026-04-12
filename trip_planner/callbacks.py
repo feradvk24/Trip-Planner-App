@@ -10,8 +10,9 @@ from marker_config import Landmark
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import dash_leaflet as dl
-from flask_login import login_user
+from flask_login import login_user, current_user
 from backend.auth import verify_user, create_user, User
+from backend.crud import save_trip
 
 def resolve_endpoint(registry, point_id, position):
     if point_id == "my_location" and position:
@@ -352,8 +353,6 @@ def register_callbacks(app, registry):
         prevent_initial_call=True,
     )
     def confirm_save_trip(n_clicks, name, landmark_ids, visit_order, start_value, end_value, position):
-        from flask_login import current_user
-        from backend.crud import save_trip
         if not name or not name.strip():
             return True, "Please enter a trip name.", True
         user_location_start = {"lat": position["lat"], "lon": position["lon"]} if start_value == "my_location" and position else None
@@ -492,24 +491,41 @@ def register_callbacks(app, registry):
                     visit_order_lms.append(lm)
 
         result = fetch_route_steps(visit_order_lms)
-        polylines = []
+        passed_coords = []
+        current_coords = []
+        remaining_coords = []
+        all_coords = []
         for i, segment in enumerate(result.segments):
+            all_coords.extend(segment)
             if i < current_idx:
-                # Passed road — gray, low opacity
-                polylines.append(html.Div(dl.Polyline(
-                    positions=segment, color="#888888", weight=5, opacity=0.35,
-                )))
+                passed_coords.extend(segment)
             elif i == current_idx:
-                # Active road — blue
-                polylines.append(html.Div(dl.Polyline(
-                    positions=segment, color="#1a6fcf", weight=5,
-                )))
+                current_coords.extend(segment)
             else:
-                # Future road — asphalt (wide dark gray + thin white dashes on top)
-                polylines.append(html.Div([
-                    dl.Polyline(positions=segment, color="#333333", weight=8),
-                    dl.Polyline(positions=segment, color="white", weight=2, dashArray="10 8"),
-                ]))
+                remaining_coords.extend(segment)
+
+        polylines = []
+        # Passed roads — gray (bottom)
+        if passed_coords:
+            polylines.append(html.Div(dl.Polyline(
+                positions=passed_coords, color="#888888", weight=9, opacity=0.6,
+            )))
+        # Dark base on unvisited legs — above gray
+        unvisited_coords = current_coords + remaining_coords
+        if unvisited_coords:
+            polylines.append(html.Div(dl.Polyline(
+                positions=unvisited_coords, color="#333333", weight=10,
+            )))
+        # Current leg — blue
+        if current_coords:
+            polylines.append(html.Div(dl.Polyline(
+                positions=current_coords, color="#1a6fcf", weight=9,
+            )))
+        # White dashes over entire route — on top of everything
+        if all_coords:
+            polylines.append(html.Div(dl.Polyline(
+                positions=all_coords, color="white", weight=2, dashArray="10 16",
+            )))
 
         markers = []
         display_num = 0
