@@ -48,3 +48,10 @@ TRIP_PANEL = "trip-panel"
 ACTIVE_TRIP_STORE = "active-trip-store"
 TRIP_MODE_LAYER = "trip-mode-layer"
 EXPLORE_MAP_CACHE = "explore-map-cache"
+
+# Map layers
+ALL_MARKERS_LAYER = "all-markers-layer"
+PLANNED_TRIP_MARKERS_LAYER = "planned-trip-markers-layer"
+PLANNED_TRIP_POLYLINE_LAYER = "planned-trip-polyline-layer"
+LOADED_TRIP_MARKERS_LAYER = "loaded-trip-markers-layer"
+LOADED_TRIP_POLYLINE_LAYER = "loaded-trip-polyline-layer"

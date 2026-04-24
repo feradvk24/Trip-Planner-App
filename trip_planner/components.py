@@ -135,11 +135,12 @@ def create_map(markers):
                 weight=0,
                 interactive=False,
             ),
-            dl.LayerGroup(id="trip-polyline"),
+            dl.LayerGroup(id=ids.PLANNED_TRIP_POLYLINE_LAYER),
+            dl.LayerGroup(id=ids.LOADED_TRIP_POLYLINE_LAYER),
             dl.LayerGroup(id=ids.USER_LOCATION_LAYER),
-            dl.LayerGroup(id="all-markers-layer", children=markers),
-            dl.LayerGroup(id="tour-markers-layer", children=[]),
-            dl.LayerGroup(id=ids.TRIP_MODE_LAYER, children=[]),
+            dl.LayerGroup(id=ids.ALL_MARKERS_LAYER, children=markers),
+            dl.LayerGroup(id=ids.PLANNED_TRIP_MARKERS_LAYER, children=[]),
+            dl.LayerGroup(id=ids.LOADED_TRIP_MARKERS_LAYER, children=[]),
             html.Div(
                 id=ids.ROUTE_STATS_PANEL,
                 style={
