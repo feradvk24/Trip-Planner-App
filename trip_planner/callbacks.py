@@ -11,7 +11,8 @@ import matplotlib.colors as mcolors
 import dash_leaflet as dl
 from flask_login import login_user, current_user
 from backend.auth import verify_user, create_user, User
-from backend.crud import save_trip
+from backend.crud import save_trip, get_user_trips, delete_trip
+from components import create_markers
 
 
 def resolve_endpoint(registry, point_id, position):
@@ -73,24 +74,7 @@ def register_callbacks(app, registry):
         ]
 
     def _build_all_markers(destination_ids):
-        destination_ids = destination_ids or []
-        return [
-            dl.Marker(
-                position=[lm.lat, lm.lon],
-                children=[
-                    dl.Tooltip(lm.name),
-                    dl.Popup(html.Div([
-                        html.H5(lm.name),
-                        html.H6(lm.location),
-                        html.A("Learn more", href=lm.link, target="_blank",
-                               style={"display": "block", "text-align": "center"})
-                    ]))
-                ],
-                id={"type": "marker", "index": lm.id},
-                icon=checkbox_icon if lm.id in destination_ids else pin_icon,
-            )
-            for lm in registry.landmarks
-        ]
+        return create_markers(registry.landmarks, pin_icon, destination_ids, checkbox_icon)
 
     @app.callback(
         Output(ids.WARN_MODAL, "is_open"),
@@ -470,8 +454,6 @@ def register_callbacks(app, registry):
         prevent_initial_call=True,
     )
     def open_or_update_load_trip_modal(open_clicks, delete_clicks_list, active_trip):
-        from flask_login import current_user
-        from backend.crud import delete_trip, get_user_trips
         active_trip_data = no_update
         if isinstance(ctx.triggered_id, dict) and ctx.triggered_id.get("type") == "delete-trip-item":
             trip_id = ctx.triggered_id["index"]
@@ -491,8 +473,6 @@ def register_callbacks(app, registry):
         if not ctx.triggered_id or not any(n_clicks_list):
             raise PreventUpdate
         trip_id = ctx.triggered_id["index"]
-        from flask_login import current_user
-        from backend.crud import get_user_trips
         trips = get_user_trips(current_user.id)
         trip = next((t for t in trips if t["id"] == trip_id), None)
         if not trip:

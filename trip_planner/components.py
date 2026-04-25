@@ -171,9 +171,9 @@ def create_map(markers):
         style={"width": "100%", "height": "100%"},
     )
 
-def create_markers(landmarks, pin_icon):
-    import dash_leaflet as dl
-    from dash import html
+def create_markers(landmarks, pin_icon, selected_ids=None, selected_icon=None):
+    selected_ids = set(selected_ids or [])
+    selected_icon = selected_icon or pin_icon
     return [
         dl.Marker(
             position=[l.lat, l.lon],
@@ -191,7 +191,7 @@ def create_markers(landmarks, pin_icon):
                 ]))
             ],
             id={"type": "marker", "index": l.id},
-            icon=pin_icon
+            icon=selected_icon if l.id in selected_ids else pin_icon
         )
         for l in landmarks
     ]
