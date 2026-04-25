@@ -105,6 +105,40 @@ def register_callbacks(app, registry):
             if i + 1 < len(visit_order_ids)
         ]
 
+    def _format_distance(distance_m):
+        if distance_m is None:
+            return "Unknown"
+        if distance_m >= 1000:
+            return f"{distance_m / 1000:.1f} km"
+        return f"{int(round(distance_m))} m"
+
+    def _trip_point_summary(visit_order_ids, index):
+        if index < 0 or index >= len(visit_order_ids):
+            return None
+        landmark_id = visit_order_ids[index]
+        if landmark_id == -1:
+            return {"name": "My location", "location": ""}
+        landmark = registry.get_landmark(landmark_id)
+        if not landmark:
+            return {"name": "Unknown destination", "location": ""}
+        return {"name": landmark.name, "location": landmark.location}
+
+    def _get_route_legs(active_trip, position=None):
+        route_legs = active_trip.get("route_legs") or []
+        if route_legs:
+            return route_legs
+        visit_order_ids = active_trip.get("visit_order") or []
+        visit_order_lms = _resolve_visit_order_landmarks(
+            visit_order_ids,
+            active_trip.get("user_location_start"),
+            active_trip.get("user_location_end"),
+            position,
+        )
+        try:
+            return _build_route_legs(visit_order_ids, fetch_route_steps(visit_order_lms))
+        except Exception:
+            return []
+
     @app.callback(
         Output(ids.WARN_MODAL, "is_open"),
         Input("warn-modal-close", "n_clicks"),
@@ -633,6 +667,90 @@ def register_callbacks(app, registry):
         if mode == "trip":
             return hide, show, False, True
         return show, hide, True, False
+
+    @app.callback(
+        Output(ids.TRIP_STATUS_PANEL, "children"),
+        Input(ids.ACTIVE_TRIP_STORE, "data"),
+        Input(ids.GEOLOCATION, "position"),
+    )
+    def render_trip_status(active_trip, position):
+        if not active_trip:
+            return html.Div("Load a trip to see your progress.", className="text-muted small")
+
+        visit_order_ids = active_trip.get("visit_order") or []
+        if not visit_order_ids:
+            return html.Div("This trip has no destinations.", className="text-muted small")
+
+        current_idx = min(active_trip.get("current_point_index", 0), len(visit_order_ids) - 1)
+        next_idx = current_idx + 1
+        current_point = _trip_point_summary(visit_order_ids, current_idx)
+        next_point = _trip_point_summary(visit_order_ids, next_idx)
+        route_legs = _get_route_legs(active_trip, position)
+
+        distance_to_next = None
+        for leg in route_legs:
+            if leg.get("from_index") == current_idx and leg.get("to_index") == next_idx:
+                distance_to_next = leg.get("distance_m", 0)
+                break
+
+        passed_distance = sum(
+            leg.get("distance_m", 0)
+            for leg in route_legs
+            if leg.get("to_index", 0) <= current_idx
+        )
+        remaining_distance = sum(
+            leg.get("distance_m", 0)
+            for leg in route_legs
+            if leg.get("from_index", 0) >= current_idx
+        )
+        total_distance = passed_distance + remaining_distance
+        progress_pct = round((passed_distance / total_distance) * 100) if total_distance else 0
+
+        def point_block(label, point):
+            if not point:
+                return html.Div([
+                    html.Div(label, className="text-muted small"),
+                    html.Div("Trip complete", style={"fontWeight": "600"}),
+                ])
+            return html.Div([
+                html.Div(label, className="text-muted small"),
+                html.Div(point["name"], style={"fontWeight": "600", "lineHeight": "1.2"}),
+                html.Div(point["location"], className="text-muted small") if point["location"] else None,
+            ])
+
+        return html.Div(
+            [
+                html.H6("Trip progress", className="mb-2"),
+                point_block("Current", current_point),
+                html.Hr(style={"margin": "0.5rem 0"}),
+                point_block("Next", next_point),
+                html.Div(
+                    [
+                        html.Div("Distance to next", className="text-muted small"),
+                        html.Div(
+                            _format_distance(distance_to_next) if next_point else "0 m",
+                            style={"fontWeight": "600"},
+                        ),
+                    ],
+                    className="mt-2",
+                ),
+                html.Hr(style={"margin": "0.5rem 0"}),
+                html.Div(
+                    [
+                        html.Div([
+                            html.Div("Passed", className="text-muted small"),
+                            html.Div(_format_distance(passed_distance), style={"fontWeight": "600"}),
+                        ]),
+                        html.Div([
+                            html.Div("Remaining", className="text-muted small"),
+                            html.Div(_format_distance(remaining_distance), style={"fontWeight": "600"}),
+                        ], style={"textAlign": "right"}),
+                    ],
+                    style={"display": "flex", "justifyContent": "space-between", "gap": "0.75rem"},
+                ),
+                dbc.Progress(value=progress_pct, className="mt-2", style={"height": "0.5rem"}),
+            ]
+        )
 
     @app.callback(
         Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),

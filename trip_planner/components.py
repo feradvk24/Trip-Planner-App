@@ -87,6 +87,16 @@ def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn, s
 
     trip_panel = html.Div([
         load_trip_btn,
+        html.Div(
+            id=ids.TRIP_STATUS_PANEL,
+            children=[],
+            style={
+                "backgroundColor": "#F8F9FA",
+                "border": "1px solid #D6D8DB",
+                "borderRadius": "0.25rem",
+                "padding": "0.75rem",
+            },
+        ),
     ], id=ids.TRIP_PANEL, style={"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0})
 
     return html.Div([
