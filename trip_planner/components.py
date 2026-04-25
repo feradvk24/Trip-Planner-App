@@ -187,7 +187,15 @@ def create_markers(landmarks, pin_icon, selected_ids=None, selected_icon=None):
                         href=l.link,
                         target='_blank',
                         style={"display": "block", "text-align": "center"}
-                    )
+                    ),
+                    dbc.Button(
+                        "Added to trip" if l.id in selected_ids else "Add to trip",
+                        id={"type": "add-marker-btn", "index": l.id},
+                        color="success",
+                        size="sm",
+                        className="mt-2 w-100",
+                        disabled=l.id in selected_ids,
+                    ),
                 ]))
             ],
             id={"type": "marker", "index": l.id},

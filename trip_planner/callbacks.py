@@ -222,16 +222,17 @@ def register_callbacks(app, registry):
         return [], _build_all_markers(destination_ids), [], "Optimize Route", "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}, None
 
     @app.callback(
-        Output({"type": "marker", "index": ALL}, "icon"),
+        Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),
         Output(ids.SELECTED_OBJECTS_GROUP, "children"),
         Output(ids.DESTINATIONS_LIST, "data"),
-        Input({"type": "marker", "index": ALL}, "n_clicks"),
+        Input({"type": "marker", "index": ALL}, "n_dblclicks"),
+        Input({"type": "add-marker-btn", "index": ALL}, "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
         State(ids.SELECTED_OBJECTS_GROUP, "children"),
         prevent_initial_call=True,
     )
-    def toggle_marker(n_clicks_list, selected, current_children):
-        if not ctx.triggered_id or not any(n_clicks_list):
+    def add_marker_to_trip(dblclicks_list, add_clicks_list, selected, current_children):
+        if not ctx.triggered_id or not (any(dblclicks_list) or any(add_clicks_list)):
             raise PreventUpdate
         if selected is None:
             selected = []
@@ -239,31 +240,19 @@ def register_callbacks(app, registry):
             current_children = []
 
         landmark_id = ctx.triggered_id["index"]
-        landmark = registry.get_landmark(landmark_id)
         if landmark_id in selected:
-            selected.remove(landmark_id)
-            current_children = [
-                child for child in current_children
-                if child["props"]["id"] != f"selected-item-{landmark_id}"
-            ]
-            icon = pin_icon
-        else:
-            selected.append(landmark_id)
-            item = dbc.ListGroupItem([
-                html.H6(landmark.name, className="mb-1 small"),
-                html.P(landmark.location, className="mb-1 small"),
-            ], className="p-3", id=f"selected-item-{landmark_id}")
-            current_children.append(item)
-            icon = checkbox_icon
+            raise PreventUpdate
+        landmark = registry.get_landmark(landmark_id)
+        if not landmark:
+            raise PreventUpdate
+        selected.append(landmark_id)
+        item = dbc.ListGroupItem([
+            html.H6(landmark.name, className="mb-1 small"),
+            html.P(landmark.location, className="mb-1 small"),
+        ], className="p-3", id=f"selected-item-{landmark_id}")
+        current_children.append(item)
 
-        icons = []
-        for marker_input in ctx.inputs_list[0]:
-            idx = marker_input["id"]["index"]
-            if idx == landmark_id:
-                icons.append(icon)
-            else:
-                icons.append(checkbox_icon if idx in selected else pin_icon)
-        return icons, current_children, selected
+        return _build_all_markers(selected), current_children, selected
 
     @app.callback(
         Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),
