@@ -125,6 +125,7 @@ class RouteResult(NamedTuple):
     segments: List[List[Tuple[float, float]]]
     distance_m: float   # total distance in metres
     duration_s: float   # total duration in seconds
+    legs: List[dict]     # per-hop distance/duration metadata
 
 @lru_cache(maxsize=128)
 def _fetch_route_cached(coord_pairs: tuple) -> RouteResult:
@@ -148,6 +149,7 @@ def _fetch_route_cached(coord_pairs: tuple) -> RouteResult:
 
     route = data["routes"][0]
     road_segments = []
+    route_legs = []
 
     for leg in route["legs"]:
         leg_coords = []
@@ -155,11 +157,16 @@ def _fetch_route_cached(coord_pairs: tuple) -> RouteResult:
             leg_coords.extend((c[1], c[0]) for c in step["geometry"]["coordinates"])  # lat, lon
         if leg_coords:
             road_segments.append(leg_coords)
+        route_legs.append({
+            "distance_m": leg.get("distance", 0),
+            "duration_s": leg.get("duration", 0),
+        })
 
     return RouteResult(
         segments=road_segments,
         distance_m=route.get("distance", 0),
         duration_s=route.get("duration", 0),
+        legs=route_legs,
     )
 
 
@@ -170,7 +177,7 @@ def fetch_route_steps(waypoints: List[Landmark]) -> RouteResult:
     visit order skip the HTTP request entirely.
     """
     if len(waypoints) < 2:
-        return RouteResult(segments=[], distance_m=0, duration_s=0)
+        return RouteResult(segments=[], distance_m=0, duration_s=0, legs=[])
     coord_pairs = tuple((w.lat, w.lon) for w in waypoints)
     return _fetch_route_cached(coord_pairs)
 

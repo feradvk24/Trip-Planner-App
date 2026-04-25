@@ -35,6 +35,7 @@ class UserTrip(Base):
     name = Column(String(200), nullable=False)
     landmark_ids = Column(JSON, nullable=False)
     visit_order = Column(JSON, nullable=False)
+    route_legs = Column(JSON, default=list, nullable=False)
     user_location_start = Column(JSON, nullable=True)  # None or {"lat": ..., "lon": ...}
     user_location_end = Column(JSON, nullable=True)    # None or {"lat": ..., "lon": ...}
     current_point_index = Column(Integer, default=0, nullable=False)

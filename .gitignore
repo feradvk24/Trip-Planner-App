@@ -2,6 +2,7 @@ data_extraction/
 
 # User credentials store
 users.json
+launch.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

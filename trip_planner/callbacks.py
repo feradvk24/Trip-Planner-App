@@ -76,6 +76,35 @@ def register_callbacks(app, registry):
     def _build_all_markers(destination_ids):
         return create_markers(registry.landmarks, pin_icon, destination_ids, checkbox_icon)
 
+    def _resolve_visit_order_landmarks(visit_order_ids, loc_start=None, loc_end=None, position=None):
+        visit_order_lms = []
+        n = len(visit_order_ids or [])
+        for idx, lid in enumerate(visit_order_ids or []):
+            if lid == -1:
+                if idx == 0 and loc_start:
+                    visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=loc_start["lat"], lon=loc_start["lon"]))
+                elif idx == n - 1 and loc_end:
+                    visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=loc_end["lat"], lon=loc_end["lon"]))
+                elif position:
+                    visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"]))
+            else:
+                lm = registry.get_landmark(lid)
+                if lm:
+                    visit_order_lms.append(lm)
+        return visit_order_lms
+
+    def _build_route_legs(visit_order_ids, route_result):
+        return [
+            {
+                "from_index": i,
+                "to_index": i + 1,
+                "distance_m": leg.get("distance_m", 0),
+                "duration_s": leg.get("duration_s", 0),
+            }
+            for i, leg in enumerate(route_result.legs)
+            if i + 1 < len(visit_order_ids)
+        ]
+
     @app.callback(
         Output(ids.WARN_MODAL, "is_open"),
         Input("warn-modal-close", "n_clicks"),
@@ -128,14 +157,7 @@ def register_callbacks(app, registry):
     def render_route(visit_order_ids, position):
         if not visit_order_ids:
             raise PreventUpdate
-        visit_order = []
-        for lid in visit_order_ids:
-            if lid == -1 and position:
-                visit_order.append(Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"]))
-            else:
-                lm = registry.get_landmark(lid)
-                if lm:
-                    visit_order.append(lm)
+        visit_order = _resolve_visit_order_landmarks(visit_order_ids, position=position)
 
         result = fetch_route_steps(visit_order)
         colormap = cm.get_cmap("viridis", len(result.segments))
@@ -394,11 +416,20 @@ def register_callbacks(app, registry):
         user_location_start = {"lat": position["lat"], "lon": position["lon"]} if start_value == "my_location" and position else None
         user_location_end = {"lat": position["lat"], "lon": position["lon"]} if end_value == "my_location" and position else None
         try:
+            route_result = fetch_route_steps(
+                _resolve_visit_order_landmarks(
+                    visit_order or [],
+                    loc_start=user_location_start,
+                    loc_end=user_location_end,
+                    position=position,
+                )
+            )
             save_trip(
                 username=current_user.id,
                 name=name.strip(),
                 landmark_ids=landmark_ids or [],
                 visit_order=visit_order or [],
+                route_legs=_build_route_legs(visit_order or [], route_result),
                 user_location_start=user_location_start,
                 user_location_end=user_location_end,
             )
@@ -469,6 +500,7 @@ def register_callbacks(app, registry):
         active_trip = {
             "trip_id": trip["id"],
             "visit_order": trip["visit_order"],
+            "route_legs": trip["route_legs"],
             "current_point_index": trip["current_point_index"],
             "visited_indices": trip["visited_indices"],
             "user_location_start": trip["user_location_start"],
@@ -494,21 +526,7 @@ def register_callbacks(app, registry):
         visited = set(active_trip["visited_indices"])
         loc_start = active_trip.get("user_location_start")
         loc_end = active_trip.get("user_location_end")
-
-        visit_order_lms = []
-        n = len(visit_order_ids)
-        for idx, lid in enumerate(visit_order_ids):
-            if lid == -1:
-                if idx == 0 and loc_start:
-                    visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=loc_start["lat"], lon=loc_start["lon"]))
-                elif idx == n - 1 and loc_end:
-                    visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=loc_end["lat"], lon=loc_end["lon"]))
-                elif position:
-                    visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"]))
-            else:
-                lm = registry.get_landmark(lid)
-                if lm:
-                    visit_order_lms.append(lm)
+        visit_order_lms = _resolve_visit_order_landmarks(visit_order_ids, loc_start, loc_end, position)
 
         result = fetch_route_steps(visit_order_lms)
         passed_coords = []
