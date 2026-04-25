@@ -77,3 +77,26 @@ def update_trip_progress(trip_id: int, new_current_index: int, newly_visited_ind
         raise
     finally:
         db.close()
+
+
+def delete_trip(username: str, trip_id: int) -> None:
+    """Delete one of a user's trips by ID."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            raise ValueError(f"User '{username}' not found in database.")
+        trip = (
+            db.query(UserTrip)
+            .filter(UserTrip.id == trip_id, UserTrip.user_id == user.id)
+            .first()
+        )
+        if trip is None:
+            raise ValueError(f"Trip {trip_id} not found.")
+        db.delete(trip)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()

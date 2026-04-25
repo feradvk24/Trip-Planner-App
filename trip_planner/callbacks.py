@@ -23,6 +23,55 @@ def resolve_endpoint(registry, point_id, position):
 
 
 def register_callbacks(app, registry):
+    def _build_load_trip_items(trips):
+        if not trips:
+            return [dbc.ListGroupItem("No saved trips yet.", disabled=True)]
+        return [
+            dbc.ListGroupItem(
+                html.Div(
+                    [
+                        html.Button(
+                            [
+                                html.Div(t["name"], style={"fontWeight": "600"}),
+                                html.Small(t["created_at"], className="text-muted"),
+                            ],
+                            id={"type": "load-trip-item", "index": t["id"]},
+                            n_clicks=0,
+                            style={
+                                "background": "none",
+                                "border": "none",
+                                "padding": 0,
+                                "textAlign": "left",
+                                "flex": "1 1 auto",
+                                "minWidth": 0,
+                                "cursor": "pointer",
+                            },
+                        ),
+                        dbc.Button(
+                            "X",
+                            id={"type": "delete-trip-item", "index": t["id"]},
+                            n_clicks=0,
+                            color="link",
+                            size="sm",
+                            title="Delete trip",
+                            style={
+                                "color": "#dc3545",
+                                "fontWeight": "700",
+                                "textDecoration": "none",
+                                "flex": "0 0 auto",
+                            },
+                        ),
+                    ],
+                    style={
+                        "display": "flex",
+                        "alignItems": "center",
+                        "gap": "0.75rem",
+                    },
+                )
+            )
+            for t in trips
+        ]
+
     def _build_all_markers(destination_ids):
         destination_ids = destination_ids or []
         return [
@@ -414,29 +463,23 @@ def register_callbacks(app, registry):
     @app.callback(
         Output(ids.LOAD_TRIP_MODAL, "is_open"),
         Output(ids.LOAD_TRIP_LIST, "children"),
+        Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),
         Input(ids.LOAD_TRIP_BTN, "n_clicks"),
+        Input({"type": "delete-trip-item", "index": ALL}, "n_clicks"),
+        State(ids.ACTIVE_TRIP_STORE, "data"),
         prevent_initial_call=True,
     )
-    def open_load_trip_modal(n_clicks):
+    def open_or_update_load_trip_modal(open_clicks, delete_clicks_list, active_trip):
         from flask_login import current_user
-        from backend.crud import get_user_trips
+        from backend.crud import delete_trip, get_user_trips
+        active_trip_data = no_update
+        if isinstance(ctx.triggered_id, dict) and ctx.triggered_id.get("type") == "delete-trip-item":
+            trip_id = ctx.triggered_id["index"]
+            delete_trip(current_user.id, trip_id)
+            if active_trip and active_trip.get("trip_id") == trip_id:
+                active_trip_data = None
         trips = get_user_trips(current_user.id)
-        if not trips:
-            items = [dbc.ListGroupItem("No saved trips yet.", disabled=True)]
-        else:
-            items = [
-                dbc.ListGroupItem(
-                    [
-                        html.Div(t["name"], style={"fontWeight": "600"}),
-                        html.Small(t["created_at"], className="text-muted"),
-                    ],
-                    id={"type": "load-trip-item", "index": t["id"]},
-                    action=True,
-                    style={"cursor": "pointer"},
-                )
-                for t in trips
-            ]
-        return True, items
+        return True, _build_load_trip_items(trips), active_trip_data
 
     @app.callback(
         Output(ids.LOAD_TRIP_MODAL, "is_open", allow_duplicate=True),
