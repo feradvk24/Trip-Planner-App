@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 from dash import html
 import ids
 from backend.tsp_formulas import fetch_route_steps, solve_tsp
-from styles import pin_icon, checkbox_icon, number_icon, location_dot_icon, grayed_number_icon, current_point_icon
+from styles import pin_icon, checkbox_icon, number_icon, location_dot_icon, grayed_number_icon, current_point_icon, house_icon
 from marker_config import Landmark
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
@@ -76,7 +76,7 @@ def register_callbacks(app, registry):
     def _build_all_markers(destination_ids):
         return create_markers(registry.landmarks, pin_icon, destination_ids, checkbox_icon)
 
-    def _resolve_visit_order_landmarks(visit_order_ids, loc_start=None, loc_end=None, position=None):
+    def _resolve_visit_order_landmarks(visit_order_ids, loc_start=None, loc_end=None, position=None, use_position_fallback=True):
         visit_order_lms = []
         n = len(visit_order_ids or [])
         for idx, lid in enumerate(visit_order_ids or []):
@@ -85,13 +85,28 @@ def register_callbacks(app, registry):
                     visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=loc_start["lat"], lon=loc_start["lon"]))
                 elif idx == n - 1 and loc_end:
                     visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=loc_end["lat"], lon=loc_end["lon"]))
-                elif position:
+                elif use_position_fallback and position:
                     visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"]))
             else:
                 lm = registry.get_landmark(lid)
                 if lm:
                     visit_order_lms.append(lm)
         return visit_order_lms
+
+    def _is_user_location_index(visit_order_ids, index):
+        return 0 <= index < len(visit_order_ids or []) and visit_order_ids[index] == -1
+
+    def _visitable_indices(visit_order_ids):
+        return [i for i, lid in enumerate(visit_order_ids or []) if lid != -1]
+
+    def _next_visitable_index(visit_order_ids, current_idx):
+        return next((i for i in _visitable_indices(visit_order_ids) if i > current_idx), None)
+
+    def _is_trip_complete(active_trip):
+        visit_order_ids = active_trip.get("visit_order") or []
+        visited = set(active_trip.get("visited_indices") or [])
+        visitable = _visitable_indices(visit_order_ids)
+        return bool(visitable) and all(i in visited for i in visitable)
 
     def _build_route_legs(visit_order_ids, route_result):
         return [
@@ -133,6 +148,7 @@ def register_callbacks(app, registry):
             active_trip.get("user_location_start"),
             active_trip.get("user_location_end"),
             position,
+            use_position_fallback=False,
         )
         try:
             return _build_route_legs(visit_order_ids, fetch_route_steps(visit_order_lms))
@@ -560,7 +576,13 @@ def register_callbacks(app, registry):
         visited = set(active_trip["visited_indices"])
         loc_start = active_trip.get("user_location_start")
         loc_end = active_trip.get("user_location_end")
-        visit_order_lms = _resolve_visit_order_landmarks(visit_order_ids, loc_start, loc_end, position)
+        visit_order_lms = _resolve_visit_order_landmarks(
+            visit_order_ids,
+            loc_start,
+            loc_end,
+            position,
+            use_position_fallback=False,
+        )
 
         result = fetch_route_steps(visit_order_lms)
         passed_coords = []
@@ -596,6 +618,33 @@ def register_callbacks(app, registry):
             )))
 
         markers = []
+        saved_location_markers = []
+        saved_locations = []
+        if visit_order_ids and visit_order_ids[0] == -1 and loc_start:
+            saved_locations.append(("Start location", loc_start))
+        if len(visit_order_ids) > 1 and visit_order_ids[-1] == -1 and loc_end:
+            saved_locations.append(("End location", loc_end))
+
+        grouped_locations = {}
+        for label, location in saved_locations:
+            key = (round(location["lat"], 7), round(location["lon"], 7))
+            grouped_locations.setdefault(key, {"labels": [], "location": location})
+            grouped_locations[key]["labels"].append(label)
+
+        for item in grouped_locations.values():
+            location = item["location"]
+            label = " / ".join(item["labels"])
+            saved_location_markers.append(
+                dl.Marker(
+                    position=[location["lat"], location["lon"]],
+                    icon=house_icon(),
+                    interactive=False,
+                    children=[dl.Tooltip(label)],
+                )
+            )
+
+        next_visitable_idx = _next_visitable_index(visit_order_ids, current_idx)
+        trip_complete = _is_trip_complete(active_trip)
         display_num = 0
         for i, lid in enumerate(visit_order_ids):
             if lid == -1:
@@ -610,13 +659,13 @@ def register_callbacks(app, registry):
                     "\u2713 Visited",
                     style={"textAlign": "center", "color": "#9e9e9e", "marginTop": "0.5rem"},
                 )
-            elif i == current_idx:
+            elif i == current_idx and not trip_complete:
                 icon = current_point_icon(display_num)
                 popup_extra = html.Div(
                     "\U0001f4cd Current stop",
                     style={"textAlign": "center", "color": "#e53935", "fontWeight": "bold", "marginTop": "0.5rem"},
                 )
-            elif i == current_idx + 1:
+            elif i == next_visitable_idx:
                 icon = number_icon(display_num)
                 popup_extra = dbc.Button(
                     "Visited",
@@ -651,7 +700,7 @@ def register_callbacks(app, registry):
                     ],
                 )
             )
-        return markers, polylines
+        return saved_location_markers + markers, polylines
 
     @app.callback(
         Output(ids.EXPLORE_PANEL, "style"),
@@ -682,27 +731,39 @@ def register_callbacks(app, registry):
             return html.Div("This trip has no destinations.", className="text-muted small")
 
         current_idx = min(active_trip.get("current_point_index", 0), len(visit_order_ids) - 1)
-        next_idx = current_idx + 1
+        trip_complete = _is_trip_complete(active_trip)
+        next_idx = None if trip_complete else _next_visitable_index(visit_order_ids, current_idx)
         current_point = _trip_point_summary(visit_order_ids, current_idx)
-        next_point = _trip_point_summary(visit_order_ids, next_idx)
+        next_point = _trip_point_summary(visit_order_ids, next_idx) if next_idx is not None else None
+        show_current_point = not _is_user_location_index(visit_order_ids, current_idx)
         route_legs = _get_route_legs(active_trip, position)
 
         distance_to_next = None
-        for leg in route_legs:
-            if leg.get("from_index") == current_idx and leg.get("to_index") == next_idx:
-                distance_to_next = leg.get("distance_m", 0)
-                break
+        if next_idx is not None:
+            for leg in route_legs:
+                if leg.get("from_index") == current_idx and leg.get("to_index") == next_idx:
+                    distance_to_next = leg.get("distance_m", 0)
+                    break
 
-        passed_distance = sum(
-            leg.get("distance_m", 0)
-            for leg in route_legs
-            if leg.get("to_index", 0) <= current_idx
-        )
-        remaining_distance = sum(
-            leg.get("distance_m", 0)
-            for leg in route_legs
-            if leg.get("from_index", 0) >= current_idx
-        )
+        last_visitable_idx = max(_visitable_indices(visit_order_ids), default=current_idx)
+        progress_legs = [
+            leg for leg in route_legs
+            if leg.get("to_index", 0) <= last_visitable_idx
+        ]
+        if trip_complete:
+            passed_distance = sum(leg.get("distance_m", 0) for leg in progress_legs)
+            remaining_distance = 0
+        else:
+            passed_distance = sum(
+                leg.get("distance_m", 0)
+                for leg in progress_legs
+                if leg.get("to_index", 0) <= current_idx
+            )
+            remaining_distance = sum(
+                leg.get("distance_m", 0)
+                for leg in progress_legs
+                if leg.get("from_index", 0) >= current_idx
+            )
         total_distance = passed_distance + remaining_distance
         progress_pct = round((passed_distance / total_distance) * 100) if total_distance else 0
 
@@ -718,12 +779,18 @@ def register_callbacks(app, registry):
                 html.Div(point["location"], className="text-muted small") if point["location"] else None,
             ])
 
+        point_sections = [point_block("Next", next_point)]
+        if show_current_point:
+            point_sections = [
+                point_block("Current", current_point),
+                html.Hr(style={"margin": "0.5rem 0"}),
+                *point_sections,
+            ]
+
         return html.Div(
             [
                 html.H6("Trip progress", className="mb-2"),
-                point_block("Current", current_point),
-                html.Hr(style={"margin": "0.5rem 0"}),
-                point_block("Next", next_point),
+                *point_sections,
                 html.Div(
                     [
                         html.Div("Distance to next", className="text-muted small"),
@@ -803,18 +870,29 @@ def register_callbacks(app, registry):
         if not active_trip:
             raise PreventUpdate
         clicked_index = ctx.triggered_id["index"]
+        visit_order_ids = active_trip.get("visit_order") or []
         current_idx = active_trip["current_point_index"]
-        if clicked_index != current_idx + 1:
+        if clicked_index != _next_visitable_index(visit_order_ids, current_idx):
             raise PreventUpdate
+        newly_visited_indices = []
+        if not _is_user_location_index(visit_order_ids, current_idx):
+            newly_visited_indices.append(current_idx)
+        if (
+            _is_user_location_index(visit_order_ids, current_idx)
+            or _next_visitable_index(visit_order_ids, clicked_index) is None
+        ):
+            newly_visited_indices.append(clicked_index)
+
         from backend.crud import update_trip_progress
         update_trip_progress(
             trip_id=active_trip["trip_id"],
             new_current_index=clicked_index,
-            newly_visited_index=current_idx,
+            newly_visited_index=newly_visited_indices,
         )
         visited = list(active_trip["visited_indices"])
-        if current_idx not in visited:
-            visited.append(current_idx)
+        for index in newly_visited_indices:
+            if index not in visited:
+                visited.append(index)
         return {
             **active_trip,
             "current_point_index": clicked_index,

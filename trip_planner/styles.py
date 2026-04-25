@@ -56,6 +56,21 @@ def current_point_icon(n: int) -> dict:
     return _svg_to_icon(svg, 36)
 
 
+def house_icon() -> dict:
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">'
+        '<circle cx="16" cy="16" r="15" fill="#198754" stroke="white" stroke-width="2"/>'
+        '<path d="M8 16.4 16 9l8 7.4" fill="none" stroke="white" stroke-width="2.4" '
+        'stroke-linecap="round" stroke-linejoin="round"/>'
+        '<path d="M10.5 15.2V23h11V15.2" fill="none" stroke="white" stroke-width="2.2" '
+        'stroke-linecap="round" stroke-linejoin="round"/>'
+        '<path d="M14 23v-5h4v5" fill="none" stroke="white" stroke-width="2.1" '
+        'stroke-linecap="round" stroke-linejoin="round"/>'
+        '</svg>'
+    )
+    return _svg_to_icon(svg, 32)
+
+
 def location_dot_icon() -> dict:
     svg = (
         '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22">'
