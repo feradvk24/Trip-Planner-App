@@ -658,8 +658,6 @@ def register_callbacks(app, registry):
             )
 
         next_action_idx = _next_action_stop_index(active_trip)
-        starts_from_custom_location = bool(custom_start)
-        first_stop_pending = starts_from_custom_location and not visited and current_idx == 0
         display_num = 0
         for i, lid in enumerate(stop_ids):
             lm = registry.get_landmark(lid)
@@ -673,7 +671,7 @@ def register_callbacks(app, registry):
                     style={"textAlign": "center", "color": "#9e9e9e", "marginTop": "0.5rem"},
                 )
             elif i == next_action_idx:
-                icon = current_point_icon(display_num) if i == current_idx and not first_stop_pending else number_icon(display_num)
+                icon = current_point_icon(display_num)
                 popup_extra = dbc.Button(
                     "Visited",
                     id={"type": "visit-btn", "index": i},
