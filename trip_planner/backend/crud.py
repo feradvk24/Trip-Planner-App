@@ -3,8 +3,8 @@ from backend.models import User, UserTrip
 
 
 def save_trip(username: str, name: str, landmark_ids: list, visit_order: list,
-              route_legs: list = None, user_location_start: dict = None,
-              user_location_end: dict = None) -> UserTrip:
+              route_legs: list = None, custom_start_location: dict = None,
+              custom_end_location: dict = None, saved_user_location: dict = None) -> UserTrip:
     db = SessionLocal()
     try:
         user = db.query(User).filter(User.username == username).first()
@@ -16,8 +16,9 @@ def save_trip(username: str, name: str, landmark_ids: list, visit_order: list,
             landmark_ids=landmark_ids,
             visit_order=visit_order,
             route_legs=route_legs or [],
-            user_location_start=user_location_start,
-            user_location_end=user_location_end,
+            custom_start_location=custom_start_location,
+            custom_end_location=custom_end_location,
+            saved_user_location=saved_user_location,
         )
         db.add(trip)
         db.commit()
@@ -50,8 +51,9 @@ def get_user_trips(username: str) -> list[dict]:
                 "landmark_ids": t.landmark_ids,
                 "visit_order": t.visit_order,
                 "route_legs": t.route_legs or [],
-                "user_location_start": t.user_location_start,
-                "user_location_end": t.user_location_end,
+                "custom_start_location": t.custom_start_location,
+                "custom_end_location": t.custom_end_location,
+                "saved_user_location": t.saved_user_location,
                 "current_point_index": t.current_point_index,
                 "visited_indices": t.visited_indices or [],
                 "created_at": t.created_at.strftime("%d %b %Y, %H:%M"),

@@ -36,8 +36,9 @@ class UserTrip(Base):
     landmark_ids = Column(JSON, nullable=False)
     visit_order = Column(JSON, nullable=False)
     route_legs = Column(JSON, default=list, nullable=False)
-    user_location_start = Column(JSON, nullable=True)  # None or {"lat": ..., "lon": ...}
-    user_location_end = Column(JSON, nullable=True)    # None or {"lat": ..., "lon": ...}
+    custom_start_location = Column(JSON, nullable=True)  # None or {"lat": ..., "lon": ...}
+    custom_end_location = Column(JSON, nullable=True)    # None or {"lat": ..., "lon": ...}
+    saved_user_location = Column(JSON, nullable=True)    # None or {"lat": ..., "lon": ...}
     current_point_index = Column(Integer, default=0, nullable=False)
     visited_indices = Column(JSON, default=list, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)

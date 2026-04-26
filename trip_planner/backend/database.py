@@ -53,8 +53,50 @@ def _migrate_user_trips():
         "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS current_point_index INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS visited_indices JSON NOT NULL DEFAULT '[]'",
         "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS route_legs JSON NOT NULL DEFAULT '[]'",
-        "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS user_location_start JSON",
-        "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS user_location_end JSON",
+        "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS custom_start_location JSON",
+        "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS custom_end_location JSON",
+        "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS saved_user_location JSON",
+        """
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'user_trips' AND column_name = 'user_location_start'
+            ) THEN
+                UPDATE user_trips
+                SET custom_start_location = user_location_start
+                WHERE custom_start_location IS NULL AND user_location_start IS NOT NULL;
+            END IF;
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'user_trips' AND column_name = 'user_location_end'
+            ) THEN
+                UPDATE user_trips
+                SET custom_end_location = user_location_end
+                WHERE custom_end_location IS NULL AND user_location_end IS NOT NULL;
+            END IF;
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'user_trips' AND column_name = 'user_location_start'
+            ) THEN
+                UPDATE user_trips
+                SET saved_user_location = user_location_start
+                WHERE saved_user_location IS NULL
+                  AND user_location_start IS NOT NULL;
+            END IF;
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'user_trips' AND column_name = 'user_location_end'
+            ) THEN
+                UPDATE user_trips
+                SET saved_user_location = user_location_end
+                WHERE saved_user_location IS NULL
+                  AND user_location_end IS NOT NULL;
+            END IF;
+        END $$;
+        """,
+        "ALTER TABLE user_trips DROP COLUMN IF EXISTS user_location_start",
+        "ALTER TABLE user_trips DROP COLUMN IF EXISTS user_location_end",
         "ALTER TABLE user_trips DROP COLUMN IF EXISTS used_user_location_start",
         "ALTER TABLE user_trips DROP COLUMN IF EXISTS used_user_location_end",
         "ALTER TABLE user_trips DROP COLUMN IF EXISTS saved_start_lat",

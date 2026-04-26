@@ -76,38 +76,24 @@ def register_callbacks(app, registry):
     def _build_all_markers(destination_ids):
         return create_markers(registry.landmarks, pin_icon, destination_ids, checkbox_icon)
 
-    def _trip_stop_ids(visit_order_ids):
-        return [lid for lid in (visit_order_ids or []) if lid != -1]
-
-    def _custom_location_landmark(label, location):
+    def _location_tuple(location):
         if not location:
             return None
-        return Landmark(id=-1, name=label, location="", lat=location["lat"], lon=location["lon"])
-
-    def _trip_route_landmarks(stop_ids, loc_start=None, loc_end=None):
-        route_landmarks = []
-        start = _custom_location_landmark("Start location", loc_start)
-        end = _custom_location_landmark("End location", loc_end)
-        if start:
-            route_landmarks.append(start)
-        route_landmarks.extend(lm for lm in registry.get_landmarks(stop_ids or []) if lm)
-        if end:
-            route_landmarks.append(end)
-        return route_landmarks
+        return location["lat"], location["lon"]
 
     def _clamp_stop_index(active_trip):
-        stop_ids = _trip_stop_ids(active_trip.get("visit_order"))
+        stop_ids = active_trip.get("visit_order") or []
         if not stop_ids:
             return 0
         return max(0, min(active_trip.get("current_point_index", 0), len(stop_ids) - 1))
 
     def _trip_complete(active_trip):
-        stop_ids = _trip_stop_ids(active_trip.get("visit_order"))
+        stop_ids = active_trip.get("visit_order") or []
         visited = set(active_trip.get("visited_indices") or [])
         return bool(stop_ids) and all(i in visited for i in range(len(stop_ids)))
 
     def _next_action_stop_index(active_trip):
-        stop_ids = _trip_stop_ids(active_trip.get("visit_order"))
+        stop_ids = active_trip.get("visit_order") or []
         if not stop_ids or _trip_complete(active_trip):
             return None
         visited = set(active_trip.get("visited_indices") or [])
@@ -117,27 +103,24 @@ def register_callbacks(app, registry):
         next_idx = _next_action_stop_index(active_trip)
         if next_idx is None:
             return None
-        start_offset = 1 if active_trip.get("user_location_start") else 0
+        start_offset = 1 if active_trip.get("custom_start_location") else 0
         return max(0, start_offset + next_idx - 1)
 
-    def _resolve_visit_order_landmarks(visit_order_ids, loc_start=None, loc_end=None, position=None, use_position_fallback=True):
+    def _resolve_visit_order_landmarks(visit_order_ids, position=None):
         visit_order_lms = []
-        n = len(visit_order_ids or [])
-        for idx, lid in enumerate(visit_order_ids or []):
+        for lid in visit_order_ids or []:
             if lid == -1:
-                if idx == 0 and loc_start:
-                    visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=loc_start["lat"], lon=loc_start["lon"]))
-                elif idx == n - 1 and loc_end:
-                    visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=loc_end["lat"], lon=loc_end["lon"]))
-                elif use_position_fallback and position:
+                if position:
                     visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"]))
-            else:
-                lm = registry.get_landmark(lid)
-                if lm:
-                    visit_order_lms.append(lm)
+                continue
+            lm = registry.get_landmark(lid)
+            if lm:
+                visit_order_lms.append(lm)
         return visit_order_lms
 
-    def _build_route_legs(visit_order_ids, route_result):
+    def _build_route_legs(route_point_count, route_result):
+        # Indexes refer to the composed route:
+        # [custom_start?] + visit_order landmarks + [custom_end?].
         return [
             {
                 "from_index": i,
@@ -146,7 +129,7 @@ def register_callbacks(app, registry):
                 "duration_s": leg.get("duration_s", 0),
             }
             for i, leg in enumerate(route_result.legs)
-            if i + 1 < len(visit_order_ids)
+            if i + 1 < route_point_count
         ]
 
     def _format_distance(distance_m):
@@ -171,13 +154,17 @@ def register_callbacks(app, registry):
         route_legs = active_trip.get("route_legs") or []
         if route_legs:
             return route_legs
-        route_landmarks = _trip_route_landmarks(
-            _trip_stop_ids(active_trip.get("visit_order")),
-            active_trip.get("user_location_start"),
-            active_trip.get("user_location_end"),
-        )
+        stop_ids = active_trip.get("visit_order") or []
+        custom_start = active_trip.get("custom_start_location")
+        custom_end = active_trip.get("custom_end_location")
         try:
-            return _build_route_legs([lm.id for lm in route_landmarks], fetch_route_steps(route_landmarks))
+            route_result = fetch_route_steps(
+                registry.get_landmarks(stop_ids),
+                start_point=_location_tuple(custom_start),
+                end_point=_location_tuple(custom_end),
+            )
+            route_point_count = len(stop_ids) + int(bool(custom_start)) + int(bool(custom_end))
+            return _build_route_legs(route_point_count, route_result)
         except Exception:
             return []
 
@@ -489,20 +476,26 @@ def register_callbacks(app, registry):
     def confirm_save_trip(n_clicks, name, landmark_ids, visit_order, start_value, end_value, position):
         if not name or not name.strip():
             return True, "Please enter a trip name.", True
-        user_location_start = {"lat": position["lat"], "lon": position["lon"]} if start_value == "my_location" and position else None
-        user_location_end = {"lat": position["lat"], "lon": position["lon"]} if end_value == "my_location" and position else None
-        stop_ids = _trip_stop_ids(visit_order or [])
-        route_landmarks = _trip_route_landmarks(stop_ids, user_location_start, user_location_end)
+        saved_user_location = {"lat": position["lat"], "lon": position["lon"]} if position else None
+        custom_start_location = saved_user_location if start_value == "my_location" else None
+        custom_end_location = saved_user_location if end_value == "my_location" else None
+        stop_ids = [lid for lid in (visit_order or []) if lid != -1]
         try:
-            route_result = fetch_route_steps(route_landmarks)
+            route_result = fetch_route_steps(
+                registry.get_landmarks(stop_ids),
+                start_point=_location_tuple(custom_start_location),
+                end_point=_location_tuple(custom_end_location),
+            )
+            route_point_count = len(stop_ids) + int(bool(custom_start_location)) + int(bool(custom_end_location))
             save_trip(
                 username=current_user.id,
                 name=name.strip(),
                 landmark_ids=landmark_ids or [],
                 visit_order=stop_ids,
-                route_legs=_build_route_legs([lm.id for lm in route_landmarks], route_result),
-                user_location_start=user_location_start,
-                user_location_end=user_location_end,
+                route_legs=_build_route_legs(route_point_count, route_result),
+                custom_start_location=custom_start_location,
+                custom_end_location=custom_end_location,
+                saved_user_location=saved_user_location,
             )
         except Exception as e:
             return True, f"Failed to save trip: {e}", True
@@ -574,8 +567,9 @@ def register_callbacks(app, registry):
             "route_legs": trip["route_legs"],
             "current_point_index": trip["current_point_index"],
             "visited_indices": trip["visited_indices"],
-            "user_location_start": trip["user_location_start"],
-            "user_location_end": trip["user_location_end"],
+            "custom_start_location": trip["custom_start_location"],
+            "custom_end_location": trip["custom_end_location"],
+            "saved_user_location": trip["saved_user_location"],
         }
         return False, active_trip
 
@@ -590,16 +584,19 @@ def register_callbacks(app, registry):
             return "trip"
         return "explore"
 
-    def _build_trip_content(active_trip, position=None):
+    def _build_trip_content(active_trip):
         """Returns (trip_markers, polylines) for a given active_trip dict."""
-        stop_ids = _trip_stop_ids(active_trip["visit_order"])
+        stop_ids = active_trip["visit_order"]
         current_idx = _clamp_stop_index(active_trip)
         visited = set(active_trip["visited_indices"])
-        loc_start = active_trip.get("user_location_start")
-        loc_end = active_trip.get("user_location_end")
-        route_landmarks = _trip_route_landmarks(stop_ids, loc_start, loc_end)
+        custom_start = active_trip.get("custom_start_location")
+        custom_end = active_trip.get("custom_end_location")
 
-        result = fetch_route_steps(route_landmarks)
+        result = fetch_route_steps(
+            registry.get_landmarks(stop_ids),
+            start_point=_location_tuple(custom_start),
+            end_point=_location_tuple(custom_end),
+        )
         active_leg_idx = _active_route_leg_index(active_trip)
         trip_complete = _trip_complete(active_trip)
         passed_coords = []
@@ -637,10 +634,10 @@ def register_callbacks(app, registry):
         markers = []
         saved_location_markers = []
         saved_locations = []
-        if loc_start:
-            saved_locations.append(("Start location", loc_start))
-        if loc_end:
-            saved_locations.append(("End location", loc_end))
+        if custom_start:
+            saved_locations.append(("Start location", custom_start))
+        if custom_end:
+            saved_locations.append(("End location", custom_end))
 
         grouped_locations = {}
         for label, location in saved_locations:
@@ -661,7 +658,7 @@ def register_callbacks(app, registry):
             )
 
         next_action_idx = _next_action_stop_index(active_trip)
-        starts_from_custom_location = bool(loc_start)
+        starts_from_custom_location = bool(custom_start)
         first_stop_pending = starts_from_custom_location and not visited and current_idx == 0
         display_num = 0
         for i, lid in enumerate(stop_ids):
@@ -736,7 +733,7 @@ def register_callbacks(app, registry):
         if not active_trip:
             return html.Div("Load a trip to see your progress.", className="text-muted small")
 
-        stop_ids = _trip_stop_ids(active_trip.get("visit_order"))
+        stop_ids = active_trip.get("visit_order") or []
         if not stop_ids:
             return html.Div("This trip has no destinations.", className="text-muted small")
 
@@ -744,7 +741,8 @@ def register_callbacks(app, registry):
         trip_complete = _trip_complete(active_trip)
         next_action_idx = _next_action_stop_index(active_trip)
         current_point = _trip_point_summary(stop_ids, current_idx)
-        show_current_point = not (active_trip.get("user_location_start") and not active_trip.get("visited_indices"))
+        custom_start = active_trip.get("custom_start_location")
+        show_current_point = not (custom_start and not active_trip.get("visited_indices"))
         if show_current_point:
             visited = set(active_trip.get("visited_indices") or [])
             next_idx = next((i for i in range(current_idx + 1, len(stop_ids)) if i not in visited), None)
@@ -761,7 +759,7 @@ def register_callbacks(app, registry):
                     distance_to_next = leg.get("distance_m", 0)
                     break
 
-        start_offset = 1 if active_trip.get("user_location_start") else 0
+        start_offset = 1 if custom_start else 0
         last_stop_route_idx = start_offset + len(stop_ids) - 1
         progress_legs = [
             leg for leg in route_legs
@@ -866,13 +864,12 @@ def register_callbacks(app, registry):
         Output(ids.LOADED_TRIP_POLYLINE_LAYER, "children"),
         Input(ids.ACTIVE_TRIP_STORE, "data"),
         Input(ids.MODE_STORE, "data"),
-        Input(ids.GEOLOCATION, "position"),
         prevent_initial_call=True,
     )
-    def render_trip_markers(active_trip, mode, position):
+    def render_trip_markers(active_trip, mode):
         if mode != "trip" or not active_trip:
             return [], []
-        trip_markers, polylines = _build_trip_content(active_trip, position)
+        trip_markers, polylines = _build_trip_content(active_trip)
         return trip_markers, polylines
 
     @app.callback(
@@ -887,7 +884,7 @@ def register_callbacks(app, registry):
         if not active_trip:
             raise PreventUpdate
         clicked_index = ctx.triggered_id["index"]
-        stop_ids = _trip_stop_ids(active_trip.get("visit_order"))
+        stop_ids = active_trip.get("visit_order") or []
         if clicked_index != _next_action_stop_index(active_trip):
             raise PreventUpdate
         if clicked_index >= len(stop_ids):

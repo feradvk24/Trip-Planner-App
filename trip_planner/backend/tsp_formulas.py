@@ -139,7 +139,7 @@ def _fetch_route_cached(coord_pairs: tuple) -> RouteResult:
         f"{coords}?overview=false&geometries=geojson&steps=true"
     )
 
-    res = requests.get(url)
+    res = requests.get(url, timeout=15)
     if res.status_code != 200:
         raise Exception(f"Failed to fetch route: {res.status_code}")
 
@@ -170,16 +170,26 @@ def _fetch_route_cached(coord_pairs: tuple) -> RouteResult:
     )
 
 
-def fetch_route_steps(waypoints: List[Landmark]) -> RouteResult:
+def fetch_route_steps(
+    waypoints: List[Landmark],
+    start_point: Optional[Tuple[float, float]] = None,
+    end_point: Optional[Tuple[float, float]] = None,
+) -> RouteResult:
     """
     Returns road segments together with total distance and duration from OSRM.
     Results are cached by waypoint coordinates — repeated calls with the same
     visit order skip the HTTP request entirely.
     """
-    if len(waypoints) < 2:
+    coord_pairs = []
+    if start_point:
+        coord_pairs.append(start_point)
+    coord_pairs.extend((w.lat, w.lon) for w in waypoints)
+    if end_point:
+        coord_pairs.append(end_point)
+
+    if len(coord_pairs) < 2:
         return RouteResult(segments=[], distance_m=0, duration_s=0, legs=[])
-    coord_pairs = tuple((w.lat, w.lon) for w in waypoints)
-    return _fetch_route_cached(coord_pairs)
+    return _fetch_route_cached(tuple(coord_pairs))
 
 
 def solve_tsp(
