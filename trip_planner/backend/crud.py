@@ -1,5 +1,28 @@
+from typing import Optional
+
 from backend.database import SessionLocal
 from backend.models import User, UserTrip
+
+
+def _trip_to_dict(trip: UserTrip, owner: Optional[User] = None) -> dict:
+    data = {
+        "id": trip.id,
+        "name": trip.name,
+        "landmark_ids": trip.landmark_ids,
+        "visit_order": trip.visit_order,
+        "route_legs": trip.route_legs or [],
+        "custom_start_location": trip.custom_start_location,
+        "custom_end_location": trip.custom_end_location,
+        "saved_user_location": trip.saved_user_location,
+        "current_point_index": trip.current_point_index,
+        "visited_indices": trip.visited_indices or [],
+        "is_public": trip.is_public,
+        "created_at": trip.created_at.strftime("%d %b %Y, %H:%M"),
+    }
+    if owner:
+        data["owner_username"] = owner.username
+        data["owner_name"] = f"{owner.first_name} {owner.last_name}"
+    return data
 
 
 def save_trip(username: str, name: str, landmark_ids: list, visit_order: list,
@@ -44,22 +67,46 @@ def get_user_trips(username: str) -> list[dict]:
             .order_by(UserTrip.created_at.desc())
             .all()
         )
-        return [
-            {
-                "id": t.id,
-                "name": t.name,
-                "landmark_ids": t.landmark_ids,
-                "visit_order": t.visit_order,
-                "route_legs": t.route_legs or [],
-                "custom_start_location": t.custom_start_location,
-                "custom_end_location": t.custom_end_location,
-                "saved_user_location": t.saved_user_location,
-                "current_point_index": t.current_point_index,
-                "visited_indices": t.visited_indices or [],
-                "created_at": t.created_at.strftime("%d %b %Y, %H:%M"),
-            }
-            for t in trips
-        ]
+        return [_trip_to_dict(t) for t in trips]
+    finally:
+        db.close()
+
+
+def get_public_trips() -> list[dict]:
+    """Return public trips from all users, newest first."""
+    db = SessionLocal()
+    try:
+        trips = (
+            db.query(UserTrip, User)
+            .join(User, UserTrip.user_id == User.id)
+            .filter(UserTrip.is_public.is_(True))
+            .order_by(UserTrip.created_at.desc())
+            .all()
+        )
+        return [_trip_to_dict(trip, owner) for trip, owner in trips]
+    finally:
+        db.close()
+
+
+def set_trip_public(username: str, trip_id: int, is_public: bool) -> None:
+    """Set whether one of a user's trips is visible in the public shared browser."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            raise ValueError(f"User '{username}' not found in database.")
+        trip = (
+            db.query(UserTrip)
+            .filter(UserTrip.id == trip_id, UserTrip.user_id == user.id)
+            .first()
+        )
+        if trip is None:
+            raise ValueError(f"Trip {trip_id} not found.")
+        trip.is_public = is_public
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 

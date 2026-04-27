@@ -56,6 +56,7 @@ def _migrate_user_trips():
         "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS custom_start_location JSON",
         "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS custom_end_location JSON",
         "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS saved_user_location JSON",
+        "ALTER TABLE user_trips ADD COLUMN IF NOT EXISTS is_public BOOLEAN NOT NULL DEFAULT FALSE",
         """
         DO $$
         BEGIN
