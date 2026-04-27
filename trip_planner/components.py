@@ -70,6 +70,7 @@ def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn, s
         [
             dbc.Button("Explore", id=ids.MODE_BTN_EXPLORE, color="primary", outline=True, active=True, size="sm", style={"flex": "1"}),
             dbc.Button("Trip", id=ids.MODE_BTN_TRIP, color="primary", outline=True, active=False, size="sm", style={"flex": "1"}),
+            dbc.Button("Browse", id=ids.MODE_BTN_BROWSE, color="primary", outline=True, active=False, size="sm", style={"flex": "1"}),
         ],
         className="w-100",
     )
@@ -99,6 +100,12 @@ def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn, s
         ),
     ], id=ids.TRIP_PANEL, style={"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0})
 
+    browse_panel = html.Div(
+        [],
+        id=ids.BROWSE_PANEL,
+        style={"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0},
+    )
+
     return html.Div([
         html.Div([
             html.Div([
@@ -110,6 +117,7 @@ def create_sidebar(route_endpoints, selected_object_group, optimize_route_btn, s
         mode_toggle,
         explore_panel,
         trip_panel,
+        browse_panel,
     ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
 
 def create_user_menu():
@@ -180,6 +188,76 @@ def create_map(markers):
         zoomAnimation=True,
         style={"width": "100%", "height": "100%"},
     )
+
+
+def create_browse_overlay():
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.H4("Browse Trips", className="mb-0"),
+                            html.Button(
+                                id=ids.BROWSE_CLOSE_BTN,
+                                type="button",
+                                className="btn-close",
+                                **{"aria-label": "Close"},
+                            ),
+                        ],
+                        className="d-flex align-items-center justify-content-between mb-3",
+                    ),
+                    dbc.Tabs(
+                        [
+                            dbc.Tab(
+                                html.Div(
+                                    "Your saved trips will appear here.",
+                                    id=ids.MY_SAVED_TRIPS_TAB,
+                                    className="text-muted small p-3",
+                                ),
+                                label="My Saved Trips",
+                                tab_id="my-saved-trips",
+                            ),
+                            dbc.Tab(
+                                html.Div(
+                                    "User shared trips will appear here.",
+                                    id=ids.USER_SHARED_TRIPS_TAB,
+                                    className="text-muted small p-3",
+                                ),
+                                label="User Shared Trips",
+                                tab_id="user-shared-trips",
+                            ),
+                        ],
+                        id=ids.BROWSE_TABS,
+                        active_tab="my-saved-trips",
+                    ),
+                ],
+                style={
+                    "width": "min(58rem, calc(100% - 2rem))",
+                    "height": "min(38rem, calc(100% - 2rem))",
+                    "backgroundColor": "rgba(255, 255, 255, 0.96)",
+                    "border": "1px solid rgba(0, 0, 0, 0.12)",
+                    "borderRadius": "0.5rem",
+                    "boxShadow": "0 1rem 3rem rgba(0, 0, 0, 0.28)",
+                    "padding": "1rem",
+                    "overflow": "hidden",
+                },
+            ),
+        ],
+        id=ids.BROWSE_OVERLAY,
+        style={
+            "display": "none",
+            "position": "absolute",
+            "inset": 0,
+            "zIndex": 1000,
+            "alignItems": "center",
+            "justifyContent": "center",
+            "backgroundColor": "rgba(248, 249, 250, 0.38)",
+            "backdropFilter": "blur(1px)",
+            "pointerEvents": "auto",
+        },
+    )
+
 
 def create_markers(landmarks, pin_icon, selected_ids=None, selected_icon=None):
     selected_ids = set(selected_ids or [])

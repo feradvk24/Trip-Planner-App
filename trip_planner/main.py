@@ -19,6 +19,7 @@ from styles import pin_icon, checkbox_icon, SIDEBAR_STYLE, CONTENT_STYLE
 from components import (
     create_sidebar, create_trip_endpoints, create_selected_object_group,
     create_map, create_login_layout, create_markers, create_user_menu,
+    create_browse_overlay,
 )
 from callbacks import register_callbacks
 from backend.auth import init_login_manager
@@ -128,9 +129,12 @@ content = html.Div(
                 dbc.Col(
                     [
                         html.Div(
-                            create_map(markers),
+                            [
+                                create_map(markers),
+                                create_browse_overlay(),
+                            ],
                             className="flex-grow-1",
-                            style={"minHeight": 0},
+                            style={"minHeight": 0, "position": "relative"},
                         ),
                     ],
                     width=12,

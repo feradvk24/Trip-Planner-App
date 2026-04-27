@@ -39,10 +39,18 @@ ROUTE_STATS_PANEL = "route-stats-panel"
 
 # Mode toggle
 MODE_STORE = "mode-store"
+BROWSE_OVERLAY_STORE = "browse-overlay-store"
 MODE_BTN_EXPLORE = "mode-btn-explore"
 MODE_BTN_TRIP = "mode-btn-trip"
+MODE_BTN_BROWSE = "mode-btn-browse"
 EXPLORE_PANEL = "explore-panel"
 TRIP_PANEL = "trip-panel"
+BROWSE_PANEL = "browse-panel"
+BROWSE_OVERLAY = "browse-overlay"
+BROWSE_CLOSE_BTN = "browse-close-btn"
+BROWSE_TABS = "browse-tabs"
+MY_SAVED_TRIPS_TAB = "my-saved-trips-tab"
+USER_SHARED_TRIPS_TAB = "user-shared-trips-tab"
 TRIP_STATUS_PANEL = "trip-status-panel"
 
 # Active trip (Trip mode)

@@ -575,14 +575,21 @@ def register_callbacks(app, registry):
 
     @app.callback(
         Output(ids.MODE_STORE, "data"),
+        Output(ids.BROWSE_OVERLAY_STORE, "data"),
         Input(ids.MODE_BTN_EXPLORE, "n_clicks"),
         Input(ids.MODE_BTN_TRIP, "n_clicks"),
+        Input(ids.MODE_BTN_BROWSE, "n_clicks"),
+        Input(ids.BROWSE_CLOSE_BTN, "n_clicks"),
         prevent_initial_call=True,
     )
-    def switch_mode(explore_clicks, trip_clicks):
+    def switch_mode(explore_clicks, trip_clicks, browse_clicks, browse_close_clicks):
         if ctx.triggered_id == ids.MODE_BTN_TRIP:
-            return "trip"
-        return "explore"
+            return "trip", False
+        if ctx.triggered_id == ids.MODE_BTN_BROWSE:
+            return no_update, True
+        if ctx.triggered_id == ids.BROWSE_CLOSE_BTN:
+            return no_update, False
+        return "explore", False
 
     def _build_trip_content(active_trip):
         """Returns (trip_markers, polylines) for a given active_trip dict."""
@@ -710,17 +717,39 @@ def register_callbacks(app, registry):
     @app.callback(
         Output(ids.EXPLORE_PANEL, "style"),
         Output(ids.TRIP_PANEL, "style"),
+        Output(ids.BROWSE_PANEL, "style"),
         Output(ids.MODE_BTN_EXPLORE, "active"),
         Output(ids.MODE_BTN_TRIP, "active"),
+        Output(ids.MODE_BTN_BROWSE, "active"),
         Input(ids.MODE_STORE, "data"),
+        Input(ids.BROWSE_OVERLAY_STORE, "data"),
         prevent_initial_call="initial_duplicate",
     )
-    def update_mode_panels(mode):
+    def update_mode_panels(mode, browse_open):
         show = {"display": "flex", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0}
         hide = {"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0}
         if mode == "trip":
-            return hide, show, False, True
-        return show, hide, True, False
+            return hide, show, hide, False, not browse_open, bool(browse_open)
+        return show, hide, hide, not browse_open, False, bool(browse_open)
+
+    @app.callback(
+        Output(ids.BROWSE_OVERLAY, "style"),
+        Input(ids.BROWSE_OVERLAY_STORE, "data"),
+    )
+    def update_browse_overlay(browse_open):
+        base_style = {
+            "position": "absolute",
+            "inset": 0,
+            "zIndex": 1000,
+            "alignItems": "center",
+            "justifyContent": "center",
+            "backgroundColor": "rgba(248, 249, 250, 0.38)",
+            "backdropFilter": "blur(1px)",
+            "pointerEvents": "auto",
+        }
+        if browse_open:
+            return {**base_style, "display": "flex"}
+        return {**base_style, "display": "none"}
 
     @app.callback(
         Output(ids.TRIP_STATUS_PANEL, "children"),
@@ -845,7 +874,7 @@ def register_callbacks(app, registry):
     )
     def sync_explore_layers(mode, explore_cache, destination_ids):
         hidden_stats = {"display": "none"}
-        if mode == "trip":
+        if mode != "explore":
             return [], [], [], [], hidden_stats
         if explore_cache:
             return (
