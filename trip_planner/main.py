@@ -92,6 +92,8 @@ load_trip_btn = dbc.Button("Load Trip", color="info", className="mt-1 w-100", id
 destinations_list = dcc.Store(id=ids.DESTINATIONS_LIST, data=[])
 visit_order_store = dcc.Store(id=ids.VISIT_ORDER_STORE, data=[])
 mode_store = dcc.Store(id=ids.MODE_STORE, data="explore")
+browse_overlay_store = dcc.Store(id=ids.BROWSE_OVERLAY_STORE, data=False)
+browse_saved_trips_store = dcc.Store(id=ids.BROWSE_SAVED_TRIPS_STORE, data=[])
 active_trip_store = dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=None)
 explore_map_cache = dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None)
 
@@ -107,14 +109,6 @@ save_trip_modal = dbc.Modal([
         dbc.Button("Cancel", id="save-trip-cancel-btn", color="secondary", outline=True, className="ms-2"),
     ]),
 ], id=ids.SAVE_TRIP_MODAL, is_open=False)
-
-load_trip_modal = dbc.Modal([
-    dbc.ModalHeader(dbc.ModalTitle("Load Trip")),
-    dbc.ModalBody(
-        dbc.ListGroup(id=ids.LOAD_TRIP_LIST, children=[], flush=True),
-        style={"maxHeight": "60vh", "overflowY": "auto"},
-    ),
-], id=ids.LOAD_TRIP_MODAL, is_open=False, centered=True, scrollable=True)
 
 # Sidebar component
 sidebar = create_sidebar(trip_endpoints, selected_object_group, optimize_route_btn, save_trip_btn, load_trip_btn)
@@ -174,12 +168,13 @@ def serve_layout():
             destinations_list,
             visit_order_store,
             mode_store,
+            browse_overlay_store,
+            browse_saved_trips_store,
             active_trip_store,
             explore_map_cache,
             warn_modal,
             success_toast,
             save_trip_modal,
-            load_trip_modal,
         ])
     return html.Div([
         dcc.Location(id="url"),

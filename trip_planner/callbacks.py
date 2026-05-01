@@ -68,7 +68,8 @@ def register_callbacks(app, registry):
                         "alignItems": "center",
                         "gap": "0.75rem",
                     },
-                )
+                ),
+                className="saved-trip-item",
             )
             for t in trips
         ]
@@ -529,36 +530,40 @@ def register_callbacks(app, registry):
         ]
 
     @app.callback(
-        Output(ids.LOAD_TRIP_MODAL, "is_open"),
         Output(ids.LOAD_TRIP_LIST, "children"),
         Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),
-        Input(ids.LOAD_TRIP_BTN, "n_clicks"),
+        Output(ids.BROWSE_SAVED_TRIPS_STORE, "data"),
+        Input(ids.BROWSE_OVERLAY_STORE, "data"),
+        Input(ids.BROWSE_TABS, "active_tab"),
         Input({"type": "delete-trip-item", "index": ALL}, "n_clicks"),
         State(ids.ACTIVE_TRIP_STORE, "data"),
         prevent_initial_call=True,
     )
-    def open_or_update_load_trip_modal(open_clicks, delete_clicks_list, active_trip):
+    def refresh_browse_saved_trips(browse_open, active_tab, delete_clicks_list, active_trip):
         active_trip_data = no_update
         if isinstance(ctx.triggered_id, dict) and ctx.triggered_id.get("type") == "delete-trip-item":
             trip_id = ctx.triggered_id["index"]
             delete_trip(current_user.id, trip_id)
             if active_trip and active_trip.get("trip_id") == trip_id:
                 active_trip_data = None
+        elif not browse_open or active_tab != "my-saved-trips":
+            raise PreventUpdate
         trips = get_user_trips(current_user.id)
-        return True, _build_load_trip_items(trips), active_trip_data
+        return _build_load_trip_items(trips), active_trip_data, trips
 
     @app.callback(
-        Output(ids.LOAD_TRIP_MODAL, "is_open", allow_duplicate=True),
         Output(ids.ACTIVE_TRIP_STORE, "data"),
+        Output(ids.MODE_STORE, "data", allow_duplicate=True),
+        Output(ids.BROWSE_OVERLAY_STORE, "data", allow_duplicate=True),
         Input({"type": "load-trip-item", "index": ALL}, "n_clicks"),
+        State(ids.BROWSE_SAVED_TRIPS_STORE, "data"),
         prevent_initial_call=True,
     )
-    def load_selected_trip(n_clicks_list):
+    def load_selected_trip(n_clicks_list, trips):
         if not ctx.triggered_id or not any(n_clicks_list):
             raise PreventUpdate
         trip_id = ctx.triggered_id["index"]
-        trips = get_user_trips(current_user.id)
-        trip = next((t for t in trips if t["id"] == trip_id), None)
+        trip = next((t for t in (trips or []) if t["id"] == trip_id), None)
         if not trip:
             raise PreventUpdate
         active_trip = {
@@ -571,7 +576,7 @@ def register_callbacks(app, registry):
             "custom_end_location": trip["custom_end_location"],
             "saved_user_location": trip["saved_user_location"],
         }
-        return False, active_trip
+        return active_trip, "trip", False
 
     @app.callback(
         Output(ids.MODE_STORE, "data"),
@@ -579,13 +584,14 @@ def register_callbacks(app, registry):
         Input(ids.MODE_BTN_EXPLORE, "n_clicks"),
         Input(ids.MODE_BTN_TRIP, "n_clicks"),
         Input(ids.MODE_BTN_BROWSE, "n_clicks"),
+        Input(ids.LOAD_TRIP_BTN, "n_clicks"),
         Input(ids.BROWSE_CLOSE_BTN, "n_clicks"),
         prevent_initial_call=True,
     )
-    def switch_mode(explore_clicks, trip_clicks, browse_clicks, browse_close_clicks):
+    def switch_mode(explore_clicks, trip_clicks, browse_clicks, load_trip_clicks, browse_close_clicks):
         if ctx.triggered_id == ids.MODE_BTN_TRIP:
             return "trip", False
-        if ctx.triggered_id == ids.MODE_BTN_BROWSE:
+        if ctx.triggered_id in (ids.MODE_BTN_BROWSE, ids.LOAD_TRIP_BTN):
             return no_update, True
         if ctx.triggered_id == ids.BROWSE_CLOSE_BTN:
             return no_update, False

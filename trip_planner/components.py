@@ -211,9 +211,10 @@ def create_browse_overlay():
                         [
                             dbc.Tab(
                                 html.Div(
-                                    "Your saved trips will appear here.",
+                                    dbc.ListGroup(id=ids.LOAD_TRIP_LIST, children=[], flush=True),
                                     id=ids.MY_SAVED_TRIPS_TAB,
-                                    className="text-muted small p-3",
+                                    className="p-3",
+                                    style={"height": "calc(100% - 3rem)", "overflowY": "auto"},
                                 ),
                                 label="My Saved Trips",
                                 tab_id="my-saved-trips",

@@ -40,6 +40,7 @@ ROUTE_STATS_PANEL = "route-stats-panel"
 # Mode toggle
 MODE_STORE = "mode-store"
 BROWSE_OVERLAY_STORE = "browse-overlay-store"
+BROWSE_SAVED_TRIPS_STORE = "browse-saved-trips-store"
 MODE_BTN_EXPLORE = "mode-btn-explore"
 MODE_BTN_TRIP = "mode-btn-trip"
 MODE_BTN_BROWSE = "mode-btn-browse"
