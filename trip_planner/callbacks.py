@@ -89,6 +89,29 @@ def register_callbacks(app, registry):
             for t in trips
         ]
 
+    def _build_selected_object_items(destination_ids):
+        return [
+            dbc.ListGroupItem([
+                html.H6(landmark.name, className="mb-1 small"),
+                html.P(landmark.location, className="mb-1 small"),
+            ], className="p-3", id=f"selected-item-{landmark.id}")
+            for landmark in registry.get_landmarks(destination_ids or [])
+        ]
+
+    def _sanitize_shared_trip(trip):
+        landmark_ids = [lid for lid in (trip.get("landmark_ids") or []) if lid != -1]
+        visit_order = [lid for lid in (trip.get("visit_order") or landmark_ids) if lid != -1]
+        has_private_endpoint = bool(trip.get("custom_start_location") or trip.get("custom_end_location"))
+        return {
+            **trip,
+            "landmark_ids": landmark_ids,
+            "visit_order": visit_order,
+            "route_legs": [] if has_private_endpoint else trip.get("route_legs", []),
+            "custom_start_location": None,
+            "custom_end_location": None,
+            "saved_user_location": None,
+        }
+
     def _build_all_markers(destination_ids):
         return create_markers(registry.landmarks, pin_icon, destination_ids, checkbox_icon)
 
@@ -575,7 +598,7 @@ def register_callbacks(app, registry):
 
         if active_tab == "user-shared-trips":
             trips = [
-                trip for trip in get_public_trips()
+                _sanitize_shared_trip(trip) for trip in get_public_trips()
                 if trip.get("owner_username") != current_user.id
             ]
             return no_update, _build_load_trip_items(trips, allow_delete=False, show_owner=True), active_trip_data, no_update, trips
@@ -586,6 +609,9 @@ def register_callbacks(app, registry):
         Output(ids.ACTIVE_TRIP_STORE, "data"),
         Output(ids.MODE_STORE, "data", allow_duplicate=True),
         Output(ids.BROWSE_OVERLAY_STORE, "data", allow_duplicate=True),
+        Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
+        Output(ids.VISIT_ORDER_STORE, "data", allow_duplicate=True),
+        Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Input({"type": "load-trip-item", "index": ALL}, "n_clicks"),
         State(ids.BROWSE_SAVED_TRIPS_STORE, "data"),
         State(ids.BROWSE_SHARED_TRIPS_STORE, "data"),
@@ -595,9 +621,23 @@ def register_callbacks(app, registry):
         if not ctx.triggered_id or not any(n_clicks_list):
             raise PreventUpdate
         trip_id = ctx.triggered_id["index"]
-        trip = next((t for t in ((saved_trips or []) + (shared_trips or [])) if t["id"] == trip_id), None)
+        shared_trip = next((t for t in (shared_trips or []) if t["id"] == trip_id), None)
+        trip = shared_trip or next((t for t in (saved_trips or []) if t["id"] == trip_id), None)
         if not trip:
             raise PreventUpdate
+        if shared_trip:
+            destination_ids = trip.get("landmark_ids") or trip.get("visit_order") or []
+            destination_ids = [lid for lid in destination_ids if lid != -1]
+            visit_order = [lid for lid in (trip.get("visit_order") or destination_ids) if lid != -1]
+            return (
+                None,
+                "explore",
+                False,
+                destination_ids,
+                visit_order,
+                _build_selected_object_items(destination_ids),
+            )
+
         active_trip = {
             "trip_id": trip["id"],
             "visit_order": trip["visit_order"] or [],
@@ -610,7 +650,7 @@ def register_callbacks(app, registry):
             "is_public": trip["is_public"],
             "owner_username": trip.get("owner_username", current_user.id),
         }
-        return active_trip, "trip", False
+        return active_trip, "trip", False, no_update, no_update, no_update
 
     @app.callback(
         Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),
