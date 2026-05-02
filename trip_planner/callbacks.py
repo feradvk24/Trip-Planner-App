@@ -207,6 +207,30 @@ def register_callbacks(app, registry):
         except Exception:
             return []
 
+    def _visit_stop(active_trip, clicked_index):
+        if not active_trip or clicked_index is None:
+            raise PreventUpdate
+        stop_ids = active_trip.get("visit_order") or []
+        if clicked_index != _next_action_stop_index(active_trip):
+            raise PreventUpdate
+        if clicked_index >= len(stop_ids):
+            raise PreventUpdate
+
+        if active_trip.get("owner_username", current_user.id) == current_user.id:
+            update_trip_progress(
+                trip_id=active_trip["trip_id"],
+                new_current_index=clicked_index,
+                newly_visited_index=clicked_index,
+            )
+        visited = list(active_trip.get("visited_indices") or [])
+        if clicked_index not in visited:
+            visited.append(clicked_index)
+        return {
+            **active_trip,
+            "current_point_index": clicked_index,
+            "visited_indices": visited,
+        }
+
     @app.callback(
         Output(ids.WARN_MODAL, "is_open"),
         Input("warn-modal-close", "n_clicks"),
@@ -940,6 +964,13 @@ def register_callbacks(app, registry):
             [
                 html.H6("Trip progress", className="mb-2"),
                 *point_sections,
+                dbc.Button(
+                    "Visit",
+                    id=ids.TRIP_NEXT_VISIT_BTN,
+                    color="success",
+                    size="sm",
+                    className="mt-2 w-100",
+                ) if next_action_idx is not None and next_point else None,
                 html.Div(
                     [
                         html.Div("Distance to next", className="text-muted small"),
@@ -1015,26 +1046,16 @@ def register_callbacks(app, registry):
     def handle_visit_btn(n_clicks_list, active_trip):
         if not ctx.triggered_id or not any(n for n in n_clicks_list if n):
             raise PreventUpdate
-        if not active_trip:
-            raise PreventUpdate
         clicked_index = ctx.triggered_id["index"]
-        stop_ids = active_trip.get("visit_order") or []
-        if clicked_index != _next_action_stop_index(active_trip):
-            raise PreventUpdate
-        if clicked_index >= len(stop_ids):
-            raise PreventUpdate
+        return _visit_stop(active_trip, clicked_index)
 
-        if active_trip.get("owner_username", current_user.id) == current_user.id:
-            update_trip_progress(
-                trip_id=active_trip["trip_id"],
-                new_current_index=clicked_index,
-                newly_visited_index=clicked_index,
-            )
-        visited = list(active_trip["visited_indices"])
-        if clicked_index not in visited:
-            visited.append(clicked_index)
-        return {
-            **active_trip,
-            "current_point_index": clicked_index,
-            "visited_indices": visited,
-        }
+    @app.callback(
+        Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),
+        Input(ids.TRIP_NEXT_VISIT_BTN, "n_clicks"),
+        State(ids.ACTIVE_TRIP_STORE, "data"),
+        prevent_initial_call=True,
+    )
+    def handle_progress_visit_btn(n_clicks, active_trip):
+        if not n_clicks:
+            raise PreventUpdate
+        return _visit_stop(active_trip, _next_action_stop_index(active_trip))

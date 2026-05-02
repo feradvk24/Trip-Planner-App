@@ -57,6 +57,7 @@ BROWSE_TABS = "browse-tabs"
 MY_SAVED_TRIPS_TAB = "my-saved-trips-tab"
 USER_SHARED_TRIPS_TAB = "user-shared-trips-tab"
 TRIP_STATUS_PANEL = "trip-status-panel"
+TRIP_NEXT_VISIT_BTN = "trip-next-visit-btn"
 
 # Active trip (Trip mode)
 ACTIVE_TRIP_STORE = "active-trip-store"
