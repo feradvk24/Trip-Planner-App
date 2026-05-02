@@ -45,25 +45,6 @@ class UserTrip(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
 
-class CompletedTrip(Base):
-    __tablename__ = "completed_trips"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    trip_id = Column(Integer, ForeignKey("user_trips.id"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    completed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-
-
-class TripShare(Base):
-    __tablename__ = "trip_shares"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    trip_id = Column(Integer, ForeignKey("user_trips.id"), nullable=False, index=True)
-    shared_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    shared_with_user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    shared_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-
-
 class TripCompletion(Base):
     __tablename__ = "trip_completions"
 
