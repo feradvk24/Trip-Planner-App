@@ -88,7 +88,7 @@ def get_public_trips() -> list[dict]:
         db.close()
 
 
-def set_trip_public(username: str, trip_id: int, is_public: bool) -> None:
+def set_trip_public_status(username: str, trip_id: int, is_public: bool) -> None:
     """Set whether one of a user's trips is visible in the public shared browser."""
     db = SessionLocal()
     try:

@@ -17,9 +17,8 @@ from marker_config import Landmark, LandmarkRegistry
 from backend.tsp_formulas import fetch_route_steps, solve_tsp
 from styles import pin_icon, checkbox_icon, SIDEBAR_STYLE, CONTENT_STYLE
 from components import (
-    create_sidebar, create_trip_endpoints, create_selected_object_group,
-    create_map, create_login_layout, create_markers, create_user_menu,
-    create_browse_overlay,
+    create_sidebar, create_map, create_login_layout, create_markers,
+    create_user_menu, create_browse_overlay,
 )
 from callbacks import register_callbacks
 from backend.auth import init_login_manager
@@ -82,13 +81,6 @@ registry.register_landmarks(landmark_list)
 
 markers = create_markers(registry.landmarks, pin_icon)
 
-# Use component functions
-selected_object_group = create_selected_object_group()
-trip_endpoints = create_trip_endpoints()
-
-optimize_route_btn = dbc.Button("Optimize Route", color="success", className="mt-2", id=ids.OPTIMIZE_ROUTE_BTN)
-save_trip_btn = dbc.Button("Save Trip", color="secondary", className="mt-1", id=ids.SAVE_TRIP_BTN, disabled=True, style={"opacity": "0.45", "flex": "1"})
-load_trip_btn = dbc.Button("Load Trip", color="info", className="mt-1 w-100", id=ids.LOAD_TRIP_BTN)
 destinations_list = dcc.Store(id=ids.DESTINATIONS_LIST, data=[])
 visit_order_store = dcc.Store(id=ids.VISIT_ORDER_STORE, data=[])
 mode_store = dcc.Store(id=ids.MODE_STORE, data="explore")
@@ -111,7 +103,7 @@ save_trip_modal = dbc.Modal([
 ], id=ids.SAVE_TRIP_MODAL, is_open=False)
 
 # Sidebar component
-sidebar = create_sidebar(trip_endpoints, selected_object_group, optimize_route_btn, save_trip_btn, load_trip_btn)
+sidebar = create_sidebar()
 
 # Main content area (simpler: use Bootstrap utilities to manage flex sizing)
 content = html.Div(
@@ -156,6 +148,17 @@ success_toast = dbc.Toast(
     style={"position": "fixed", "bottom": "1rem", "right": "1rem", "zIndex": 9999, "minWidth": "auto"},
 )
 
+share_trip_toast = dbc.Toast(
+    "",
+    id=ids.SHARE_TRIP_TOAST,
+    header="Share Trip",
+    icon="info",
+    is_open=False,
+    dismissable=True,
+    duration=3500,
+    style={"position": "fixed", "bottom": "4.75rem", "right": "1rem", "zIndex": 9999, "minWidth": "18rem"},
+)
+
 # App layout — dynamic: shows login form or main app based on auth state
 def serve_layout():
     if current_user.is_authenticated:
@@ -174,6 +177,7 @@ def serve_layout():
             explore_map_cache,
             warn_modal,
             success_toast,
+            share_trip_toast,
             save_trip_modal,
         ])
     return html.Div([

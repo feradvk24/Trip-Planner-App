@@ -11,7 +11,7 @@ import matplotlib.colors as mcolors
 import dash_leaflet as dl
 from flask_login import login_user, current_user
 from backend.auth import verify_user, create_user, User
-from backend.crud import save_trip, get_user_trips, delete_trip
+from backend.crud import save_trip, get_user_trips, delete_trip, update_trip_progress, set_trip_public_status
 from components import create_markers
 
 
@@ -24,6 +24,17 @@ def resolve_endpoint(registry, point_id, position):
 
 
 def register_callbacks(app, registry):
+    def _button_label_text(children):
+        if isinstance(children, str):
+            return children
+        if isinstance(children, list):
+            return "".join(child for child in children if isinstance(child, str)).strip()
+        return ""
+
+    def _optimize_route_button_children(label):
+        icon_class = "bi bi-pencil-square me-2" if label == "Modify Route" else "bi bi-signpost-split me-2"
+        return [html.I(className=icon_class), label]
+
     def _build_load_trip_items(trips):
         if not trips:
             return [dbc.ListGroupItem("No saved trips yet.", disabled=True)]
@@ -189,7 +200,7 @@ def register_callbacks(app, registry):
         prevent_initial_call=True,
     )
     def compute_route(n_clicks, destination_ids, start_point_id, end_point_id, btn_label, position):
-        if btn_label == "Modify Route":
+        if _button_label_text(btn_label) == "Modify Route":
             raise PreventUpdate
         if not destination_ids or len(destination_ids) < 2:
             return no_update, True
@@ -283,7 +294,7 @@ def register_callbacks(app, registry):
             "stats_content": stats_content,
             "stats_style": stats_style,
         }
-        return polylines, True, [], tour_markers, "Modify Route", "success", True, False, "info", {"flex": "1"}, stats_content, stats_style, explore_cache
+        return polylines, True, [], tour_markers, _optimize_route_button_children("Modify Route"), "success", True, False, "info", {"flex": "1"}, stats_content, stats_style, explore_cache
 
     @app.callback(
         Output(ids.PLANNED_TRIP_POLYLINE_LAYER, "children", allow_duplicate=True),
@@ -303,9 +314,9 @@ def register_callbacks(app, registry):
         prevent_initial_call=True,
     )
     def modify_route(n_clicks, destination_ids, btn_label):
-        if btn_label != "Modify Route":
+        if _button_label_text(btn_label) != "Modify Route":
             raise PreventUpdate
-        return [], _build_all_markers(destination_ids), [], "Optimize Route", "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}, None
+        return [], _build_all_markers(destination_ids), [], _optimize_route_button_children("Optimize Route"), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}, None
 
     @app.callback(
         Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),
@@ -358,7 +369,7 @@ def register_callbacks(app, registry):
         prevent_initial_call=True,
     )
     def clear_all(n_clicks):
-        return _build_all_markers([]), [], [], [], [], "Optimize Route", "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}, None
+        return _build_all_markers([]), [], [], [], [], _optimize_route_button_children("Optimize Route"), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}, None
 
     @app.callback(
         Output(ids.START_POINT_DROPDOWN, "options"),
@@ -575,8 +586,36 @@ def register_callbacks(app, registry):
             "custom_start_location": trip["custom_start_location"],
             "custom_end_location": trip["custom_end_location"],
             "saved_user_location": trip["saved_user_location"],
+            "is_public": trip["is_public"],
         }
         return active_trip, "trip", False
+
+    @app.callback(
+        Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),
+        Output(ids.SHARE_TRIP_TOAST, "children"),
+        Output(ids.SHARE_TRIP_TOAST, "header"),
+        Output(ids.SHARE_TRIP_TOAST, "icon"),
+        Output(ids.SHARE_TRIP_TOAST, "is_open"),
+        Input(ids.SHARE_TRIP_BTN, "n_clicks"),
+        State(ids.ACTIVE_TRIP_STORE, "data"),
+        prevent_initial_call=True,
+    )
+    def share_trip(n_clicks, active_trip):
+        if not n_clicks:
+            raise PreventUpdate
+        if not active_trip or not active_trip.get("trip_id"):
+            return no_update, "Load a trip before sharing it.", "Trip not loaded", "warning", True
+        if active_trip.get("is_public"):
+            return no_update, "This trip is already shared.", "Already shared", "info", True
+
+        trip_id = active_trip["trip_id"]
+        username = current_user.id
+        try:
+            set_trip_public_status(username, trip_id, True)
+        except Exception as e:
+            return no_update, f"Could not share this trip: {e}", "Sharing failed", "danger", True
+
+        return {**active_trip, "is_public": True}, "Trip shared successfully.", "Shared", "success", True
 
     @app.callback(
         Output(ids.MODE_STORE, "data"),
@@ -923,7 +962,6 @@ def register_callbacks(app, registry):
         if clicked_index >= len(stop_ids):
             raise PreventUpdate
 
-        from backend.crud import update_trip_progress
         update_trip_progress(
             trip_id=active_trip["trip_id"],
             new_current_index=clicked_index,
