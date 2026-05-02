@@ -11,7 +11,7 @@ import matplotlib.colors as mcolors
 import dash_leaflet as dl
 from flask_login import login_user, current_user
 from backend.auth import verify_user, create_user, User
-from backend.crud import save_trip, get_user_trips, delete_trip, update_trip_progress, set_trip_public_status
+from backend.crud import save_trip, get_user_trips, get_public_trips, delete_trip, update_trip_progress, set_trip_public_status
 from components import create_markers
 
 
@@ -35,18 +35,22 @@ def register_callbacks(app, registry):
         icon_class = "bi bi-pencil-square me-2" if label == "Modify Route" else "bi bi-signpost-split me-2"
         return [html.I(className=icon_class), label]
 
-    def _build_load_trip_items(trips):
+    def _build_load_trip_items(trips, allow_delete=True, show_owner=False):
         if not trips:
-            return [dbc.ListGroupItem("No saved trips yet.", disabled=True)]
+            return [dbc.ListGroupItem("No trips to show...", disabled=True)]
         return [
             dbc.ListGroupItem(
                 html.Div(
-                    [
+                    [component for component in [
                         html.Button(
-                            [
+                            [component for component in [
                                 html.Div(t["name"], style={"fontWeight": "600"}),
+                                html.Small(
+                                    f"Shared by {t.get('owner_name') or t.get('owner_username')}",
+                                    className="text-muted d-block",
+                                ) if show_owner else None,
                                 html.Small(t["created_at"], className="text-muted"),
-                            ],
+                            ] if component is not None],
                             id={"type": "load-trip-item", "index": t["id"]},
                             n_clicks=0,
                             style={
@@ -72,8 +76,8 @@ def register_callbacks(app, registry):
                                 "textDecoration": "none",
                                 "flex": "0 0 auto",
                             },
-                        ),
-                    ],
+                        ) if allow_delete else None,
+                    ] if component is not None],
                     style={
                         "display": "flex",
                         "alignItems": "center",
@@ -542,8 +546,10 @@ def register_callbacks(app, registry):
 
     @app.callback(
         Output(ids.LOAD_TRIP_LIST, "children"),
+        Output(ids.USER_SHARED_TRIPS_LIST, "children"),
         Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),
         Output(ids.BROWSE_SAVED_TRIPS_STORE, "data"),
+        Output(ids.BROWSE_SHARED_TRIPS_STORE, "data"),
         Input(ids.BROWSE_OVERLAY_STORE, "data"),
         Input(ids.BROWSE_TABS, "active_tab"),
         Input({"type": "delete-trip-item", "index": ALL}, "n_clicks"),
@@ -557,10 +563,24 @@ def register_callbacks(app, registry):
             delete_trip(current_user.id, trip_id)
             if active_trip and active_trip.get("trip_id") == trip_id:
                 active_trip_data = None
-        elif not browse_open or active_tab != "my-saved-trips":
+            trips = get_user_trips(current_user.id)
+            return _build_load_trip_items(trips), no_update, active_trip_data, trips, no_update
+
+        if not browse_open:
             raise PreventUpdate
-        trips = get_user_trips(current_user.id)
-        return _build_load_trip_items(trips), active_trip_data, trips
+
+        if active_tab == "my-saved-trips":
+            trips = get_user_trips(current_user.id)
+            return _build_load_trip_items(trips), no_update, active_trip_data, trips, no_update
+
+        if active_tab == "user-shared-trips":
+            trips = [
+                trip for trip in get_public_trips()
+                if trip.get("owner_username") != current_user.id
+            ]
+            return no_update, _build_load_trip_items(trips, allow_delete=False, show_owner=True), active_trip_data, no_update, trips
+
+        raise PreventUpdate
 
     @app.callback(
         Output(ids.ACTIVE_TRIP_STORE, "data"),
@@ -568,13 +588,14 @@ def register_callbacks(app, registry):
         Output(ids.BROWSE_OVERLAY_STORE, "data", allow_duplicate=True),
         Input({"type": "load-trip-item", "index": ALL}, "n_clicks"),
         State(ids.BROWSE_SAVED_TRIPS_STORE, "data"),
+        State(ids.BROWSE_SHARED_TRIPS_STORE, "data"),
         prevent_initial_call=True,
     )
-    def load_selected_trip(n_clicks_list, trips):
+    def load_selected_trip(n_clicks_list, saved_trips, shared_trips):
         if not ctx.triggered_id or not any(n_clicks_list):
             raise PreventUpdate
         trip_id = ctx.triggered_id["index"]
-        trip = next((t for t in (trips or []) if t["id"] == trip_id), None)
+        trip = next((t for t in ((saved_trips or []) + (shared_trips or [])) if t["id"] == trip_id), None)
         if not trip:
             raise PreventUpdate
         active_trip = {
@@ -587,6 +608,7 @@ def register_callbacks(app, registry):
             "custom_end_location": trip["custom_end_location"],
             "saved_user_location": trip["saved_user_location"],
             "is_public": trip["is_public"],
+            "owner_username": trip.get("owner_username", current_user.id),
         }
         return active_trip, "trip", False
 
@@ -962,11 +984,12 @@ def register_callbacks(app, registry):
         if clicked_index >= len(stop_ids):
             raise PreventUpdate
 
-        update_trip_progress(
-            trip_id=active_trip["trip_id"],
-            new_current_index=clicked_index,
-            newly_visited_index=clicked_index,
-        )
+        if active_trip.get("owner_username", current_user.id) == current_user.id:
+            update_trip_progress(
+                trip_id=active_trip["trip_id"],
+                new_current_index=clicked_index,
+                newly_visited_index=clicked_index,
+            )
         visited = list(active_trip["visited_indices"])
         if clicked_index not in visited:
             visited.append(clicked_index)

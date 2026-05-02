@@ -86,6 +86,7 @@ visit_order_store = dcc.Store(id=ids.VISIT_ORDER_STORE, data=[])
 mode_store = dcc.Store(id=ids.MODE_STORE, data="explore")
 browse_overlay_store = dcc.Store(id=ids.BROWSE_OVERLAY_STORE, data=False)
 browse_saved_trips_store = dcc.Store(id=ids.BROWSE_SAVED_TRIPS_STORE, data=[])
+browse_shared_trips_store = dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[])
 active_trip_store = dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=None)
 explore_map_cache = dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None)
 
@@ -173,6 +174,7 @@ def serve_layout():
             mode_store,
             browse_overlay_store,
             browse_saved_trips_store,
+            browse_shared_trips_store,
             active_trip_store,
             explore_map_cache,
             warn_modal,

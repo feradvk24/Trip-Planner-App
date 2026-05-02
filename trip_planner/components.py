@@ -252,9 +252,10 @@ def create_browse_overlay():
                             ),
                             dbc.Tab(
                                 html.Div(
-                                    "User shared trips will appear here.",
+                                    dbc.ListGroup(id=ids.USER_SHARED_TRIPS_LIST, children=[], flush=True),
                                     id=ids.USER_SHARED_TRIPS_TAB,
-                                    className="text-muted small p-3",
+                                    className="p-3",
+                                    style={"height": "calc(100% - 3rem)", "overflowY": "auto"},
                                 ),
                                 label="User Shared Trips",
                                 tab_id="user-shared-trips",
