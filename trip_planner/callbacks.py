@@ -4,8 +4,7 @@ import dash_bootstrap_components as dbc
 from dash import html
 import ids
 from backend.tsp_formulas import fetch_route_steps, solve_tsp
-from styles import pin_icon, checkbox_icon, number_icon, location_dot_icon, grayed_number_icon, current_point_icon, house_icon
-from marker_config import Landmark
+from styles import number_icon, location_dot_icon
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import dash_leaflet as dl
@@ -20,275 +19,39 @@ from backend.crud import (
     set_trip_public_status,
     update_trip_progress,
 )
-from layout.markers import create_markers
-
-
-def resolve_endpoint(registry, point_id, position):
-    if point_id == "my_location" and position:
-        return Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"])
-    if point_id and point_id != "auto":
-        return registry.get_landmark(int(point_id))
-    return None
+from layout.callback_widgets import (
+    build_all_markers,
+    build_load_trip_items,
+    build_selected_object_items,
+    button_label_text,
+    optimize_route_button_children,
+)
+from layout.review_widgets import (
+    landmark_review_pane_style,
+    landmark_review_star_buttons,
+    review_pane_state,
+)
+from layout.trip_rendering import build_trip_content
+from utils.routing import (
+    build_route_legs,
+    format_distance,
+    get_route_legs,
+    location_tuple,
+    resolve_endpoint,
+    resolve_visit_order_landmarks,
+)
+from utils.trip_state import (
+    active_route_leg_index,
+    clamp_stop_index,
+    next_action_stop_index,
+    sanitize_shared_trip,
+    trip_complete,
+    trip_point_summary,
+    visit_stop,
+)
 
 
 def register_callbacks(app, registry):
-    def _button_label_text(children):
-        if isinstance(children, str):
-            return children
-        if isinstance(children, list):
-            return "".join(child for child in children if isinstance(child, str)).strip()
-        return ""
-
-    def _optimize_route_button_children(label):
-        icon_class = "bi bi-pencil-square me-2" if label == "Modify Route" else "bi bi-signpost-split me-2"
-        return [html.I(className=icon_class), label]
-
-    def _build_load_trip_items(trips, allow_delete=True, show_owner=False):
-        if not trips:
-            return [dbc.ListGroupItem("No trips to show...", disabled=True)]
-        return [
-            dbc.ListGroupItem(
-                html.Div(
-                    [component for component in [
-                        html.Button(
-                            [component for component in [
-                                html.Div(t["name"], style={"fontWeight": "600"}),
-                                html.Small(
-                                    f"Shared by {t.get('owner_name') or t.get('owner_username')}",
-                                    className="text-muted d-block",
-                                ) if show_owner else None,
-                                html.Small(t["created_at"], className="text-muted"),
-                            ] if component is not None],
-                            id={"type": "load-trip-item", "index": t["id"]},
-                            n_clicks=0,
-                            style={
-                                "background": "none",
-                                "border": "none",
-                                "padding": 0,
-                                "textAlign": "left",
-                                "flex": "1 1 auto",
-                                "minWidth": 0,
-                                "cursor": "pointer",
-                            },
-                        ),
-                        dbc.Button(
-                            "X",
-                            id={"type": "delete-trip-item", "index": t["id"]},
-                            n_clicks=0,
-                            color="link",
-                            size="sm",
-                            title="Delete trip",
-                            style={
-                                "color": "#dc3545",
-                                "fontWeight": "700",
-                                "textDecoration": "none",
-                                "flex": "0 0 auto",
-                            },
-                        ) if allow_delete else None,
-                    ] if component is not None],
-                    style={
-                        "display": "flex",
-                        "alignItems": "center",
-                        "gap": "0.75rem",
-                    },
-                ),
-                className="saved-trip-item",
-            )
-            for t in trips
-        ]
-
-    def _build_selected_object_items(destination_ids):
-        return [
-            dbc.ListGroupItem([
-                html.H6(landmark.name, className="mb-1 small"),
-                html.P(landmark.location, className="mb-1 small"),
-            ], className="p-3", id=f"selected-item-{landmark.id}")
-            for landmark in registry.get_landmarks(destination_ids or [])
-        ]
-
-    def _sanitize_shared_trip(trip):
-        landmark_ids = [lid for lid in (trip.get("landmark_ids") or []) if lid != -1]
-        visit_order = [lid for lid in (trip.get("visit_order") or landmark_ids) if lid != -1]
-        has_private_endpoint = bool(trip.get("custom_start_location") or trip.get("custom_end_location"))
-        return {
-            **trip,
-            "landmark_ids": landmark_ids,
-            "visit_order": visit_order,
-            "route_legs": [] if has_private_endpoint else trip.get("route_legs", []),
-            "custom_start_location": None,
-            "custom_end_location": None,
-            "saved_user_location": None,
-        }
-
-    def _build_all_markers(destination_ids):
-        return create_markers(registry.landmarks, pin_icon, destination_ids, checkbox_icon)
-
-    def _location_tuple(location):
-        if not location:
-            return None
-        return location["lat"], location["lon"]
-
-    def _clamp_stop_index(active_trip):
-        stop_ids = active_trip.get("visit_order") or []
-        if not stop_ids:
-            return 0
-        return max(0, min(active_trip.get("current_point_index", 0), len(stop_ids) - 1))
-
-    def _trip_complete(active_trip):
-        stop_ids = active_trip.get("visit_order") or []
-        visited = set(active_trip.get("visited_indices") or [])
-        return bool(stop_ids) and all(i in visited for i in range(len(stop_ids)))
-
-    def _next_action_stop_index(active_trip):
-        stop_ids = active_trip.get("visit_order") or []
-        if not stop_ids or _trip_complete(active_trip):
-            return None
-        visited = set(active_trip.get("visited_indices") or [])
-        return next((i for i in range(len(stop_ids)) if i not in visited), None)
-
-    def _active_route_leg_index(active_trip):
-        next_idx = _next_action_stop_index(active_trip)
-        if next_idx is None:
-            return None
-        start_offset = 1 if active_trip.get("custom_start_location") else 0
-        return max(0, start_offset + next_idx - 1)
-
-    def _resolve_visit_order_landmarks(visit_order_ids, position=None):
-        visit_order_lms = []
-        for lid in visit_order_ids or []:
-            if lid == -1:
-                if position:
-                    visit_order_lms.append(Landmark(id=-1, name="My location", location="", lat=position["lat"], lon=position["lon"]))
-                continue
-            lm = registry.get_landmark(lid)
-            if lm:
-                visit_order_lms.append(lm)
-        return visit_order_lms
-
-    def _build_route_legs(route_point_count, route_result):
-        # Indexes refer to the composed route:
-        # [custom_start?] + visit_order landmarks + [custom_end?].
-        return [
-            {
-                "from_index": i,
-                "to_index": i + 1,
-                "distance_m": leg.get("distance_m", 0),
-                "duration_s": leg.get("duration_s", 0),
-            }
-            for i, leg in enumerate(route_result.legs)
-            if i + 1 < route_point_count
-        ]
-
-    def _format_distance(distance_m):
-        if distance_m is None:
-            return "Unknown"
-        if distance_m >= 1000:
-            return f"{distance_m / 1000:.1f} km"
-        return f"{int(round(distance_m))} m"
-
-    def _trip_point_summary(visit_order_ids, index):
-        if index < 0 or index >= len(visit_order_ids):
-            return None
-        landmark_id = visit_order_ids[index]
-        if landmark_id == -1:
-            return {"name": "My location", "location": ""}
-        landmark = registry.get_landmark(landmark_id)
-        if not landmark:
-            return {"name": "Unknown destination", "location": ""}
-        return {"name": landmark.name, "location": landmark.location}
-
-    def _landmark_review_pane_style(display="none"):
-        return {
-            "display": display,
-            "position": "absolute",
-            "inset": 0,
-            "zIndex": 1001,
-            "alignItems": "center",
-            "justifyContent": "center",
-            "backgroundColor": "rgba(248, 249, 250, 0.42)",
-            "backdropFilter": "blur(1px)",
-            "pointerEvents": "auto",
-        }
-
-    def _landmark_review_star_buttons(rating=None):
-        rating = int(rating or 0)
-        return [
-            html.Button(
-                [
-                    html.I(className="bi bi-star-fill"),
-                    html.Span(f"{i} stars", className="visually-hidden"),
-                ],
-                id={"type": "landmark-review-star-btn", "index": i},
-                type="button",
-                className=(
-                    "landmark-review-star landmark-review-star-active"
-                    if i <= rating else
-                    "landmark-review-star"
-                ),
-            )
-            for i in range(1, 6)
-        ]
-
-    def _review_pane_state(active_trip, visited_index):
-        stop_ids = active_trip.get("visit_order") or []
-        if visited_index is None or visited_index < 0 or visited_index >= len(stop_ids):
-            raise PreventUpdate
-        landmark_id = stop_ids[visited_index]
-        if landmark_id == -1:
-            raise PreventUpdate
-        landmark = registry.get_landmark(landmark_id)
-        if not landmark:
-            raise PreventUpdate
-        return {
-            "is_open": True,
-            "landmark_id": landmark.id,
-            "title": landmark.name,
-            "location": landmark.location,
-            "rating": None,
-        }
-
-    def _get_route_legs(active_trip, position=None):
-        route_legs = active_trip.get("route_legs") or []
-        if route_legs:
-            return route_legs
-        stop_ids = active_trip.get("visit_order") or []
-        custom_start = active_trip.get("custom_start_location")
-        custom_end = active_trip.get("custom_end_location")
-        try:
-            route_result = fetch_route_steps(
-                registry.get_landmarks(stop_ids),
-                start_point=_location_tuple(custom_start),
-                end_point=_location_tuple(custom_end),
-            )
-            route_point_count = len(stop_ids) + int(bool(custom_start)) + int(bool(custom_end))
-            return _build_route_legs(route_point_count, route_result)
-        except Exception:
-            return []
-
-    def _visit_stop(active_trip, clicked_index):
-        if not active_trip or clicked_index is None:
-            raise PreventUpdate
-        stop_ids = active_trip.get("visit_order") or []
-        if clicked_index != _next_action_stop_index(active_trip):
-            raise PreventUpdate
-        if clicked_index >= len(stop_ids):
-            raise PreventUpdate
-
-        if active_trip.get("owner_username", current_user.id) == current_user.id:
-            update_trip_progress(
-                trip_id=active_trip["trip_id"],
-                new_current_index=clicked_index,
-                newly_visited_index=clicked_index,
-            )
-        visited = list(active_trip.get("visited_indices") or [])
-        if clicked_index not in visited:
-            visited.append(clicked_index)
-        return {
-            **active_trip,
-            "current_point_index": clicked_index,
-            "visited_indices": visited,
-        }
-
     @app.callback(
         Output(ids.WARN_MODAL, "is_open"),
         Input("warn-modal-close", "n_clicks"),
@@ -309,7 +72,7 @@ def register_callbacks(app, registry):
         prevent_initial_call=True,
     )
     def compute_route(n_clicks, destination_ids, start_point_id, end_point_id, btn_label, position):
-        if _button_label_text(btn_label) == "Modify Route":
+        if button_label_text(btn_label) == "Modify Route":
             raise PreventUpdate
         if not destination_ids or len(destination_ids) < 2:
             return no_update, True
@@ -341,7 +104,7 @@ def register_callbacks(app, registry):
     def render_route(visit_order_ids, position):
         if not visit_order_ids:
             raise PreventUpdate
-        visit_order = _resolve_visit_order_landmarks(visit_order_ids, position=position)
+        visit_order = resolve_visit_order_landmarks(registry, visit_order_ids, position=position)
 
         result = fetch_route_steps(visit_order)
         colormap = cm.get_cmap("viridis", len(result.segments))
@@ -403,7 +166,7 @@ def register_callbacks(app, registry):
             "stats_content": stats_content,
             "stats_style": stats_style,
         }
-        return polylines, True, [], tour_markers, _optimize_route_button_children("Modify Route"), "success", True, False, "info", {"flex": "1"}, stats_content, stats_style, explore_cache
+        return polylines, True, [], tour_markers, optimize_route_button_children("Modify Route"), "success", True, False, "info", {"flex": "1"}, stats_content, stats_style, explore_cache
 
     @app.callback(
         Output(ids.PLANNED_TRIP_POLYLINE_LAYER, "children", allow_duplicate=True),
@@ -423,9 +186,9 @@ def register_callbacks(app, registry):
         prevent_initial_call=True,
     )
     def modify_route(n_clicks, destination_ids, btn_label):
-        if _button_label_text(btn_label) != "Modify Route":
+        if button_label_text(btn_label) != "Modify Route":
             raise PreventUpdate
-        return [], _build_all_markers(destination_ids), [], _optimize_route_button_children("Optimize Route"), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}, None
+        return [], build_all_markers(registry.landmarks, destination_ids), [], optimize_route_button_children("Optimize Route"), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}, None
 
     @app.callback(
         Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),
@@ -458,7 +221,7 @@ def register_callbacks(app, registry):
         ], className="p-3", id=f"selected-item-{landmark_id}")
         current_children.append(item)
 
-        return _build_all_markers(selected), current_children, selected
+        return build_all_markers(registry.landmarks, selected), current_children, selected
 
     @app.callback(
         Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),
@@ -478,7 +241,7 @@ def register_callbacks(app, registry):
         prevent_initial_call=True,
     )
     def clear_all(n_clicks):
-        return _build_all_markers([]), [], [], [], [], _optimize_route_button_children("Optimize Route"), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}, None
+        return build_all_markers(registry.landmarks, []), [], [], [], [], optimize_route_button_children("Optimize Route"), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}, None
 
     @app.callback(
         Output(ids.START_POINT_DROPDOWN, "options"),
@@ -604,8 +367,8 @@ def register_callbacks(app, registry):
         try:
             route_result = fetch_route_steps(
                 registry.get_landmarks(stop_ids),
-                start_point=_location_tuple(custom_start_location),
-                end_point=_location_tuple(custom_end_location),
+                start_point=location_tuple(custom_start_location),
+                end_point=location_tuple(custom_end_location),
             )
             route_point_count = len(stop_ids) + int(bool(custom_start_location)) + int(bool(custom_end_location))
             save_trip(
@@ -613,7 +376,7 @@ def register_callbacks(app, registry):
                 name=name.strip(),
                 landmark_ids=landmark_ids or [],
                 visit_order=stop_ids,
-                route_legs=_build_route_legs(route_point_count, route_result),
+                route_legs=build_route_legs(route_point_count, route_result),
                 custom_start_location=custom_start_location,
                 custom_end_location=custom_end_location,
                 saved_user_location=saved_user_location,
@@ -669,21 +432,21 @@ def register_callbacks(app, registry):
             if active_trip and active_trip.get("trip_id") == trip_id:
                 active_trip_data = None
             trips = get_user_trips(current_user.id)
-            return _build_load_trip_items(trips), no_update, active_trip_data, trips, no_update
+            return build_load_trip_items(trips), no_update, active_trip_data, trips, no_update
 
         if not browse_open:
             raise PreventUpdate
 
         if active_tab == "my-saved-trips":
             trips = get_user_trips(current_user.id)
-            return _build_load_trip_items(trips), no_update, active_trip_data, trips, no_update
+            return build_load_trip_items(trips), no_update, active_trip_data, trips, no_update
 
         if active_tab == "user-shared-trips":
             trips = [
-                _sanitize_shared_trip(trip) for trip in get_public_trips()
+                sanitize_shared_trip(trip) for trip in get_public_trips()
                 if trip.get("owner_username") != current_user.id
             ]
-            return no_update, _build_load_trip_items(trips, allow_delete=False, show_owner=True), active_trip_data, no_update, trips
+            return no_update, build_load_trip_items(trips, allow_delete=False, show_owner=True), active_trip_data, no_update, trips
 
         raise PreventUpdate
 
@@ -717,7 +480,7 @@ def register_callbacks(app, registry):
                 False,
                 destination_ids,
                 visit_order,
-                _build_selected_object_items(destination_ids),
+                build_selected_object_items(registry, destination_ids),
             )
 
         active_trip = {
@@ -780,129 +543,6 @@ def register_callbacks(app, registry):
             return no_update, False
         return "explore", False
 
-    def _build_trip_content(active_trip):
-        """Returns (trip_markers, polylines) for a given active_trip dict."""
-        stop_ids = active_trip["visit_order"]
-        current_idx = _clamp_stop_index(active_trip)
-        visited = set(active_trip["visited_indices"])
-        custom_start = active_trip.get("custom_start_location")
-        custom_end = active_trip.get("custom_end_location")
-
-        result = fetch_route_steps(
-            registry.get_landmarks(stop_ids),
-            start_point=_location_tuple(custom_start),
-            end_point=_location_tuple(custom_end),
-        )
-        active_leg_idx = _active_route_leg_index(active_trip)
-        trip_complete = _trip_complete(active_trip)
-        passed_coords = []
-        current_coords = []
-        remaining_coords = []
-        all_coords = []
-        for i, segment in enumerate(result.segments):
-            all_coords.extend(segment)
-            if trip_complete or (active_leg_idx is not None and i < active_leg_idx):
-                passed_coords.extend(segment)
-            elif active_leg_idx is not None and i == active_leg_idx:
-                current_coords.extend(segment)
-            else:
-                remaining_coords.extend(segment)
-
-        polylines = []
-        if passed_coords:
-            polylines.append(html.Div(dl.Polyline(
-                positions=passed_coords, color="#888888", weight=9, opacity=0.6,
-            )))
-        unvisited_coords = current_coords + remaining_coords
-        if unvisited_coords:
-            polylines.append(html.Div(dl.Polyline(
-                positions=unvisited_coords, color="#333333", weight=10,
-            )))
-        if current_coords:
-            polylines.append(html.Div(dl.Polyline(
-                positions=current_coords, color="#1a6fcf", weight=9,
-            )))
-        if all_coords:
-            polylines.append(html.Div(dl.Polyline(
-                positions=all_coords, color="white", weight=2, dashArray="10 16",
-            )))
-
-        markers = []
-        saved_location_markers = []
-        saved_locations = []
-        if custom_start:
-            saved_locations.append(("Start location", custom_start))
-        if custom_end:
-            saved_locations.append(("End location", custom_end))
-
-        grouped_locations = {}
-        for label, location in saved_locations:
-            key = (round(location["lat"], 7), round(location["lon"], 7))
-            grouped_locations.setdefault(key, {"labels": [], "location": location})
-            grouped_locations[key]["labels"].append(label)
-
-        for item in grouped_locations.values():
-            location = item["location"]
-            label = " / ".join(item["labels"])
-            saved_location_markers.append(
-                dl.Marker(
-                    position=[location["lat"], location["lon"]],
-                    icon=house_icon(),
-                    interactive=False,
-                    children=[dl.Tooltip(label)],
-                )
-            )
-
-        next_action_idx = _next_action_stop_index(active_trip)
-        display_num = 0
-        for i, lid in enumerate(stop_ids):
-            lm = registry.get_landmark(lid)
-            if not lm:
-                continue
-            display_num += 1
-            if i in visited:
-                icon = grayed_number_icon(display_num)
-                popup_extra = html.Div(
-                    "\u2713 Visited",
-                    style={"textAlign": "center", "color": "#9e9e9e", "marginTop": "0.5rem"},
-                )
-            elif i == next_action_idx:
-                icon = current_point_icon(display_num)
-                popup_extra = dbc.Button(
-                    "Visited",
-                    id={"type": "visit-btn", "index": i},
-                    color="success",
-                    size="sm",
-                    className="mt-2 w-100",
-                )
-            else:
-                icon = number_icon(display_num)
-                popup_extra = dbc.Button(
-                    "Visited",
-                    id={"type": "visit-btn", "index": i},
-                    color="success",
-                    size="sm",
-                    className="mt-2 w-100",
-                    disabled=True,
-                )
-            markers.append(
-                dl.Marker(
-                    position=[lm.lat, lm.lon],
-                    icon=icon,
-                    children=[
-                        dl.Tooltip(lm.name),
-                        dl.Popup(html.Div([
-                            html.H5(lm.name),
-                            html.H6(lm.location),
-                            html.A("Learn more", href=lm.link, target="_blank",
-                                   style={"display": "block", "textAlign": "center"}),
-                            popup_extra,
-                        ])),
-                    ],
-                )
-            )
-        return saved_location_markers + markers, polylines
-
     @app.callback(
         Output(ids.EXPLORE_PANEL, "style"),
         Output(ids.TRIP_PANEL, "style"),
@@ -953,10 +593,10 @@ def register_callbacks(app, registry):
         if not stop_ids:
             return html.Div("This trip has no destinations.", className="text-muted small")
 
-        current_idx = _clamp_stop_index(active_trip)
-        trip_complete = _trip_complete(active_trip)
-        next_action_idx = _next_action_stop_index(active_trip)
-        current_point = _trip_point_summary(stop_ids, current_idx)
+        current_idx = clamp_stop_index(active_trip)
+        is_trip_complete = trip_complete(active_trip)
+        next_action_idx = next_action_stop_index(active_trip)
+        current_point = trip_point_summary(registry, stop_ids, current_idx)
         custom_start = active_trip.get("custom_start_location")
         show_current_point = not (custom_start and not active_trip.get("visited_indices"))
         if show_current_point:
@@ -964,11 +604,11 @@ def register_callbacks(app, registry):
             next_idx = next((i for i in range(current_idx + 1, len(stop_ids)) if i not in visited), None)
         else:
             next_idx = next_action_idx
-        next_point = _trip_point_summary(stop_ids, next_idx) if next_idx is not None else None
-        route_legs = _get_route_legs(active_trip, position)
+        next_point = trip_point_summary(registry, stop_ids, next_idx) if next_idx is not None else None
+        route_legs = get_route_legs(registry, active_trip)
 
         distance_to_next = None
-        active_leg_idx = _active_route_leg_index(active_trip)
+        active_leg_idx = active_route_leg_index(active_trip)
         if active_leg_idx is not None:
             for leg in route_legs:
                 if leg.get("from_index") == active_leg_idx:
@@ -981,7 +621,7 @@ def register_callbacks(app, registry):
             leg for leg in route_legs
             if leg.get("to_index", 0) <= last_stop_route_idx
         ]
-        if trip_complete:
+        if is_trip_complete:
             passed_distance = sum(leg.get("distance_m", 0) for leg in progress_legs)
             remaining_distance = 0
         else:
@@ -1033,7 +673,7 @@ def register_callbacks(app, registry):
                     [
                         html.Div("Distance to next", className="text-muted small"),
                         html.Div(
-                            _format_distance(distance_to_next) if next_point else "0 m",
+                            format_distance(distance_to_next) if next_point else "0 m",
                             style={"fontWeight": "600"},
                         ),
                     ],
@@ -1044,11 +684,11 @@ def register_callbacks(app, registry):
                     [
                         html.Div([
                             html.Div("Passed", className="text-muted small"),
-                            html.Div(_format_distance(passed_distance), style={"fontWeight": "600"}),
+                            html.Div(format_distance(passed_distance), style={"fontWeight": "600"}),
                         ]),
                         html.Div([
                             html.Div("Remaining", className="text-muted small"),
-                            html.Div(_format_distance(remaining_distance), style={"fontWeight": "600"}),
+                            html.Div(format_distance(remaining_distance), style={"fontWeight": "600"}),
                         ], style={"textAlign": "right"}),
                     ],
                     style={"display": "flex", "justifyContent": "space-between", "gap": "0.75rem"},
@@ -1080,7 +720,7 @@ def register_callbacks(app, registry):
                 explore_cache.get("stats_content", []),
                 explore_cache.get("stats_style", hidden_stats),
             )
-        return _build_all_markers(destination_ids or []), [], [], [], hidden_stats
+        return build_all_markers(registry.landmarks, destination_ids or []), [], [], [], hidden_stats
 
     @app.callback(
         Output(ids.LOADED_TRIP_MARKERS_LAYER, "children"),
@@ -1092,7 +732,7 @@ def register_callbacks(app, registry):
     def render_trip_markers(active_trip, mode):
         if mode != "trip" or not active_trip:
             return [], []
-        trip_markers, polylines = _build_trip_content(active_trip)
+        trip_markers, polylines = build_trip_content(registry, active_trip)
         return trip_markers, polylines
 
     @app.callback(
@@ -1111,14 +751,14 @@ def register_callbacks(app, registry):
         if ctx.triggered_id == ids.TRIP_NEXT_VISIT_BTN:
             if not progress_clicks:
                 raise PreventUpdate
-            clicked_index = _next_action_stop_index(active_trip)
+            clicked_index = next_action_stop_index(active_trip)
         else:
             if not any(n for n in n_clicks_list if n):
                 raise PreventUpdate
             clicked_index = ctx.triggered_id["index"]
 
-        updated_trip = _visit_stop(active_trip, clicked_index)
-        return updated_trip, _review_pane_state(active_trip, clicked_index), "", False
+        updated_trip = visit_stop(active_trip, clicked_index, current_user.id, update_trip_progress)
+        return updated_trip, review_pane_state(registry, active_trip, clicked_index), "", False
 
     @app.callback(
         Output(ids.LANDMARK_REVIEW_STATE_STORE, "data", allow_duplicate=True),
@@ -1154,10 +794,10 @@ def register_callbacks(app, registry):
         review_state = review_state or {}
         display = "flex" if review_state.get("is_open") else "none"
         return (
-            _landmark_review_pane_style(display),
+            landmark_review_pane_style(display),
             review_state.get("title", ""),
             review_state.get("location", ""),
-            _landmark_review_star_buttons(review_state.get("rating")),
+            landmark_review_star_buttons(review_state.get("rating")),
         )
 
     @app.callback(
