@@ -11,7 +11,15 @@ import matplotlib.colors as mcolors
 import dash_leaflet as dl
 from flask_login import login_user, current_user
 from backend.auth import verify_user, create_user, User
-from backend.crud import save_trip, get_user_trips, get_public_trips, delete_trip, update_trip_progress, set_trip_public_status
+from backend.crud import (
+    create_landmark_review,
+    delete_trip,
+    get_public_trips,
+    get_user_trips,
+    save_trip,
+    set_trip_public_status,
+    update_trip_progress,
+)
 from components import create_markers
 
 
@@ -188,6 +196,56 @@ def register_callbacks(app, registry):
         if not landmark:
             return {"name": "Unknown destination", "location": ""}
         return {"name": landmark.name, "location": landmark.location}
+
+    def _landmark_review_pane_style(display="none"):
+        return {
+            "display": display,
+            "position": "absolute",
+            "inset": 0,
+            "zIndex": 1001,
+            "alignItems": "center",
+            "justifyContent": "center",
+            "backgroundColor": "rgba(248, 249, 250, 0.42)",
+            "backdropFilter": "blur(1px)",
+            "pointerEvents": "auto",
+        }
+
+    def _landmark_review_star_buttons(rating=None):
+        rating = int(rating or 0)
+        return [
+            html.Button(
+                [
+                    html.I(className="bi bi-star-fill"),
+                    html.Span(f"{i} stars", className="visually-hidden"),
+                ],
+                id={"type": "landmark-review-star-btn", "index": i},
+                type="button",
+                className=(
+                    "landmark-review-star landmark-review-star-active"
+                    if i <= rating else
+                    "landmark-review-star"
+                ),
+            )
+            for i in range(1, 6)
+        ]
+
+    def _review_pane_state(active_trip, visited_index):
+        stop_ids = active_trip.get("visit_order") or []
+        if visited_index is None or visited_index < 0 or visited_index >= len(stop_ids):
+            raise PreventUpdate
+        landmark_id = stop_ids[visited_index]
+        if landmark_id == -1:
+            raise PreventUpdate
+        landmark = registry.get_landmark(landmark_id)
+        if not landmark:
+            raise PreventUpdate
+        return {
+            "is_open": True,
+            "landmark_id": landmark.id,
+            "title": landmark.name,
+            "location": landmark.location,
+            "rating": None,
+        }
 
     def _get_route_legs(active_trip, position=None):
         route_legs = active_trip.get("route_legs") or []
@@ -1039,23 +1097,115 @@ def register_callbacks(app, registry):
 
     @app.callback(
         Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),
+        Output(ids.LANDMARK_REVIEW_STATE_STORE, "data"),
+        Output(ids.LANDMARK_REVIEW_TEXT, "value"),
+        Output(ids.LANDMARK_REVIEW_ALERT, "is_open"),
         Input({"type": "visit-btn", "index": ALL}, "n_clicks"),
-        State(ids.ACTIVE_TRIP_STORE, "data"),
-        prevent_initial_call=True,
-    )
-    def handle_visit_btn(n_clicks_list, active_trip):
-        if not ctx.triggered_id or not any(n for n in n_clicks_list if n):
-            raise PreventUpdate
-        clicked_index = ctx.triggered_id["index"]
-        return _visit_stop(active_trip, clicked_index)
-
-    @app.callback(
-        Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),
         Input(ids.TRIP_NEXT_VISIT_BTN, "n_clicks"),
         State(ids.ACTIVE_TRIP_STORE, "data"),
         prevent_initial_call=True,
     )
-    def handle_progress_visit_btn(n_clicks, active_trip):
+    def handle_visit_btn(n_clicks_list, progress_clicks, active_trip):
+        if not ctx.triggered_id:
+            raise PreventUpdate
+        if ctx.triggered_id == ids.TRIP_NEXT_VISIT_BTN:
+            if not progress_clicks:
+                raise PreventUpdate
+            clicked_index = _next_action_stop_index(active_trip)
+        else:
+            if not any(n for n in n_clicks_list if n):
+                raise PreventUpdate
+            clicked_index = ctx.triggered_id["index"]
+
+        updated_trip = _visit_stop(active_trip, clicked_index)
+        return updated_trip, _review_pane_state(active_trip, clicked_index), "", False
+
+    @app.callback(
+        Output(ids.LANDMARK_REVIEW_STATE_STORE, "data", allow_duplicate=True),
+        Input(ids.LANDMARK_REVIEW_CLOSE_BTN, "n_clicks"),
+        Input(ids.LANDMARK_REVIEW_SKIP_BTN, "n_clicks"),
+        State(ids.LANDMARK_REVIEW_STATE_STORE, "data"),
+        prevent_initial_call=True,
+    )
+    def close_landmark_review_pane(close_clicks, skip_clicks, review_state):
+        if not close_clicks and not skip_clicks:
+            raise PreventUpdate
+        return {**(review_state or {}), "is_open": False}
+
+    @app.callback(
+        Output(ids.LANDMARK_REVIEW_STATE_STORE, "data", allow_duplicate=True),
+        Input({"type": "landmark-review-star-btn", "index": ALL}, "n_clicks"),
+        State(ids.LANDMARK_REVIEW_STATE_STORE, "data"),
+        prevent_initial_call=True,
+    )
+    def select_landmark_review_rating(star_clicks, review_state):
+        if not ctx.triggered_id or not any(n for n in star_clicks if n):
+            raise PreventUpdate
+        return {**(review_state or {}), "rating": ctx.triggered_id["index"]}
+
+    @app.callback(
+        Output(ids.LANDMARK_REVIEW_PANE, "style"),
+        Output(ids.LANDMARK_REVIEW_TITLE, "children"),
+        Output(ids.LANDMARK_REVIEW_LOCATION, "children"),
+        Output(ids.LANDMARK_REVIEW_STAR_ROW, "children"),
+        Input(ids.LANDMARK_REVIEW_STATE_STORE, "data"),
+    )
+    def render_landmark_review_pane(review_state):
+        review_state = review_state or {}
+        display = "flex" if review_state.get("is_open") else "none"
+        return (
+            _landmark_review_pane_style(display),
+            review_state.get("title", ""),
+            review_state.get("location", ""),
+            _landmark_review_star_buttons(review_state.get("rating")),
+        )
+
+    @app.callback(
+        Output(ids.LANDMARK_REVIEW_STATE_STORE, "data", allow_duplicate=True),
+        Output(ids.LANDMARK_REVIEW_ALERT, "children"),
+        Output(ids.LANDMARK_REVIEW_ALERT, "color"),
+        Output(ids.LANDMARK_REVIEW_ALERT, "is_open", allow_duplicate=True),
+        Input(ids.LANDMARK_REVIEW_SUBMIT_BTN, "n_clicks"),
+        State(ids.LANDMARK_REVIEW_STATE_STORE, "data"),
+        State(ids.LANDMARK_REVIEW_TEXT, "value"),
+        State(ids.ACTIVE_TRIP_STORE, "data"),
+        prevent_initial_call=True,
+    )
+    def submit_landmark_review(n_clicks, review_state, review_text, active_trip):
         if not n_clicks:
             raise PreventUpdate
-        return _visit_stop(active_trip, _next_action_stop_index(active_trip))
+        review_state = review_state or {}
+        landmark_id = review_state.get("landmark_id")
+        rating = review_state.get("rating")
+        if not active_trip or not active_trip.get("trip_id") or not landmark_id:
+            return (
+                {**review_state, "is_open": True},
+                "Could not find the active trip or landmark for this review.",
+                "danger",
+                True,
+            )
+        if rating is None:
+            return (
+                {**review_state, "is_open": True},
+                "Please choose a rating before submitting.",
+                "warning",
+                True,
+            )
+
+        try:
+            create_landmark_review(
+                username=current_user.id,
+                trip_id=active_trip["trip_id"],
+                landmark_id=int(landmark_id),
+                rating=int(rating),
+                review_text=review_text,
+            )
+        except Exception as e:
+            return (
+                {**review_state, "is_open": True},
+                f"Could not save review: {e}",
+                "danger",
+                True,
+            )
+
+        return {**review_state, "is_open": False}, "", "success", False

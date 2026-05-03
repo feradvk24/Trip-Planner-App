@@ -59,6 +59,18 @@ USER_SHARED_TRIPS_TAB = "user-shared-trips-tab"
 TRIP_STATUS_PANEL = "trip-status-panel"
 TRIP_NEXT_VISIT_BTN = "trip-next-visit-btn"
 
+# Landmark reviews
+LANDMARK_REVIEW_PANE = "landmark-review-pane"
+LANDMARK_REVIEW_CLOSE_BTN = "landmark-review-close-btn"
+LANDMARK_REVIEW_STATE_STORE = "landmark-review-state-store"
+LANDMARK_REVIEW_TITLE = "landmark-review-title"
+LANDMARK_REVIEW_LOCATION = "landmark-review-location"
+LANDMARK_REVIEW_STAR_ROW = "landmark-review-star-row"
+LANDMARK_REVIEW_TEXT = "landmark-review-text"
+LANDMARK_REVIEW_SUBMIT_BTN = "landmark-review-submit-btn"
+LANDMARK_REVIEW_SKIP_BTN = "landmark-review-skip-btn"
+LANDMARK_REVIEW_ALERT = "landmark-review-alert"
+
 # Active trip (Trip mode)
 ACTIVE_TRIP_STORE = "active-trip-store"
 TRIP_MODE_LAYER = "trip-mode-layer"

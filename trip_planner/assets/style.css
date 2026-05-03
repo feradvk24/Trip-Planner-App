@@ -25,3 +25,35 @@
     background-color: #eef6ff;
     border-color: #9cc8f5;
 }
+
+.landmark-review-stars {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.landmark-review-star {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    color: #c8ced3;
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 2rem;
+    height: 2.35rem;
+    justify-content: center;
+    line-height: 1;
+    padding: 0.1rem;
+    transition: color 120ms ease, transform 120ms ease;
+    width: 2.35rem;
+}
+
+.landmark-review-star:hover,
+.landmark-review-star:focus-visible {
+    color: #f2b01e;
+    transform: translateY(-1px);
+}
+
+.landmark-review-star-active {
+    color: #f2b01e;
+}

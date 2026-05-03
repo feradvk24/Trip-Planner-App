@@ -1,7 +1,7 @@
 from typing import Optional
 
 from backend.database import SessionLocal
-from backend.models import User, UserTrip
+from backend.models import Landmark, Review, User, UserTrip
 
 
 def _trip_to_dict(trip: UserTrip, owner: Optional[User] = None) -> dict:
@@ -124,6 +124,40 @@ def update_trip_progress(trip_id: int, new_current_index: int, newly_visited_ind
         trip.visited_indices = visited
         trip.current_point_index = new_current_index
         db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def create_landmark_review(username: str, trip_id: int, landmark_id: int, rating: int, review_text: str = None) -> Review:
+    """Create a review for a landmark visited during a trip."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            raise ValueError(f"User '{username}' not found in database.")
+        trip = db.query(UserTrip).filter(UserTrip.id == trip_id).first()
+        if trip is None:
+            raise ValueError(f"Trip {trip_id} not found.")
+        landmark = db.query(Landmark).filter(Landmark.id == landmark_id).first()
+        if landmark is None:
+            raise ValueError(f"Landmark {landmark_id} not found.")
+        if rating < 1 or rating > 5:
+            raise ValueError("Rating must be between 1 and 5.")
+
+        review = Review(
+            user_id=user.id,
+            trip_id=trip.id,
+            landmark_id=landmark.id,
+            rating=rating,
+            review_text=(review_text or "").strip() or None,
+        )
+        db.add(review)
+        db.commit()
+        db.refresh(review)
+        return review
     except Exception:
         db.rollback()
         raise

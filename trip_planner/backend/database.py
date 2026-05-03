@@ -45,6 +45,7 @@ def init_db():
     import backend.models  # noqa: F401 — registers ORM models with Base
     Base.metadata.create_all(bind=engine)
     _migrate_user_trips()
+    _migrate_reviews()
 
 
 def _migrate_user_trips():
@@ -104,6 +105,32 @@ def _migrate_user_trips():
         "ALTER TABLE user_trips DROP COLUMN IF EXISTS saved_start_lon",
         "ALTER TABLE user_trips DROP COLUMN IF EXISTS saved_end_lat",
         "ALTER TABLE user_trips DROP COLUMN IF EXISTS saved_end_lon",
+    ]
+    with engine.connect() as conn:
+        for stmt in migrations:
+            conn.execute(text(stmt))
+        conn.commit()
+
+
+def _migrate_reviews():
+    """Add columns introduced after initial reviews schema creation (idempotent)."""
+    migrations = [
+        "ALTER TABLE reviews ADD COLUMN IF NOT EXISTS landmark_id INTEGER",
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_constraint
+                WHERE conname = 'reviews_landmark_id_fkey'
+            ) THEN
+                ALTER TABLE reviews
+                ADD CONSTRAINT reviews_landmark_id_fkey
+                FOREIGN KEY (landmark_id) REFERENCES landmarks(id);
+            END IF;
+        END $$;
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_reviews_landmark_id ON reviews (landmark_id)",
     ]
     with engine.connect() as conn:
         for stmt in migrations:

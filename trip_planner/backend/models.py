@@ -56,3 +56,17 @@ class TripCompletion(Base):
     completed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     rating = Column(Integer, nullable=True)  # 1-5 stars
     revew_text = Column(String(1000), nullable=True)
+
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+
+    trip_id = Column(Integer, ForeignKey("user_trips.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    landmark_id = Column(Integer, ForeignKey("landmarks.id"), nullable=False, index=True)
+
+    rating = Column(Integer, nullable=False)  # 1-5 stars
+    review_text = Column(String(1000), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
