@@ -1,0 +1,168 @@
+import dash_bootstrap_components as dbc
+from dash import html
+
+import ids
+from styles import SIDEBAR_STYLE
+
+
+def create_selected_object_group():
+    return dbc.ListGroup(
+        id=ids.SELECTED_OBJECTS_GROUP,
+        children=[],
+        style={"flex": "1 1 auto", "minHeight": 0, "overflowY": "auto"},
+    )
+
+
+def create_trip_endpoints():
+    return html.Div(
+        [
+            html.Div([
+                html.Label("Start:", style={"fontSize": "12px", "marginBottom": "1px"}),
+                dbc.Select(
+                    options=[{"label": "Автоматично", "value": "auto"}],
+                    placeholder="Select a start point",
+                    id=ids.START_POINT_DROPDOWN,
+                    className="format-dropdown",
+                    size=5,
+                ),
+            ]),
+            html.Div([
+                html.Label("End:", style={"fontSize": "12px", "marginBottom": "1px"}),
+                dbc.Select(
+                    options=[{"label": "Автоматично", "value": "auto"}],
+                    placeholder="Select an end point",
+                    id=ids.END_POINT_DROPDOWN,
+                    className="format-dropdown",
+                    size=5,
+                ),
+            ]),
+        ],
+        style={
+            "marginBottom": 0,
+            "backgroundColor": "#E1E1E1",
+            "border": "1px solid black",
+            "padding": "0.5rem",
+            "borderRadius": "0.25rem",
+        },
+    )
+
+
+def create_sidebar():
+    route_endpoints = create_trip_endpoints()
+    selected_object_group = create_selected_object_group()
+    optimize_route_btn = dbc.Button(
+        [html.I(className="bi bi-signpost-split me-2"), "Optimize Route"],
+        color="success",
+        className="mt-2",
+        id=ids.OPTIMIZE_ROUTE_BTN,
+    )
+    save_trip_btn = dbc.Button(
+        [html.I(className="bi bi-save me-2"), "Save Trip"],
+        color="secondary",
+        className="mt-1",
+        id=ids.SAVE_TRIP_BTN,
+        disabled=True,
+        style={"opacity": "0.45", "flex": "1"},
+    )
+    load_trip_btn = dbc.Button(
+        [html.I(className="bi bi-folder2-open me-2"), "Load Trip"],
+        color="info",
+        className="mt-1 w-100",
+        id=ids.LOAD_TRIP_BTN,
+    )
+    share_trip_btn = dbc.Button(
+        [html.I(className="bi bi-share me-2"), "Share Trip"],
+        color="info",
+        className="mt-1 w-100",
+        id=ids.SHARE_TRIP_BTN,
+    )
+
+    mode_toggle = dbc.ButtonGroup(
+        [
+            dbc.Button("Explore", id=ids.MODE_BTN_EXPLORE, color="primary", outline=True, active=True, size="sm", style={"flex": "1"}),
+            dbc.Button("Trip", id=ids.MODE_BTN_TRIP, color="primary", outline=True, active=False, size="sm", style={"flex": "1"}),
+            dbc.Button("Browse", id=ids.MODE_BTN_BROWSE, color="primary", outline=True, active=False, size="sm", style={"flex": "1"}),
+        ],
+        className="w-100",
+    )
+
+    explore_panel = html.Div([
+        route_endpoints,
+        html.Div([
+            html.P("Selected monuments:", className="lead", style={"marginBottom": 0}),
+            html.Span(
+                "Clear all",
+                id=ids.CLEAR_ALL_BTN,
+                style={
+                    "fontSize": "0.75rem",
+                    "color": "#dc3545",
+                    "cursor": "pointer",
+                    "userSelect": "none",
+                    "alignSelf": "center",
+                },
+            ),
+        ], style={"display": "flex", "justifyContent": "space-between", "alignItems": "baseline"}),
+        selected_object_group,
+        optimize_route_btn,
+        html.Div([save_trip_btn], className="d-flex gap-2 w-100"),
+    ], id=ids.EXPLORE_PANEL, style={"display": "flex", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0})
+
+    trip_panel = html.Div([
+        load_trip_btn,
+        html.Div(
+            id=ids.TRIP_STATUS_PANEL,
+            children=[],
+            style={
+                "backgroundColor": "#F8F9FA",
+                "border": "1px solid #D6D8DB",
+                "borderRadius": "0.25rem",
+                "padding": "0.75rem",
+            },
+        ),
+        share_trip_btn,
+    ], id=ids.TRIP_PANEL, style={"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0})
+
+    browse_panel = html.Div(
+        [],
+        id=ids.BROWSE_PANEL,
+        style={"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0},
+    )
+
+    return html.Div([
+        html.Div([
+            html.Div([
+                html.Img(src="/assets/icon.svg", style={"height": "24px", "marginRight": "0.5rem"}),
+                html.Span("Bulgarian Monuments", style={"fontSize": "1.25rem", "fontWeight": "600"}),
+            ], className="d-flex align-items-center justify-content-center"),
+            html.Hr(style={"margin": 0}),
+        ], style={"display": "flex", "flexDirection": "column", "gap": "0.25rem"}),
+        mode_toggle,
+        explore_panel,
+        trip_panel,
+        browse_panel,
+    ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
+
+
+def create_user_menu():
+    return dbc.DropdownMenu(
+        id=ids.USER_MENU,
+        label=html.I(className="bi bi-person-circle", style={"fontSize": "1.25rem", "color": "black"}),
+        children=[
+            dbc.DropdownMenuItem("Logout", id=ids.LOGOUT_BUTTON, style={"color": "#dc3545"}),
+        ],
+        direction="down",
+        align_end=True,
+        toggle_style={
+            "background": "none",
+            "border": "none",
+            "boxShadow": "none",
+            "padding": "0.25rem 0.5rem",
+            "color": "black",
+        },
+        style={
+            "position": "fixed",
+            "top": "0.75rem",
+            "right": "1rem",
+            "zIndex": 1050,
+        },
+    )
