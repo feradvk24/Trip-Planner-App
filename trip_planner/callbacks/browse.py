@@ -1,0 +1,122 @@
+from dash import ALL, Input, Output, State, ctx, no_update
+from dash.exceptions import PreventUpdate
+from flask_login import current_user
+
+import ids
+from backend.crud import delete_trip, get_public_trips, get_user_trips, set_trip_public_status
+from callbacks.utils.trip_state import sanitize_shared_trip
+from callbacks.widgets.callback_widgets import build_load_trip_items, build_selected_object_items
+
+
+def register_browse_callbacks(app, registry):
+    @app.callback(
+        Output(ids.LOAD_TRIP_LIST, "children"),
+        Output(ids.USER_SHARED_TRIPS_LIST, "children"),
+        Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),
+        Output(ids.BROWSE_SAVED_TRIPS_STORE, "data"),
+        Output(ids.BROWSE_SHARED_TRIPS_STORE, "data"),
+        Input(ids.BROWSE_OVERLAY_STORE, "data"),
+        Input(ids.BROWSE_TABS, "active_tab"),
+        Input({"type": "delete-trip-item", "index": ALL}, "n_clicks"),
+        State(ids.ACTIVE_TRIP_STORE, "data"),
+        prevent_initial_call=True,
+    )
+    def refresh_browse_saved_trips(browse_open, active_tab, delete_clicks_list, active_trip):
+        active_trip_data = no_update
+        if isinstance(ctx.triggered_id, dict) and ctx.triggered_id.get("type") == "delete-trip-item":
+            trip_id = ctx.triggered_id["index"]
+            delete_trip(current_user.id, trip_id)
+            if active_trip and active_trip.get("trip_id") == trip_id:
+                active_trip_data = None
+            trips = get_user_trips(current_user.id)
+            return build_load_trip_items(trips), no_update, active_trip_data, trips, no_update
+
+        if not browse_open:
+            raise PreventUpdate
+
+        if active_tab == "my-saved-trips":
+            trips = get_user_trips(current_user.id)
+            return build_load_trip_items(trips), no_update, active_trip_data, trips, no_update
+
+        if active_tab == "user-shared-trips":
+            trips = [
+                sanitize_shared_trip(trip) for trip in get_public_trips()
+                if trip.get("owner_username") != current_user.id
+            ]
+            return no_update, build_load_trip_items(trips, allow_delete=False, show_owner=True), active_trip_data, no_update, trips
+
+        raise PreventUpdate
+
+    @app.callback(
+        Output(ids.ACTIVE_TRIP_STORE, "data"),
+        Output(ids.MODE_STORE, "data", allow_duplicate=True),
+        Output(ids.BROWSE_OVERLAY_STORE, "data", allow_duplicate=True),
+        Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
+        Output(ids.VISIT_ORDER_STORE, "data", allow_duplicate=True),
+        Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
+        Input({"type": "load-trip-item", "index": ALL}, "n_clicks"),
+        State(ids.BROWSE_SAVED_TRIPS_STORE, "data"),
+        State(ids.BROWSE_SHARED_TRIPS_STORE, "data"),
+        prevent_initial_call=True,
+    )
+    def load_selected_trip(n_clicks_list, saved_trips, shared_trips):
+        if not ctx.triggered_id or not any(n_clicks_list):
+            raise PreventUpdate
+        trip_id = ctx.triggered_id["index"]
+        shared_trip = next((t for t in (shared_trips or []) if t["id"] == trip_id), None)
+        trip = shared_trip or next((t for t in (saved_trips or []) if t["id"] == trip_id), None)
+        if not trip:
+            raise PreventUpdate
+        if shared_trip:
+            destination_ids = trip.get("landmark_ids") or trip.get("visit_order") or []
+            destination_ids = [lid for lid in destination_ids if lid != -1]
+            visit_order = [lid for lid in (trip.get("visit_order") or destination_ids) if lid != -1]
+            return (
+                None,
+                "explore",
+                False,
+                destination_ids,
+                visit_order,
+                build_selected_object_items(registry, destination_ids),
+            )
+
+        active_trip = {
+            "trip_id": trip["id"],
+            "visit_order": trip["visit_order"] or [],
+            "route_legs": trip["route_legs"],
+            "current_point_index": trip["current_point_index"],
+            "visited_indices": trip["visited_indices"],
+            "custom_start_location": trip["custom_start_location"],
+            "custom_end_location": trip["custom_end_location"],
+            "saved_user_location": trip["saved_user_location"],
+            "is_public": trip["is_public"],
+            "owner_username": trip.get("owner_username", current_user.id),
+        }
+        return active_trip, "trip", False, no_update, no_update, no_update
+
+    @app.callback(
+        Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),
+        Output(ids.SHARE_TRIP_TOAST, "children"),
+        Output(ids.SHARE_TRIP_TOAST, "header"),
+        Output(ids.SHARE_TRIP_TOAST, "icon"),
+        Output(ids.SHARE_TRIP_TOAST, "is_open"),
+        Input(ids.SHARE_TRIP_BTN, "n_clicks"),
+        State(ids.ACTIVE_TRIP_STORE, "data"),
+        prevent_initial_call=True,
+    )
+    def share_trip(n_clicks, active_trip):
+        if not n_clicks:
+            raise PreventUpdate
+        if not active_trip or not active_trip.get("trip_id"):
+            return no_update, "Load a trip before sharing it.", "Trip not loaded", "warning", True
+        if active_trip.get("is_public"):
+            return no_update, "This trip is already shared.", "Already shared", "info", True
+
+        trip_id = active_trip["trip_id"]
+        username = current_user.id
+        try:
+            set_trip_public_status(username, trip_id, True)
+        except Exception as e:
+            return no_update, f"Could not share this trip: {e}", "Sharing failed", "danger", True
+
+        return {**active_trip, "is_public": True}, "Trip shared successfully.", "Shared", "success", True
