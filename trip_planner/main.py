@@ -1,33 +1,26 @@
 import dash_bootstrap_components as dbc
-from dash import Dash, Output, html, dcc, Input, State, ALL, ctx
-import dash
-import dash_leaflet as dl
-import matplotlib.cm as cm
-import matplotlib.colors as mcolors
-from flask import Flask, redirect, request, session
+from dash import Dash
+from flask import redirect, request
 from flask_login import current_user, logout_user
 
 from dotenv import load_dotenv
-import os
 
 load_dotenv()
 
-import ids
-from marker_config import Landmark, LandmarkRegistry
-from backend.tsp_formulas import fetch_route_steps, solve_tsp
-from styles import pin_icon, checkbox_icon, SIDEBAR_STYLE, CONTENT_STYLE
-from layout.auth import create_login_layout
-from layout.map import create_map
-from layout.markers import create_markers
-from layout.overlays import create_browse_overlay, create_landmark_review_pane
-from layout.sidebar import create_sidebar, create_user_menu
-from callbacks import register_callbacks
 from backend.auth import init_login_manager
-from backend.database import init_db, shutdown_session, SessionLocal, create_database_if_missing
+from backend.database import SessionLocal, create_database_if_missing, init_db, shutdown_session
 from backend.models import Landmark as LandmarkModel
+from callbacks import register_callbacks
+from layout.app_layout import create_app_layout
+from layout.markers import create_markers
+from marker_config import Landmark, LandmarkRegistry
+from styles import pin_icon
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP],
-           suppress_callback_exceptions=True)
+app = Dash(
+    __name__,
+    external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP],
+    suppress_callback_exceptions=True,
+)
 server = app.server
 
 # Initialize Flask-Login
@@ -38,7 +31,8 @@ create_database_if_missing()
 init_db()
 server.teardown_appcontext(shutdown_session)
 
-# Protect all Dash views — redirect unauthenticated users to /login
+
+# Protect all Dash views - redirect unauthenticated users to /login
 @server.before_request
 def require_login():
     # Allow static assets, the login page itself, and Dash's internal routes
@@ -53,10 +47,12 @@ def require_login():
     if not current_user.is_authenticated:
         return redirect("/login")
 
+
 @server.route("/logout", methods=["POST"])
 def logout():
     logout_user()
     return redirect("/login")
+
 
 db = SessionLocal()
 try:
@@ -65,10 +61,10 @@ try:
         Landmark(
             id=row.id,
             name=row.name,
-            location=row.location or 'Location',
+            location=row.location or "Location",
             lat=row.latitude,
             lon=row.longitude,
-            link=row.link or '#'
+            link=row.link or "#",
         )
         for row in db_landmarks
     ]
@@ -79,117 +75,8 @@ finally:
 registry = LandmarkRegistry()
 registry.register_landmarks(landmark_list)
 
-
 markers = create_markers(registry.landmarks, pin_icon)
-
-destinations_list = dcc.Store(id=ids.DESTINATIONS_LIST, data=[])
-visit_order_store = dcc.Store(id=ids.VISIT_ORDER_STORE, data=[])
-mode_store = dcc.Store(id=ids.MODE_STORE, data="explore")
-browse_overlay_store = dcc.Store(id=ids.BROWSE_OVERLAY_STORE, data=False)
-browse_saved_trips_store = dcc.Store(id=ids.BROWSE_SAVED_TRIPS_STORE, data=[])
-browse_shared_trips_store = dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[])
-active_trip_store = dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=None)
-explore_map_cache = dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None)
-
-save_trip_modal = dbc.Modal([
-    dbc.ModalHeader(dbc.ModalTitle("Save Trip")),
-    dbc.ModalBody([
-        dbc.Alert(id=ids.SAVE_TRIP_ALERT, is_open=False, color="danger", duration=4000),
-        dbc.Label("Trip name"),
-        dbc.Input(id=ids.SAVE_TRIP_NAME_INPUT, placeholder="e.g. Summer Rhodope trip", maxLength=200),
-    ]),
-    dbc.ModalFooter([
-        dbc.Button("Save", id=ids.SAVE_TRIP_CONFIRM_BTN, color="info"),
-        dbc.Button("Cancel", id="save-trip-cancel-btn", color="secondary", outline=True, className="ms-2"),
-    ]),
-], id=ids.SAVE_TRIP_MODAL, is_open=False)
-
-# Sidebar component
-sidebar = create_sidebar()
-
-# Main content area (simpler: use Bootstrap utilities to manage flex sizing)
-content = html.Div(
-    id=ids.MAIN_CONTENT,
-    style=CONTENT_STYLE,
-    children=[
-        dbc.Container(fluid=True, className="h-100 d-flex flex-column p-0", children=[
-            dbc.Row(className="h-100 flex-grow-1 p-0", children=[
-                dbc.Col(
-                    [
-                        html.Div(
-                            [
-                                create_map(markers),
-                                create_browse_overlay(),
-                                create_landmark_review_pane(),
-                            ],
-                            className="flex-grow-1",
-                            style={"minHeight": 0, "position": "relative"},
-                        ),
-                    ],
-                    width=12,
-                    className="d-flex flex-column",
-                )
-            ])
-        ])
-    ]
-)
-
-warn_modal = dbc.Modal([
-    dbc.ModalHeader(dbc.ModalTitle("Cannot optimize route")),
-    dbc.ModalBody("Please select at least 2 monuments before optimizing the route."),
-    dbc.ModalFooter(dbc.Button("OK", id="warn-modal-close", color="primary")),
-], id=ids.WARN_MODAL, is_open=False)
-
-success_toast = dbc.Toast(
-    "Route Optimized",
-    id=ids.SUCCESS_TOAST,
-    header="Success!",
-    icon="success",
-    is_open=False,
-    dismissable=True,
-    duration=2000,
-    style={"position": "fixed", "bottom": "1rem", "right": "1rem", "zIndex": 9999, "minWidth": "auto"},
-)
-
-share_trip_toast = dbc.Toast(
-    "",
-    id=ids.SHARE_TRIP_TOAST,
-    header="Share Trip",
-    icon="info",
-    is_open=False,
-    dismissable=True,
-    duration=3500,
-    style={"position": "fixed", "bottom": "4.75rem", "right": "1rem", "zIndex": 9999, "minWidth": "18rem"},
-)
-
-# App layout — dynamic: shows login form or main app based on auth state
-def serve_layout():
-    if current_user.is_authenticated:
-        return html.Div([
-            dcc.Location(id="url"),
-            dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0, update_now=True, timeout=10000),
-            sidebar,
-            content,
-            create_user_menu(),
-            destinations_list,
-            visit_order_store,
-            mode_store,
-            browse_overlay_store,
-            browse_saved_trips_store,
-            browse_shared_trips_store,
-            active_trip_store,
-            explore_map_cache,
-            warn_modal,
-            success_toast,
-            share_trip_toast,
-            save_trip_modal,
-        ])
-    return html.Div([
-        dcc.Location(id="url"),
-        create_login_layout(),
-    ])
-
-app.layout = serve_layout
+app.layout = lambda: create_app_layout(markers)
 
 register_callbacks(app, registry)
 
