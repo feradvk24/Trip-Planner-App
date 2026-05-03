@@ -5,7 +5,7 @@ from functools import lru_cache
 from math import radians, cos, sin, asin, sqrt
 from typing import List, Optional, Tuple, NamedTuple
 
-from marker_config import Landmark
+from backend.landmark_registry import Landmark
 
 def haversine(a: Landmark, b: Landmark) -> float:
     """

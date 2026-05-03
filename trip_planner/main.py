@@ -8,12 +8,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from backend.auth import init_login_manager
-from backend.database import SessionLocal, create_database_if_missing, init_db, shutdown_session
-from backend.models import Landmark as LandmarkModel
+from backend.database import create_database_if_missing, init_db, shutdown_session
+from backend.landmark_registry import LandmarkRegistry
 from callbacks import register_callbacks
 from layout.app_layout import create_app_layout
 from layout.markers import create_markers
-from marker_config import Landmark, LandmarkRegistry
 from styles import pin_icon
 
 app = Dash(
@@ -54,27 +53,7 @@ def logout():
     return redirect("/login")
 
 
-db = SessionLocal()
-try:
-    db_landmarks = db.query(LandmarkModel).all()
-    landmark_list = [
-        Landmark(
-            id=row.id,
-            name=row.name,
-            location=row.location or "Location",
-            lat=row.latitude,
-            lon=row.longitude,
-            link=row.link or "#",
-        )
-        for row in db_landmarks
-    ]
-finally:
-    db.close()
-
-# Register them in the singleton
-registry = LandmarkRegistry()
-registry.register_landmarks(landmark_list)
-
+registry = LandmarkRegistry.from_database()
 markers = create_markers(registry.landmarks, pin_icon)
 app.layout = lambda: create_app_layout(markers)
 

@@ -1,5 +1,5 @@
 from backend.tsp_formulas import fetch_route_steps
-from marker_config import Landmark
+from backend.landmark_registry import Landmark
 
 
 def resolve_endpoint(registry, point_id, position):
