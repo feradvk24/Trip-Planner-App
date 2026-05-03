@@ -19,20 +19,20 @@ from backend.crud import (
     set_trip_public_status,
     update_trip_progress,
 )
-from layout.callback_widgets import (
+from callbacks.widgets.callback_widgets import (
     build_all_markers,
     build_load_trip_items,
     build_selected_object_items,
     button_label_text,
     optimize_route_button_children,
 )
-from layout.review_widgets import (
+from callbacks.widgets.review_widgets import (
     landmark_review_pane_style,
     landmark_review_star_buttons,
     review_pane_state,
 )
-from layout.trip_rendering import build_trip_content
-from utils.routing import (
+from callbacks.widgets.trip_rendering import build_trip_content
+from callbacks.utils.routing import (
     build_route_legs,
     format_distance,
     get_route_legs,
@@ -40,7 +40,7 @@ from utils.routing import (
     resolve_endpoint,
     resolve_visit_order_landmarks,
 )
-from utils.trip_state import (
+from callbacks.utils.trip_state import (
     active_route_leg_index,
     clamp_stop_index,
     next_action_stop_index,

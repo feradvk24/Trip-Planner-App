@@ -3,8 +3,8 @@ import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 
 from backend.tsp_formulas import fetch_route_steps
-from utils.routing import location_tuple
-from utils.trip_state import (
+from callbacks.utils.routing import location_tuple
+from callbacks.utils.trip_state import (
     active_route_leg_index,
     next_action_stop_index,
     trip_complete,
