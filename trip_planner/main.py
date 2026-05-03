@@ -16,10 +16,11 @@ import ids
 from marker_config import Landmark, LandmarkRegistry
 from backend.tsp_formulas import fetch_route_steps, solve_tsp
 from styles import pin_icon, checkbox_icon, SIDEBAR_STYLE, CONTENT_STYLE
-from components import (
-    create_sidebar, create_map, create_login_layout, create_markers,
-    create_user_menu, create_browse_overlay, create_landmark_review_pane,
-)
+from layout.auth import create_login_layout
+from layout.map import create_map
+from layout.markers import create_markers
+from layout.overlays import create_browse_overlay, create_landmark_review_pane
+from layout.sidebar import create_sidebar, create_user_menu
 from callbacks import register_callbacks
 from backend.auth import init_login_manager
 from backend.database import init_db, shutdown_session, SessionLocal, create_database_if_missing

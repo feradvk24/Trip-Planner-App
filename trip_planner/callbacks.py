@@ -20,7 +20,7 @@ from backend.crud import (
     set_trip_public_status,
     update_trip_progress,
 )
-from components import create_markers
+from layout.markers import create_markers
 
 
 def resolve_endpoint(registry, point_id, position):
