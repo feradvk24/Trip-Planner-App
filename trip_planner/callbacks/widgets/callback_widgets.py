@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
 from dash import html
 
-from layout.markers import create_markers
+from layout.markers import create_marker, create_markers
 from styles import checkbox_icon, pin_icon
 
 
@@ -20,6 +20,10 @@ def optimize_route_button_children(label):
 
 def build_all_markers(landmarks, destination_ids):
     return create_markers(landmarks, pin_icon, destination_ids, checkbox_icon)
+
+
+def build_marker(landmark, destination_ids):
+    return create_marker(landmark, pin_icon, destination_ids, checkbox_icon)
 
 
 def build_load_trip_items(trips, allow_delete=True, show_owner=False):
@@ -77,11 +81,42 @@ def build_load_trip_items(trips, allow_delete=True, show_owner=False):
     ]
 
 
-def build_selected_object_items(registry, destination_ids):
+def build_selected_object_items(registry, destination_ids, allow_remove=True):
     return [
-        dbc.ListGroupItem([
-            html.H6(landmark.name, className="mb-1 small"),
-            html.P(landmark.location, className="mb-1 small"),
-        ], className="p-3", id=f"selected-item-{landmark.id}")
+        dbc.ListGroupItem(
+            html.Div(
+                [component for component in [
+                    html.Div(
+                        [
+                            html.H6(landmark.name, className="mb-1 small"),
+                            html.P(landmark.location, className="mb-1 small"),
+                        ],
+                        style={"flex": "1 1 auto", "minWidth": 0},
+                    ),
+                    dbc.Button(
+                        "X",
+                        id={"type": "remove-selected-item", "index": landmark.id},
+                        n_clicks=0,
+                        color="link",
+                        size="sm",
+                        title="Remove monument",
+                        style={
+                            "color": "#dc3545",
+                            "fontWeight": "700",
+                            "textDecoration": "none",
+                            "flex": "0 0 auto",
+                            "padding": "0.1rem 0.25rem",
+                        },
+                    ) if allow_remove else None,
+                ] if component is not None],
+                style={
+                    "display": "flex",
+                    "alignItems": "flex-start",
+                    "gap": "0.5rem",
+                },
+            ),
+            className="p-3 selected-monument-item",
+            id=f"selected-item-{landmark.id}",
+        )
         for landmark in registry.get_landmarks(destination_ids or [])
     ]
