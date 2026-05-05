@@ -1,4 +1,6 @@
 SIDEBAR = "sidebar"
+INFO_SIDEBAR = "info-sidebar"
+INFO_SIDEBAR_BODY = "info-sidebar-body"
 MAIN_CONTENT = "main-content"
 DESTINATIONS_LIST = "destinations-list"
 VISIT_ORDER_STORE = "visit-order-store"
@@ -76,6 +78,7 @@ LANDMARK_REVIEW_ALERT = "landmark-review-alert"
 ACTIVE_TRIP_STORE = "active-trip-store"
 TRIP_MODE_LAYER = "trip-mode-layer"
 EXPLORE_MAP_CACHE = "explore-map-cache"
+ACTIVE_INFO_STORE = "active-info-store"
 
 # Map layers
 ALL_MARKERS_LAYER = "all-markers-layer"

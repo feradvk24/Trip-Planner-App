@@ -162,7 +162,7 @@ def create_user_menu():
         style={
             "position": "fixed",
             "top": "0.75rem",
-            "right": "1rem",
+            "right": "21rem",
             "zIndex": 1050,
         },
     )

@@ -4,6 +4,7 @@ from flask_login import current_user
 
 import ids
 from layout.auth import create_login_layout
+from layout.info_sidebar import create_info_sidebar
 from layout.map import create_map
 from layout.overlays import create_browse_overlay, create_landmark_review_pane
 from layout.sidebar import create_sidebar, create_user_menu
@@ -20,6 +21,7 @@ def create_stores():
         dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=None),
         dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None),
+        dcc.Store(id=ids.ACTIVE_INFO_STORE, data=None),
     ]
 
 
@@ -105,6 +107,7 @@ def create_authenticated_layout(markers):
         dcc.Location(id="url"),
         dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0, update_now=True, timeout=10000),
         create_sidebar(),
+        create_info_sidebar(),
         create_main_content(markers),
         create_user_menu(),
         *create_stores(),

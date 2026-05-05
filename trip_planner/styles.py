@@ -94,9 +94,25 @@ SIDEBAR_STYLE = {
     "overflow": "hidden",
 }
 
+INFO_SIDEBAR_STYLE = {
+    "position": "fixed",
+    "top": 0,
+    "right": 0,
+    "bottom": 0,
+    "width": "20rem",
+    "padding": "1.25rem",
+    "backgroundColor": "#ffffff",
+    "borderLeft": "1px solid #dee2e6",
+    "display": "flex",
+    "flexDirection": "column",
+    "overflow": "hidden",
+    "zIndex": 1030,
+}
+
 # Main content styles
 CONTENT_STYLE = {
     "marginLeft": "18rem",
+    "marginRight": "20rem",
     "height": "100vh",
     "overflow": "hidden",
     "display": "flex",
