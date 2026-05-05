@@ -43,7 +43,7 @@ def build_load_trip_items(trips, allow_delete=True, show_owner=False):
                             ) if show_owner else None,
                             html.Small(trip["created_at"], className="text-muted"),
                             html.Small(
-                                f"Completed: {trip.get('completed_at')}",
+                                f"✓ Completed: {trip.get('completed_at')}",
                                 className="d-block",
                                 style={"color": "#198754", "fontWeight": "600"},
                             ) if trip.get("is_completed") else None,
