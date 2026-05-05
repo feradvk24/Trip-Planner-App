@@ -85,7 +85,11 @@ def create_landmark_review_pane():
                         [
                             html.Div(
                                 [
-                                    html.Div("Leave a review", style={"fontSize": "0.8rem", "color": "#6C757D"}),
+                                    html.Div(
+                                        "Leave a review",
+                                        id=ids.LANDMARK_REVIEW_EYEBROW,
+                                        style={"fontSize": "0.8rem", "color": "#6C757D"},
+                                    ),
                                     html.H4(id=ids.LANDMARK_REVIEW_TITLE, className="mb-0"),
                                     html.Div(
                                         id=ids.LANDMARK_REVIEW_LOCATION,

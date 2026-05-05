@@ -48,8 +48,21 @@ def review_pane_state(registry, active_trip, visited_index):
         raise PreventUpdate
     return {
         "is_open": True,
+        "review_type": "landmark",
         "landmark_id": landmark.id,
         "title": landmark.name,
         "location": landmark.location,
+        "rating": None,
+    }
+
+
+def trip_completion_review_pane_state(active_trip):
+    trip_name = active_trip.get("name") or active_trip.get("trip_name") or active_trip.get("title") or "Trip"
+    return {
+        "is_open": True,
+        "review_type": "trip_completion",
+        "trip_id": active_trip.get("trip_id"),
+        "title": "Trip Completed!",
+        "location": trip_name,
         "rating": None,
     }

@@ -29,6 +29,7 @@ def build_marker(landmark, destination_ids):
 def build_load_trip_items(trips, allow_delete=True, show_owner=False):
     if not trips:
         return [dbc.ListGroupItem("No trips to show...", disabled=True)]
+
     return [
         dbc.ListGroupItem(
             html.Div(
@@ -41,6 +42,11 @@ def build_load_trip_items(trips, allow_delete=True, show_owner=False):
                                 className="text-muted d-block",
                             ) if show_owner else None,
                             html.Small(trip["created_at"], className="text-muted"),
+                            html.Small(
+                                f"Completed: {trip.get('completed_at')}",
+                                className="d-block",
+                                style={"color": "#198754", "fontWeight": "600"},
+                            ) if trip.get("is_completed") else None,
                         ] if component is not None],
                         id={"type": "load-trip-item", "index": trip["id"]},
                         n_clicks=0,

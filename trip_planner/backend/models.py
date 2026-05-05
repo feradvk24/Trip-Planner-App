@@ -55,7 +55,7 @@ class TripCompletion(Base):
 
     completed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     rating = Column(Integer, nullable=True)  # 1-5 stars
-    revew_text = Column(String(1000), nullable=True)
+    review_text = Column(String(1000), nullable=True)
 
 
 class Review(Base):

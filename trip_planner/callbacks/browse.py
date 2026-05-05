@@ -28,19 +28,19 @@ def register_browse_callbacks(app, registry):
             delete_trip(current_user.id, trip_id)
             if active_trip and active_trip.get("trip_id") == trip_id:
                 active_trip_data = None
-            trips = get_user_trips(current_user.id)
+            trips = get_user_trips(current_user.id, include_completion_status=True)
             return build_load_trip_items(trips), no_update, active_trip_data, trips, no_update
 
         if not browse_open:
             raise PreventUpdate
 
         if active_tab == "my-saved-trips":
-            trips = get_user_trips(current_user.id)
+            trips = get_user_trips(current_user.id, include_completion_status=True)
             return build_load_trip_items(trips), no_update, active_trip_data, trips, no_update
 
         if active_tab == "user-shared-trips":
             trips = [
-                sanitize_shared_trip(trip) for trip in get_public_trips()
+                sanitize_shared_trip(trip) for trip in get_public_trips(include_completion_status=True)
                 if trip.get("owner_username") != current_user.id
             ]
             return no_update, build_load_trip_items(trips, allow_delete=False, show_owner=True), active_trip_data, no_update, trips
@@ -82,6 +82,7 @@ def register_browse_callbacks(app, registry):
 
         active_trip = {
             "trip_id": trip["id"],
+            "name": trip.get("name"),
             "visit_order": trip["visit_order"] or [],
             "route_legs": trip["route_legs"],
             "current_point_index": trip["current_point_index"],

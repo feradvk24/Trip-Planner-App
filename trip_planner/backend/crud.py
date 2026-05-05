@@ -1,7 +1,7 @@
 from typing import Optional
 
 from backend.database import SessionLocal
-from backend.models import Landmark, Review, User, UserTrip
+from backend.models import Landmark, Review, TripCompletion, User, UserTrip
 
 
 def _trip_to_dict(trip: UserTrip, owner: Optional[User] = None) -> dict:
@@ -23,6 +23,46 @@ def _trip_to_dict(trip: UserTrip, owner: Optional[User] = None) -> dict:
         data["owner_username"] = owner.username
         data["owner_name"] = f"{owner.first_name} {owner.last_name}"
     return data
+
+
+def _completion_to_status(completion: TripCompletion) -> dict:
+    return {
+        "is_completed": True,
+        "completed_at": completion.completed_at.strftime("%d %b %Y, %H:%M"),
+    }
+
+
+def find_completed_trips(trip_ids: list[int]) -> dict[int, dict]:
+    """Return completion statuses keyed by trip ID."""
+    if not trip_ids:
+        return {}
+    db = SessionLocal()
+    try:
+        completed_trips = {}
+        for trip_id in trip_ids:
+            completion = (
+                db.query(TripCompletion)
+                .filter(TripCompletion.trip_id == trip_id)
+                .limit(1)
+                .first()
+            )
+            if completion:
+                completed_trips[trip_id] = _completion_to_status(completion)
+        return completed_trips
+    finally:
+        db.close()
+
+
+def _with_completion_statuses(trips: list[dict]) -> list[dict]:
+    completed_trips = find_completed_trips([trip["id"] for trip in trips])
+    return [
+        {
+            **trip,
+            "is_completed": trip["id"] in completed_trips,
+            "completed_at": completed_trips.get(trip["id"], {}).get("completed_at"),
+        }
+        for trip in trips
+    ]
 
 
 def save_trip(username: str, name: str, landmark_ids: list, visit_order: list,
@@ -54,7 +94,7 @@ def save_trip(username: str, name: str, landmark_ids: list, visit_order: list,
         db.close()
 
 
-def get_user_trips(username: str) -> list[dict]:
+def get_user_trips(username: str, include_completion_status: bool = False) -> list[dict]:
     """Return all trips for a user, newest first."""
     db = SessionLocal()
     try:
@@ -67,12 +107,15 @@ def get_user_trips(username: str) -> list[dict]:
             .order_by(UserTrip.created_at.desc())
             .all()
         )
-        return [_trip_to_dict(t) for t in trips]
+        trip_data = [_trip_to_dict(t) for t in trips]
+        if include_completion_status:
+            return _with_completion_statuses(trip_data)
+        return trip_data
     finally:
         db.close()
 
 
-def get_public_trips() -> list[dict]:
+def get_public_trips(include_completion_status: bool = False) -> list[dict]:
     """Return public trips from all users, newest first."""
     db = SessionLocal()
     try:
@@ -83,7 +126,10 @@ def get_public_trips() -> list[dict]:
             .order_by(UserTrip.created_at.desc())
             .all()
         )
-        return [_trip_to_dict(trip, owner) for trip, owner in trips]
+        trip_data = [_trip_to_dict(trip, owner) for trip, owner in trips]
+        if include_completion_status:
+            return _with_completion_statuses(trip_data)
+        return trip_data
     finally:
         db.close()
 
@@ -158,6 +204,36 @@ def create_landmark_review(username: str, trip_id: int, landmark_id: int, rating
         db.commit()
         db.refresh(review)
         return review
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def create_trip_completion(username: str, trip_id: int, rating: int, review_text: str = None) -> TripCompletion:
+    """Create a completion record for a finished trip."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            raise ValueError(f"User '{username}' not found in database.")
+        trip = db.query(UserTrip).filter(UserTrip.id == trip_id).first()
+        if trip is None:
+            raise ValueError(f"Trip {trip_id} not found.")
+        if rating < 1 or rating > 5:
+            raise ValueError("Rating must be between 1 and 5.")
+
+        completion = TripCompletion(
+            user_id=user.id,
+            trip_id=trip.id,
+            rating=rating,
+            review_text=(review_text or "").strip() or None,
+        )
+        db.add(completion)
+        db.commit()
+        db.refresh(completion)
+        return completion
     except Exception:
         db.rollback()
         raise

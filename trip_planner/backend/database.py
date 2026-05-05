@@ -46,6 +46,7 @@ def init_db():
     Base.metadata.create_all(bind=engine)
     _migrate_user_trips()
     _migrate_reviews()
+    _migrate_trip_completions()
 
 
 def _migrate_user_trips():
@@ -131,6 +132,42 @@ def _migrate_reviews():
         END $$;
         """,
         "CREATE INDEX IF NOT EXISTS ix_reviews_landmark_id ON reviews (landmark_id)",
+    ]
+    with engine.connect() as conn:
+        for stmt in migrations:
+            conn.execute(text(stmt))
+        conn.commit()
+
+
+def _migrate_trip_completions():
+    """Normalize trip completion columns introduced after initial schema creation."""
+    migrations = [
+        """
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'trip_completions' AND column_name = 'revew_text'
+            ) AND NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'trip_completions' AND column_name = 'review_text'
+            ) THEN
+                ALTER TABLE trip_completions RENAME COLUMN revew_text TO review_text;
+            ELSIF EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'trip_completions' AND column_name = 'revew_text'
+            ) AND EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'trip_completions' AND column_name = 'review_text'
+            ) THEN
+                UPDATE trip_completions
+                SET review_text = COALESCE(review_text, revew_text)
+                WHERE review_text IS NULL AND revew_text IS NOT NULL;
+
+                ALTER TABLE trip_completions DROP COLUMN revew_text;
+            END IF;
+        END $$;
+        """,
     ]
     with engine.connect() as conn:
         for stmt in migrations:

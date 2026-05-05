@@ -14,7 +14,7 @@ from callbacks.utils.trip_state import (
     trip_point_summary,
     visit_stop,
 )
-from callbacks.widgets.review_widgets import review_pane_state
+from callbacks.widgets.review_widgets import review_pane_state, trip_completion_review_pane_state
 from callbacks.widgets.trip_rendering import build_trip_content
 
 
@@ -172,4 +172,19 @@ def register_trip_callbacks(app, registry):
             clicked_index = ctx.triggered_id["index"]
 
         updated_trip = visit_stop(active_trip, clicked_index, current_user.id, update_trip_progress)
-        return updated_trip, review_pane_state(registry, active_trip, clicked_index), "", False
+        completion_review_state = (
+            trip_completion_review_pane_state(updated_trip)
+            if trip_complete(updated_trip)
+            else None
+        )
+
+        try:
+            review_state = review_pane_state(registry, active_trip, clicked_index)
+        except PreventUpdate:
+            if not completion_review_state:
+                raise
+            return updated_trip, completion_review_state, "", False
+
+        if completion_review_state:
+            review_state["next_review_state"] = completion_review_state
+        return updated_trip, review_state, "", False
