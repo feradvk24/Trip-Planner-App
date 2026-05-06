@@ -16,25 +16,30 @@ def sanitize_shared_trip(trip):
     }
 
 
-def clamp_stop_index(active_trip):
+def actionable_stop_count(active_trip):
     stop_ids = active_trip.get("visit_order") or []
-    if not stop_ids:
+    return len(stop_ids) + int(bool(active_trip.get("custom_end_location")))
+
+
+def clamp_stop_index(active_trip):
+    stop_count = actionable_stop_count(active_trip)
+    if not stop_count:
         return 0
-    return max(0, min(active_trip.get("current_point_index", 0), len(stop_ids) - 1))
+    return max(0, min(active_trip.get("current_point_index", 0), stop_count - 1))
 
 
 def trip_complete(active_trip):
-    stop_ids = active_trip.get("visit_order") or []
+    stop_count = actionable_stop_count(active_trip)
     visited = set(active_trip.get("visited_indices") or [])
-    return bool(stop_ids) and all(i in visited for i in range(len(stop_ids)))
+    return bool(stop_count) and all(i in visited for i in range(stop_count))
 
 
 def next_action_stop_index(active_trip):
-    stop_ids = active_trip.get("visit_order") or []
-    if not stop_ids or trip_complete(active_trip):
+    stop_count = actionable_stop_count(active_trip)
+    if not stop_count or trip_complete(active_trip):
         return None
     visited = set(active_trip.get("visited_indices") or [])
-    return next((i for i in range(len(stop_ids)) if i not in visited), None)
+    return next((i for i in range(stop_count) if i not in visited), None)
 
 
 def active_route_leg_index(active_trip):
@@ -45,8 +50,12 @@ def active_route_leg_index(active_trip):
     return max(0, start_offset + next_idx - 1)
 
 
-def trip_point_summary(registry, visit_order_ids, index):
-    if index is None or index < 0 or index >= len(visit_order_ids):
+def trip_point_summary(registry, visit_order_ids, index, active_trip=None):
+    if index is None or index < 0:
+        return None
+    if index == len(visit_order_ids) and active_trip and active_trip.get("custom_end_location"):
+        return {"name": "Home", "location": ""}
+    if index >= len(visit_order_ids):
         return None
     landmark_id = visit_order_ids[index]
     if landmark_id == -1:
@@ -63,7 +72,7 @@ def visit_stop(active_trip, clicked_index, current_username, update_progress):
     stop_ids = active_trip.get("visit_order") or []
     if clicked_index != next_action_stop_index(active_trip):
         raise PreventUpdate
-    if clicked_index >= len(stop_ids):
+    if clicked_index >= actionable_stop_count(active_trip):
         raise PreventUpdate
 
     if active_trip.get("owner_username", current_username) == current_username:

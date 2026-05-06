@@ -35,15 +35,17 @@ def register_trip_callbacks(app, registry):
         current_idx = clamp_stop_index(active_trip)
         is_trip_complete = trip_complete(active_trip)
         next_action_idx = next_action_stop_index(active_trip)
-        current_point = trip_point_summary(registry, stop_ids, current_idx)
+        current_point = trip_point_summary(registry, stop_ids, current_idx, active_trip)
         custom_start = active_trip.get("custom_start_location")
         show_current_point = not (custom_start and not active_trip.get("visited_indices"))
         if show_current_point:
             visited = set(active_trip.get("visited_indices") or [])
             next_idx = next((i for i in range(current_idx + 1, len(stop_ids)) if i not in visited), None)
+            if next_idx is None:
+                next_idx = next_action_idx
         else:
             next_idx = next_action_idx
-        next_point = trip_point_summary(registry, stop_ids, next_idx) if next_idx is not None else None
+        next_point = trip_point_summary(registry, stop_ids, next_idx, active_trip) if next_idx is not None else None
         route_legs = get_route_legs(registry, active_trip)
 
         distance_to_next = None
@@ -55,7 +57,7 @@ def register_trip_callbacks(app, registry):
                     break
 
         start_offset = 1 if custom_start else 0
-        last_stop_route_idx = start_offset + len(stop_ids) - 1
+        last_stop_route_idx = start_offset + len(stop_ids) - 1 + int(bool(active_trip.get("custom_end_location")))
         progress_legs = [
             leg for leg in route_legs
             if leg.get("to_index", 0) <= last_stop_route_idx
