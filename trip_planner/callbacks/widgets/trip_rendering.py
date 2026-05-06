@@ -119,6 +119,7 @@ def build_trip_content(registry, active_trip):
         markers.append(
             dl.Marker(
                 position=[landmark.lat, landmark.lon],
+                id={"type": "route-marker", "index": i, "landmark_id": landmark.id},
                 icon=icon,
                 children=[
                     dl.Tooltip(landmark.name),

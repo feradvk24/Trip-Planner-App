@@ -108,27 +108,33 @@ def register_explore_callbacks(app, registry):
             if lm.id not in visit_num:
                 visit_num[lm.id] = i if start_is_my_location else i + 1
 
-        tour_markers = [
-            dl.Marker(
-                position=[lm.lat, lm.lon],
-                children=[
-                    dl.Tooltip(lm.name),
-                    dl.Popup(html.Div([
-                        html.H5(lm.name),
-                        html.H6(lm.location),
-                        html.A(
-                            "Learn more",
-                            href=lm.link,
-                            target="_blank",
-                            style={"display": "block", "text-align": "center"},
-                        ),
-                    ])),
-                ],
-                icon=number_icon(visit_num[lm.id]),
+        tour_markers = []
+        for i, lm in enumerate(visit_order):
+            if lm.id not in visit_num:
+                continue
+            marker_props = {}
+            if lm.id != -1:
+                marker_props["id"] = {"type": "route-marker", "index": i, "landmark_id": lm.id}
+            tour_markers.append(
+                dl.Marker(
+                    position=[lm.lat, lm.lon],
+                    children=[
+                        dl.Tooltip(lm.name),
+                        dl.Popup(html.Div([
+                            html.H5(lm.name),
+                            html.H6(lm.location),
+                            html.A(
+                                "Learn more",
+                                href=lm.link,
+                                target="_blank",
+                                style={"display": "block", "text-align": "center"},
+                            ),
+                        ])),
+                    ],
+                    icon=number_icon(visit_num[lm.id]),
+                    **marker_props,
+                )
             )
-            for lm in visit_order
-            if lm.id in visit_num
-        ]
 
         distance_km = result.distance_m / 1000
         hours, remainder = divmod(int(result.duration_s), 3600)

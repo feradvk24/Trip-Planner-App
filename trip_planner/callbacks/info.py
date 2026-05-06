@@ -11,11 +11,12 @@ def register_info_callbacks(app, registry):
     @app.callback(
         Output(ids.ACTIVE_INFO_STORE, "data"),
         Input({"type": "marker", "index": ALL}, "n_clicks"),
+        Input({"type": "route-marker", "index": ALL, "landmark_id": ALL}, "n_clicks"),
         Input(ids.ACTIVE_TRIP_STORE, "data"),
         Input(ids.MODE_STORE, "data"),
         prevent_initial_call=True,
     )
-    def select_info_sidebar_mode(marker_clicks, trip_data, mode):
+    def select_info_sidebar_mode(marker_clicks, route_marker_clicks, trip_data, mode):
         triggered_id = ctx.triggered_id
         triggered_value = ctx.triggered[0].get("value") if ctx.triggered else None
 
@@ -38,12 +39,12 @@ def register_info_callbacks(app, registry):
                 "type": "trip",
                 "content": stop_ids[next_stop_index],
             }
-        if isinstance(triggered_id, dict) and triggered_id.get("type") == "marker":
+        if isinstance(triggered_id, dict) and triggered_id.get("type") in ("marker", "route-marker"):
             if not triggered_value:
                 raise PreventUpdate
             return {
                 "type": "landmark",
-                "content": triggered_id["index"],
+                "content": triggered_id.get("landmark_id", triggered_id["index"]),
             }
 
         raise PreventUpdate
