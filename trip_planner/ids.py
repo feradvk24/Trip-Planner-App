@@ -1,5 +1,7 @@
 SIDEBAR = "sidebar"
 INFO_SIDEBAR = "info-sidebar"
+INFO_SIDEBAR_TITLE = "info-sidebar-title"
+INFO_SIDEBAR_SUBTITLE = "info-sidebar-subtitle"
 INFO_SIDEBAR_BODY = "info-sidebar-body"
 MAIN_CONTENT = "main-content"
 DESTINATIONS_LIST = "destinations-list"

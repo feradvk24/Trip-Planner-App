@@ -9,9 +9,14 @@ def create_info_sidebar():
         [
             html.Div(
                 [
-                    html.Div("Details", style={"fontSize": "1.25rem", "fontWeight": "600"}),
+                    html.Div(
+                        "Details",
+                        id=ids.INFO_SIDEBAR_TITLE,
+                        style={"fontSize": "1.25rem", "fontWeight": "600"},
+                    ),
                     html.Div(
                         "No selection",
+                        id=ids.INFO_SIDEBAR_SUBTITLE,
                         style={"fontSize": "0.85rem", "color": "#6c757d"},
                     ),
                 ],

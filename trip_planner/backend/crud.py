@@ -53,6 +53,51 @@ def find_completed_trips(trip_ids: list[int]) -> dict[int, dict]:
         db.close()
 
 
+def get_landmark_review_summary(landmark_id: int) -> dict:
+    """Return average rating and review count for a landmark."""
+    db = SessionLocal()
+    try:
+        reviews = db.query(Review).filter(Review.landmark_id == landmark_id).all()
+        review_count = len(reviews)
+        average_rating = (
+            sum(review.rating for review in reviews) / review_count
+            if review_count else
+            None
+        )
+        return {
+            "average_rating": average_rating,
+            "review_count": review_count,
+        }
+    finally:
+        db.close()
+
+
+def get_landmark_reviews(landmark_id: int) -> list[dict]:
+    """Return reviews for a landmark, newest first."""
+    db = SessionLocal()
+    try:
+        reviews = (
+            db.query(Review, User)
+            .join(User, Review.user_id == User.id)
+            .filter(Review.landmark_id == landmark_id)
+            .order_by(Review.created_at.desc())
+            .all()
+        )
+        return [
+            {
+                "id": review.id,
+                "rating": review.rating,
+                "review_text": review.review_text,
+                "created_at": review.created_at.strftime("%d %b %Y, %H:%M"),
+                "user_name": f"{user.first_name} {user.last_name}",
+                "username": user.username,
+            }
+            for review, user in reviews
+        ]
+    finally:
+        db.close()
+
+
 def _with_completion_statuses(trips: list[dict]) -> list[dict]:
     completed_trips = find_completed_trips([trip["id"] for trip in trips])
     return [
