@@ -1,6 +1,8 @@
 import dash_bootstrap_components as dbc
 from dash import html
 
+import ids
+
 
 def _stars(rating):
     if rating is None:
@@ -117,6 +119,90 @@ def build_landmark_info(landmark, review_summary, reviews):
                             )
                         ],
                         style={"display": "flex", "flexDirection": "column", "gap": "0.75rem"},
+                    ),
+                ],
+                style={"paddingTop": "1rem"},
+            ),
+        ],
+        style={"display": "flex", "flexDirection": "column"},
+    )
+
+
+def build_trip_info(trip, registry):
+    destination_ids = [lid for lid in (trip.get("visit_order") or trip.get("landmark_ids") or []) if lid != -1]
+    destinations = registry.get_landmarks(destination_ids)
+    route_legs = trip.get("route_legs") or []
+    distance_m = sum(leg.get("distance_m", 0) for leg in route_legs)
+    distance_text = f"{distance_m / 1000:.1f} km" if distance_m >= 1000 else f"{int(round(distance_m))} m"
+    owner = trip.get("owner_name") or trip.get("owner_username")
+
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.Div(
+                        "Shared trip" if trip.get("source") == "shared" else "Saved trip",
+                        style={"fontSize": "0.75rem", "color": "#6c757d", "textTransform": "uppercase"},
+                    ),
+                    html.Div(f"By {owner}", className="text-muted", style={"fontSize": "0.9rem"}) if owner else None,
+                    html.Div(trip.get("created_at"), className="text-muted", style={"fontSize": "0.85rem"}) if trip.get("created_at") else None,
+                ],
+                style={"borderBottom": "1px solid #e9ecef", "paddingBottom": "1rem"},
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        [
+                            html.Div("Destinations", className="text-muted", style={"fontSize": "0.8rem"}),
+                            html.Div(str(len(destination_ids)), style={"fontWeight": "700"}),
+                        ],
+                    ),
+                    html.Div(
+                        [
+                            html.Div("Distance", className="text-muted", style={"fontSize": "0.8rem"}),
+                            html.Div(distance_text if route_legs else "Unknown", style={"fontWeight": "700"}),
+                        ],
+                    ),
+                ],
+                style={
+                    "display": "grid",
+                    "gridTemplateColumns": "1fr 1fr",
+                    "gap": "0.75rem",
+                    "padding": "1rem 0",
+                    "borderBottom": "1px solid #e9ecef",
+                },
+            ),
+            dbc.Alert(
+                f"Completed: {trip.get('completed_at')}",
+                color="success",
+                className="mt-3 mb-0",
+            ) if trip.get("is_completed") else None,
+            dbc.Button(
+                "Select Trip",
+                id=ids.SELECT_TRIP_BTN,
+                color="info",
+                className="w-100 mt-3",
+            ),
+            html.Div(
+                [
+                    html.H6("Stops", className="mb-2"),
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(landmark.name, style={"fontWeight": "600", "fontSize": "0.9rem"}),
+                                    html.Div(landmark.location, className="text-muted", style={"fontSize": "0.85rem"}),
+                                ],
+                                style={
+                                    "border": "1px solid #e9ecef",
+                                    "borderRadius": "0.35rem",
+                                    "padding": "0.6rem 0.7rem",
+                                    "backgroundColor": "#ffffff",
+                                },
+                            )
+                            for landmark in destinations
+                        ] or [dbc.Alert("No destinations to show.", color="light", className="mb-0")],
+                        style={"display": "flex", "flexDirection": "column", "gap": "0.5rem"},
                     ),
                 ],
                 style={"paddingTop": "1rem"},

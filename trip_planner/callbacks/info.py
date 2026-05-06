@@ -4,7 +4,7 @@ from dash.exceptions import PreventUpdate
 import ids
 from backend.crud import get_landmark_review_summary, get_landmark_reviews
 from callbacks.utils.trip_state import next_action_stop_index
-from callbacks.widgets.info_widgets import build_empty_info, build_landmark_info
+from callbacks.widgets.info_widgets import build_empty_info, build_landmark_info, build_trip_info
 
 
 def register_info_callbacks(app, registry):
@@ -55,13 +55,27 @@ def register_info_callbacks(app, registry):
         Output(ids.INFO_SIDEBAR_BODY, "children"),
         Output(ids.INFO_SIDEBAR_BODY, "style"),
         Input(ids.ACTIVE_INFO_STORE, "data"),
+        Input(ids.SELECTED_TRIP_STORE, "data"),
+        Input(ids.BROWSE_OVERLAY_STORE, "data"),
     )
-    def render_info_sidebar(active_info):
+    def render_info_sidebar(active_info, selected_trip, browse_open):
         base_style = {
             "flex": "1 1 auto",
             "minHeight": 0,
             "overflowY": "auto",
         }
+
+        if browse_open:
+            if selected_trip:
+                trip_name = selected_trip.get("name") or "Selected trip"
+                return trip_name, "Shared trip" if selected_trip.get("source") == "shared" else "Saved trip", build_trip_info(selected_trip, registry), {
+                    **base_style,
+                    "display": "block",
+                }
+            return "Browse Trips", "No trip selected", build_empty_info(), {
+                **base_style,
+                "display": "block",
+            }
 
         if not active_info:
             return "Details", "No selection", build_empty_info(), {

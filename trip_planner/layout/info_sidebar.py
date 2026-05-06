@@ -12,7 +12,7 @@ def create_info_sidebar():
                     html.Div(
                         "Details",
                         id=ids.INFO_SIDEBAR_TITLE,
-                        style={"fontSize": "1.25rem", "fontWeight": "600"},
+                        style={"fontSize": "1.6rem", "fontWeight": "700", "lineHeight": "1.15"},
                     ),
                     html.Div(
                         "No selection",

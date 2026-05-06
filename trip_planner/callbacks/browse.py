@@ -15,37 +15,64 @@ def register_browse_callbacks(app, registry):
         Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),
         Output(ids.BROWSE_SAVED_TRIPS_STORE, "data"),
         Output(ids.BROWSE_SHARED_TRIPS_STORE, "data"),
+        Output(ids.SELECTED_TRIP_STORE, "data", allow_duplicate=True),
         Input(ids.BROWSE_OVERLAY_STORE, "data"),
         Input(ids.BROWSE_TABS, "active_tab"),
         Input({"type": "delete-trip-item", "index": ALL}, "n_clicks"),
         State(ids.ACTIVE_TRIP_STORE, "data"),
+        State(ids.SELECTED_TRIP_STORE, "data"),
         prevent_initial_call=True,
     )
-    def refresh_browse_saved_trips(browse_open, active_tab, delete_clicks_list, active_trip):
+    def refresh_browse_saved_trips(browse_open, active_tab, delete_clicks_list, active_trip, selected_trip):
         active_trip_data = no_update
+        selected_trip_data = no_update
         if isinstance(ctx.triggered_id, dict) and ctx.triggered_id.get("type") == "delete-trip-item":
             trip_id = ctx.triggered_id["index"]
             delete_trip(current_user.id, trip_id)
             if active_trip and active_trip.get("trip_id") == trip_id:
                 active_trip_data = None
+            if selected_trip and selected_trip.get("id") == trip_id:
+                selected_trip_data = None
             trips = get_user_trips(current_user.id, include_completion_status=True)
-            return build_load_trip_items(trips), no_update, active_trip_data, trips, no_update
+            return build_load_trip_items(trips), no_update, active_trip_data, trips, no_update, selected_trip_data
 
         if not browse_open:
             raise PreventUpdate
+        if ctx.triggered_id in (ids.BROWSE_OVERLAY_STORE, ids.BROWSE_TABS):
+            selected_trip_data = None
 
         if active_tab == "my-saved-trips":
             trips = get_user_trips(current_user.id, include_completion_status=True)
-            return build_load_trip_items(trips), no_update, active_trip_data, trips, no_update
+            return build_load_trip_items(trips), no_update, active_trip_data, trips, no_update, selected_trip_data
 
         if active_tab == "user-shared-trips":
             trips = [
                 sanitize_shared_trip(trip) for trip in get_public_trips(include_completion_status=True)
                 if trip.get("owner_username") != current_user.id
             ]
-            return no_update, build_load_trip_items(trips, allow_delete=False, show_owner=True), active_trip_data, no_update, trips
+            return no_update, build_load_trip_items(trips, allow_delete=False, show_owner=True), active_trip_data, no_update, trips, selected_trip_data
 
         raise PreventUpdate
+
+    @app.callback(
+        Output(ids.SELECTED_TRIP_STORE, "data"),
+        Input({"type": "load-trip-item", "index": ALL}, "n_clicks"),
+        State(ids.BROWSE_SAVED_TRIPS_STORE, "data"),
+        State(ids.BROWSE_SHARED_TRIPS_STORE, "data"),
+        prevent_initial_call=True,
+    )
+    def preview_selected_trip(n_clicks_list, saved_trips, shared_trips):
+        if not ctx.triggered_id or not any(n_clicks_list):
+            raise PreventUpdate
+        trip_id = ctx.triggered_id["index"]
+        shared_trip = next((t for t in (shared_trips or []) if t["id"] == trip_id), None)
+        trip = shared_trip or next((t for t in (saved_trips or []) if t["id"] == trip_id), None)
+        if not trip:
+            raise PreventUpdate
+        return {
+            **trip,
+            "source": "shared" if shared_trip else "saved",
+        }
 
     @app.callback(
         Output(ids.ACTIVE_TRIP_STORE, "data"),
@@ -54,19 +81,14 @@ def register_browse_callbacks(app, registry):
         Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
         Output(ids.VISIT_ORDER_STORE, "data", allow_duplicate=True),
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
-        Input({"type": "load-trip-item", "index": ALL}, "n_clicks"),
-        State(ids.BROWSE_SAVED_TRIPS_STORE, "data"),
-        State(ids.BROWSE_SHARED_TRIPS_STORE, "data"),
+        Input(ids.SELECT_TRIP_BTN, "n_clicks"),
+        State(ids.SELECTED_TRIP_STORE, "data"),
         prevent_initial_call=True,
     )
-    def load_selected_trip(n_clicks_list, saved_trips, shared_trips):
-        if not ctx.triggered_id or not any(n_clicks_list):
+    def load_selected_trip(n_clicks, trip):
+        if not n_clicks or not trip:
             raise PreventUpdate
-        trip_id = ctx.triggered_id["index"]
-        shared_trip = next((t for t in (shared_trips or []) if t["id"] == trip_id), None)
-        trip = shared_trip or next((t for t in (saved_trips or []) if t["id"] == trip_id), None)
-        if not trip:
-            raise PreventUpdate
+        shared_trip = trip.get("source") == "shared"
         if shared_trip:
             destination_ids = trip.get("landmark_ids") or trip.get("visit_order") or []
             destination_ids = [lid for lid in destination_ids if lid != -1]
