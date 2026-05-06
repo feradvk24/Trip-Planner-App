@@ -71,6 +71,7 @@ def register_info_callbacks(app, registry):
                 return trip_name, "Shared trip" if selected_trip.get("source") == "shared" else "Saved trip", build_trip_info(selected_trip, registry), {
                     **base_style,
                     "display": "block",
+                    "overflow": "hidden",
                 }
             return "Browse Trips", "No trip selected", build_empty_info(), {
                 **base_style,

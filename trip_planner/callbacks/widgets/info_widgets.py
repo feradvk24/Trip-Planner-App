@@ -177,12 +177,6 @@ def build_trip_info(trip, registry):
                 color="success",
                 className="mt-3 mb-0",
             ) if trip.get("is_completed") else None,
-            dbc.Button(
-                "Select Trip",
-                id=ids.SELECT_TRIP_BTN,
-                color="info",
-                className="w-100 mt-3",
-            ),
             html.Div(
                 [
                     html.H6("Stops", className="mb-2"),
@@ -202,11 +196,31 @@ def build_trip_info(trip, registry):
                             )
                             for landmark in destinations
                         ] or [dbc.Alert("No destinations to show.", color="light", className="mb-0")],
-                        style={"display": "flex", "flexDirection": "column", "gap": "0.5rem"},
+                        style={
+                            "display": "flex",
+                            "flexDirection": "column",
+                            "gap": "0.5rem",
+                            "flex": "1 1 auto",
+                            "overflowY": "auto",
+                            "overflowX": "hidden",
+                            "minHeight": 0,
+                        },
                     ),
                 ],
-                style={"paddingTop": "1rem"},
+                style={
+                    "display": "flex",
+                    "flex": "1 1 auto",
+                    "flexDirection": "column",
+                    "minHeight": 0,
+                    "paddingTop": "1rem",
+                },
+            ),
+            dbc.Button(
+                "Select Trip",
+                id=ids.SELECT_TRIP_BTN,
+                color="info",
+                className="w-100 mt-3",
             ),
         ],
-        style={"display": "flex", "flexDirection": "column"},
+        style={"display": "flex", "flexDirection": "column", "height": "100%", "minHeight": 0},
     )
