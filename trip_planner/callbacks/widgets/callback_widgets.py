@@ -46,7 +46,7 @@ def build_load_trip_items(trips, allow_delete=True, show_owner=False):
                                 f"✓ Completed: {trip.get('completed_at')}",
                                 className="d-block",
                                 style={"color": "#198754", "fontWeight": "600"},
-                            ) if trip.get("is_completed") else None,
+                            ) if trip.get("completed_at") else None,
                         ] if component is not None],
                         id={"type": "load-trip-item", "index": trip["id"]},
                         n_clicks=0,

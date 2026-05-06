@@ -135,6 +135,8 @@ def build_trip_info(trip, registry):
     distance_m = sum(leg.get("distance_m", 0) for leg in route_legs)
     distance_text = f"{distance_m / 1000:.1f} km" if distance_m >= 1000 else f"{int(round(distance_m))} m"
     owner = trip.get("owner_name") or trip.get("owner_username")
+    completed_at = trip.get("completed_at")
+    completion_review_text = trip.get("completion_review_text")
 
     return html.Div(
         [
@@ -173,10 +175,25 @@ def build_trip_info(trip, registry):
                 },
             ),
             dbc.Alert(
-                f"Completed: {trip.get('completed_at')}",
+                f"Completed: {completed_at}",
                 color="success",
                 className="mt-3 mb-0",
-            ) if trip.get("is_completed") else None,
+            ) if completed_at else None,
+            html.Div(
+                [
+                    html.H6("Trip Review", className="mb-2"),
+                    html.Div(_stars(trip.get("completion_rating")), style={"color": "#f2b01e", "fontSize": "1.1rem"}),
+                    html.Div(
+                        completion_review_text if completion_review_text else "No written remarks.",
+                        className="text-muted" if not completion_review_text else "",
+                        style={"fontSize": "0.9rem", "marginTop": "0.35rem", "lineHeight": "1.35"},
+                    ),
+                ],
+                style={
+                    "borderBottom": "1px solid #e9ecef",
+                    "padding": "1rem 0",
+                },
+            ) if completed_at else None,
             html.Div(
                 [
                     html.H6("Stops", className="mb-2"),

@@ -31,8 +31,9 @@ def _trip_to_dict(trip: UserTrip, owner: Optional[User] = None) -> dict:
 
 def _completion_to_status(completion: TripCompletion) -> dict:
     return {
-        "is_completed": True,
         "completed_at": completion.completed_at.strftime("%d %b %Y, %H:%M"),
+        "completion_rating": completion.rating,
+        "completion_review_text": completion.review_text,
     }
 
 
@@ -107,8 +108,9 @@ def _with_completion_statuses(trips: list[dict]) -> list[dict]:
     return [
         {
             **trip,
-            "is_completed": trip["id"] in completed_trips,
             "completed_at": completed_trips.get(trip["id"], {}).get("completed_at"),
+            "completion_rating": completed_trips.get(trip["id"], {}).get("completion_rating"),
+            "completion_review_text": completed_trips.get(trip["id"], {}).get("completion_review_text"),
         }
         for trip in trips
     ]

@@ -62,7 +62,8 @@ def register_browse_callbacks(app, registry):
         prevent_initial_call=True,
     )
     def preview_selected_trip(n_clicks_list, saved_trips, shared_trips):
-        if not ctx.triggered_id or not any(n_clicks_list):
+        triggered_value = ctx.triggered[0].get("value") if ctx.triggered else None
+        if not ctx.triggered_id or not triggered_value:
             raise PreventUpdate
         trip_id = ctx.triggered_id["index"]
         shared_trip = next((t for t in (shared_trips or []) if t["id"] == trip_id), None)
