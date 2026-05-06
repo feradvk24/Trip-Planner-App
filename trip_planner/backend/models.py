@@ -27,6 +27,26 @@ class Landmark(Base):
     link = Column(String(500), nullable=True)
 
 
+class LandmarkImage(Base):
+    __tablename__ = "landmark_images"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    landmark_id = Column(Integer, ForeignKey("landmarks.id"), nullable=False, index=True)
+
+    wikidata_id = Column(String(32), nullable=True, index=True)
+    commons_file = Column(String(500), nullable=True)
+    image_url = Column(String(1000), nullable=True)
+    image_source_url = Column(String(1000), nullable=True)
+
+    author = Column(String(500), nullable=True)
+    license = Column(String(200), nullable=True)
+    license_url = Column(String(1000), nullable=True)
+
+    is_primary = Column(Boolean, default=True, nullable=False)
+    sort_order = Column(Integer, default=0, nullable=False)
+    fetched_at = Column(DateTime, nullable=True)
+
+
 class UserTrip(Base):
     __tablename__ = "user_trips"
 

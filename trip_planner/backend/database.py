@@ -47,6 +47,7 @@ def init_db():
     _migrate_user_trips()
     _migrate_reviews()
     _migrate_trip_completions()
+    _migrate_landmark_images()
 
 
 def _migrate_user_trips():
@@ -168,6 +169,28 @@ def _migrate_trip_completions():
             END IF;
         END $$;
         """,
+    ]
+    with engine.connect() as conn:
+        for stmt in migrations:
+            conn.execute(text(stmt))
+        conn.commit()
+
+
+def _migrate_landmark_images():
+    """Add columns/indexes for cached Wikimedia image metadata."""
+    migrations = [
+        "ALTER TABLE landmark_images ADD COLUMN IF NOT EXISTS wikidata_id VARCHAR(32)",
+        "ALTER TABLE landmark_images ADD COLUMN IF NOT EXISTS commons_file VARCHAR(500)",
+        "ALTER TABLE landmark_images ADD COLUMN IF NOT EXISTS image_url VARCHAR(1000)",
+        "ALTER TABLE landmark_images ADD COLUMN IF NOT EXISTS image_source_url VARCHAR(1000)",
+        "ALTER TABLE landmark_images ADD COLUMN IF NOT EXISTS author VARCHAR(500)",
+        "ALTER TABLE landmark_images ADD COLUMN IF NOT EXISTS license VARCHAR(200)",
+        "ALTER TABLE landmark_images ADD COLUMN IF NOT EXISTS license_url VARCHAR(1000)",
+        "ALTER TABLE landmark_images ADD COLUMN IF NOT EXISTS is_primary BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE landmark_images ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE landmark_images ADD COLUMN IF NOT EXISTS fetched_at TIMESTAMP",
+        "CREATE INDEX IF NOT EXISTS ix_landmark_images_landmark_id ON landmark_images (landmark_id)",
+        "CREATE INDEX IF NOT EXISTS ix_landmark_images_wikidata_id ON landmark_images (wikidata_id)",
     ]
     with engine.connect() as conn:
         for stmt in migrations:
