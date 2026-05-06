@@ -3,6 +3,7 @@ from dash.exceptions import PreventUpdate
 
 import ids
 from backend.crud import get_landmark_review_summary, get_landmark_reviews
+from callbacks.utils.trip_state import next_action_stop_index
 from callbacks.widgets.info_widgets import build_empty_info, build_landmark_info
 
 
@@ -26,9 +27,16 @@ def register_info_callbacks(app, registry):
                 raise PreventUpdate
             if not trip_data:
                 raise PreventUpdate
+            stop_ids = trip_data.get("visit_order") or []
+            next_stop_index = next_action_stop_index(trip_data)
+            if next_stop_index is None or next_stop_index >= len(stop_ids):
+                return {
+                    "type": "trip",
+                    "content": None,
+                }
             return {
                 "type": "trip",
-                "content": trip_data.get("id"),
+                "content": stop_ids[next_stop_index],
             }
         if isinstance(triggered_id, dict) and triggered_id.get("type") == "marker":
             if not triggered_value:
@@ -61,8 +69,15 @@ def register_info_callbacks(app, registry):
             }
 
         if active_info.get("type") == "trip":
-            # For now, just show a placeholder for trip info
-            return "Trip Details", "Feature coming soon", build_empty_info(), {
+            landmark = registry.get_landmark(active_info.get("content"))
+            if not landmark:
+                return "Trip Details", "No next stop", build_empty_info(), {
+                    **base_style,
+                    "display": "block",
+                }
+            review_summary = get_landmark_review_summary(landmark.id)
+            reviews = get_landmark_reviews(landmark.id)
+            return "Trip Details", landmark.name, build_landmark_info(landmark, review_summary, reviews), {
                 **base_style,
                 "display": "block",
             }
