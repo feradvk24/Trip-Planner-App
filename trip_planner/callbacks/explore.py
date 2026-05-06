@@ -6,7 +6,7 @@ import matplotlib.colors as mcolors
 from flask_login import current_user
 
 import ids
-from backend.crud import save_trip
+from backend.crud import save_trip, user_trip_name_exists
 from backend.tsp_formulas import fetch_route_steps, solve_tsp
 from callbacks.utils.routing import (
     build_route_legs,
@@ -339,6 +339,9 @@ def register_explore_callbacks(app, registry):
     def confirm_save_trip(n_clicks, name, landmark_ids, visit_order, start_value, end_value, position):
         if not name or not name.strip():
             return True, "Please enter a trip name.", True
+        trip_name = name.strip()
+        if user_trip_name_exists(current_user.id, trip_name):
+            return True, "You already have a saved trip with this name.", True
         saved_user_location = {"lat": position["lat"], "lon": position["lon"]} if position else None
         custom_start_location = saved_user_location if start_value == "my_location" else None
         custom_end_location = saved_user_location if end_value == "my_location" else None
@@ -352,7 +355,7 @@ def register_explore_callbacks(app, registry):
             route_point_count = len(stop_ids) + int(bool(custom_start_location)) + int(bool(custom_end_location))
             save_trip(
                 username=current_user.id,
-                name=name.strip(),
+                name=trip_name,
                 landmark_ids=landmark_ids or [],
                 visit_order=stop_ids,
                 route_legs=build_route_legs(route_point_count, route_result),

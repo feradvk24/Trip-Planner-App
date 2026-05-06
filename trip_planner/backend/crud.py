@@ -4,6 +4,10 @@ from backend.database import SessionLocal
 from backend.models import Landmark, Review, TripCompletion, User, UserTrip
 
 
+def _normalize_trip_name(name: str) -> str:
+    return (name or "").strip().casefold()
+
+
 def _trip_to_dict(trip: UserTrip, owner: Optional[User] = None) -> dict:
     data = {
         "id": trip.id,
@@ -110,6 +114,22 @@ def _with_completion_statuses(trips: list[dict]) -> list[dict]:
     ]
 
 
+def user_trip_name_exists(username: str, name: str) -> bool:
+    """Return whether a user already has a trip with the same normalized name."""
+    normalized_name = _normalize_trip_name(name)
+    if not normalized_name:
+        return False
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            return False
+        trips = db.query(UserTrip.name).filter(UserTrip.user_id == user.id).all()
+        return any(_normalize_trip_name(trip_name) == normalized_name for (trip_name,) in trips)
+    finally:
+        db.close()
+
+
 def save_trip(username: str, name: str, landmark_ids: list, visit_order: list,
               route_legs: list = None, custom_start_location: dict = None,
               custom_end_location: dict = None, saved_user_location: dict = None) -> UserTrip:
@@ -118,6 +138,10 @@ def save_trip(username: str, name: str, landmark_ids: list, visit_order: list,
         user = db.query(User).filter(User.username == username).first()
         if user is None:
             raise ValueError(f"User '{username}' not found in database.")
+        normalized_name = _normalize_trip_name(name)
+        existing_names = db.query(UserTrip.name).filter(UserTrip.user_id == user.id).all()
+        if any(_normalize_trip_name(trip_name) == normalized_name for (trip_name,) in existing_names):
+            raise ValueError("You already have a saved trip with this name.")
         trip = UserTrip(
             user_id=user.id,
             name=name,
