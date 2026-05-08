@@ -2,7 +2,7 @@ from dash import ALL, Input, Output, ctx
 from dash.exceptions import PreventUpdate
 
 import ids
-from backend.crud import get_landmark_review_summary, get_landmark_reviews
+from backend.crud import get_landmark_image, get_landmark_review_summary, get_landmark_reviews
 from callbacks.utils.trip_state import next_action_stop_index
 from callbacks.widgets.info_widgets import build_empty_info, build_landmark_info, build_trip_info
 
@@ -52,34 +52,38 @@ def register_info_callbacks(app, registry):
     @app.callback(
         Output(ids.INFO_SIDEBAR_TITLE, "children"),
         Output(ids.INFO_SIDEBAR_SUBTITLE, "children"),
+        Output(ids.INFO_SIDEBAR_IMAGE, "hidden"),
+        Output(ids.INFO_SIDEBAR_IMAGE, "src"),
         Output(ids.INFO_SIDEBAR_BODY, "children"),
         Output(ids.INFO_SIDEBAR_BODY, "style"),
         Input(ids.ACTIVE_INFO_STORE, "data"),
         Input(ids.SELECTED_TRIP_STORE, "data"),
         Input(ids.BROWSE_OVERLAY_STORE, "data"),
+        Input(ids.MODE_STORE, "data"),
     )
-    def render_info_sidebar(active_info, selected_trip, browse_open):
+    def render_info_sidebar(active_info, selected_trip, browse_open, mode):
         base_style = {
             "flex": "1 1 auto",
             "minHeight": 0,
             "overflowY": "auto",
         }
+        hide_landmark_image = mode not in ("explore", "trip")
 
         if browse_open:
             if selected_trip:
                 trip_name = selected_trip.get("name") or "Selected trip"
-                return trip_name, "Shared trip" if selected_trip.get("source") == "shared" else "Saved trip", build_trip_info(selected_trip, registry), {
+                return trip_name, "Shared trip" if selected_trip.get("source") == "shared" else "Saved trip", True, None, build_trip_info(selected_trip, registry), {
                     **base_style,
                     "display": "block",
                     "overflow": "hidden",
                 }
-            return "Browse Trips", "No trip selected", build_empty_info(), {
+            return "Browse Trips", "No trip selected", True, None, build_empty_info(), {
                 **base_style,
                 "display": "block",
             }
 
         if not active_info:
-            return "Details", "No selection", build_empty_info(), {
+            return "Details", "No selection", True, None, build_empty_info(), {
                 **base_style,
                 "display": "block",
             }
@@ -87,13 +91,15 @@ def register_info_callbacks(app, registry):
         if active_info.get("type") == "trip":
             landmark = registry.get_landmark(active_info.get("content"))
             if not landmark:
-                return "Trip Details", "No next stop", build_empty_info(), {
+                return "Trip Details", "No next stop", True, None, build_empty_info(), {
                     **base_style,
                     "display": "block",
                 }
+            image = get_landmark_image(landmark.id)
+            image_src = image.get("src_link") if image else None
             review_summary = get_landmark_review_summary(landmark.id)
             reviews = get_landmark_reviews(landmark.id)
-            return "Trip Details", landmark.name, build_landmark_info(landmark, review_summary, reviews), {
+            return "Trip Details", landmark.name, hide_landmark_image, image_src, build_landmark_info(landmark, review_summary, reviews), {
                 **base_style,
                 "display": "block",
             }
@@ -101,13 +107,15 @@ def register_info_callbacks(app, registry):
 
             landmark = registry.get_landmark(active_info.get("content"))
             if not landmark:
-                return "Details", "No selection", build_empty_info(), {
+                return "Details", "No selection", True, None, build_empty_info(), {
                     **base_style,
                     "display": "block",
                 }
+            image = get_landmark_image(landmark.id)
+            image_src = image.get("src_link") if image else None
             review_summary = get_landmark_review_summary(landmark.id)
             reviews = get_landmark_reviews(landmark.id)
-            return "Landmark", landmark.name, build_landmark_info(landmark, review_summary, reviews), {
+            return "Landmark", landmark.name, hide_landmark_image, image_src, build_landmark_info(landmark, review_summary, reviews), {
                 **base_style,
                 "display": "block",
             }

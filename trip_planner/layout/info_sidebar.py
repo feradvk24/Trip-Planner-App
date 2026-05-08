@@ -19,6 +19,22 @@ def create_info_sidebar():
                         id=ids.INFO_SIDEBAR_SUBTITLE,
                         style={"fontSize": "0.85rem", "color": "#6c757d"},
                     ),
+                    html.Img(
+                        id=ids.INFO_SIDEBAR_IMAGE,
+                        src=None,
+                        alt="",
+                        hidden=True,
+                        style={
+                            "width": "100%",
+                            "height": "10rem",
+                            "objectFit": "cover",
+                            "border": "1px solid #e9ecef",
+                            "borderRadius": "0.35rem",
+                            "backgroundColor": "#f8f9fa",
+                            "display": "block",
+                            "marginTop": "0.75rem",
+                        },
+                    ),
                 ],
                 style={
                     "borderBottom": "1px solid #e9ecef",
