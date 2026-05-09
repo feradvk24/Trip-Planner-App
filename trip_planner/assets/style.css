@@ -16,6 +16,48 @@
     z-index: 1000;
 }
 
+.landmark-search-shell {
+    background: #ffffff;
+    border: 1px solid #8fb7df;
+    border-radius: 0.4rem;
+    box-shadow: 0 3px 10px rgba(26, 111, 207, 0.18);
+    padding: 0.15rem;
+    position: relative;
+    z-index: 1050;
+}
+
+.landmark-search-dropdown {
+    position: relative;
+    z-index: 1050;
+}
+
+.landmark-search-shell .Select-control {
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.landmark-search-dropdown .Select-control {
+    background-color: #ffffff;
+    border: 1px solid #8fb7df;
+    box-shadow: 0 2px 7px rgba(26, 111, 207, 0.16);
+    min-height: 38px;
+}
+
+.landmark-search-dropdown.is-focused .Select-control,
+.landmark-search-dropdown .Select-control:hover {
+    border-color: #1a6fcf;
+    box-shadow: 0 0 0 0.18rem rgba(26, 111, 207, 0.16);
+}
+
+.landmark-search-dropdown .Select-placeholder {
+    color: #495057;
+}
+
+.landmark-search-dropdown .Select-menu-outer,
+.landmark-search-dropdown .Select-menu {
+    z-index: 1051 !important;
+}
+
 .saved-trip-item {
     transition: background-color 120ms ease, border-color 120ms ease;
 }

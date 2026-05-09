@@ -92,6 +92,7 @@ SIDEBAR_STYLE = {
     "display": "flex",
     "flexDirection": "column",
     "overflow": "hidden",
+    "zIndex": 1040,
 }
 
 INFO_SIDEBAR_STYLE = {

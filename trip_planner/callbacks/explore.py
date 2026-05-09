@@ -366,3 +366,23 @@ def register_explore_callbacks(app, registry):
         except Exception as e:
             return True, f"Failed to save trip: {e}", True
         return False, "", False
+
+    @app.callback(
+        Output(ids.LANDMARK_SEARCH_DROPDOWN, "options"),
+        Input(ids.LANDMARK_SEARCH_DROPDOWN, "search_value"),
+    )
+    def update_search_options(search_value):
+        query = " ".join((search_value or "").casefold().split())
+        if len(query) < 3:
+            return []
+
+        query_terms = query.split()
+        matching_landmarks = []
+        for landmark in registry.landmarks:
+            searchable_text = " ".join(
+                f"{landmark.name} {landmark.location}".casefold().split()
+            )
+            if all(term in searchable_text for term in query_terms):
+                matching_landmarks.append(landmark)
+
+        return [{"label": f"{lm.name} - {lm.location}", "value": lm.id} for lm in matching_landmarks]

@@ -1,5 +1,5 @@
 import dash_bootstrap_components as dbc
-from dash import html
+from dash import dcc, html
 
 import ids
 from styles import SIDEBAR_STYLE
@@ -10,6 +10,21 @@ def create_selected_object_group():
         id=ids.SELECTED_OBJECTS_GROUP,
         children=[],
         style={"flex": "1 1 auto", "minHeight": 0, "overflowY": "auto"},
+    )
+
+
+def create_landmark_search():
+    return html.Div(
+        dcc.Dropdown(
+            id=ids.LANDMARK_SEARCH_DROPDOWN,
+            options=[],
+            placeholder="Search landmark...",
+            searchable=True,
+            clearable=True,
+            className="landmark-search-dropdown",
+            style={"fontSize": "0.9rem"},
+        ),
+        className="landmark-search-shell",
     )
 
 
@@ -50,6 +65,7 @@ def create_trip_endpoints():
 
 
 def create_sidebar():
+    landmark_search = create_landmark_search()
     route_endpoints = create_trip_endpoints()
     selected_object_group = create_selected_object_group()
     optimize_route_btn = dbc.Button(
@@ -139,6 +155,7 @@ def create_sidebar():
             html.Hr(style={"margin": 0}),
         ], style={"display": "flex", "flexDirection": "column", "gap": "0.25rem"}),
         mode_toggle,
+        landmark_search,
         explore_panel,
         trip_panel,
         browse_panel,
