@@ -57,3 +57,45 @@
 .landmark-review-star-active {
     color: #f2b01e;
 }
+
+.info-sidebar-image-link {
+    color: inherit;
+    overflow: hidden;
+    position: relative;
+    text-decoration: none;
+}
+
+.info-sidebar-image-meta {
+    background: rgba(17, 24, 39, 0.84);
+    border-radius: 0 0 0.35rem 0.35rem;
+    bottom: 0;
+    color: #ffffff;
+    font-size: 0.78rem;
+    left: 0;
+    line-height: 1.25;
+    opacity: 0;
+    padding: 0.45rem 0.55rem;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+    transform: translateY(0.35rem);
+    transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.info-sidebar-image-link:hover .info-sidebar-image-meta,
+.info-sidebar-image-link:focus-visible .info-sidebar-image-meta {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.info-sidebar-image-label,
+.info-sidebar-image-author {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.info-sidebar-image-author {
+    color: #d1d5db;
+    margin-top: 0.15rem;
+}
