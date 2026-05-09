@@ -17,23 +17,25 @@ def create_trip_endpoints():
     return html.Div(
         [
             html.Div([
-                html.Label("Start:", style={"fontSize": "12px", "marginBottom": "1px"}),
+                html.Label("Start:", style={"fontSize": "11px", "marginBottom": "0"}),
                 dbc.Select(
                     options=[{"label": "Автоматично", "value": "auto"}],
                     placeholder="Select a start point",
                     id=ids.START_POINT_DROPDOWN,
                     className="format-dropdown",
                     size=5,
+                    style={"minHeight": "30px", "paddingTop": "0.2rem", "paddingBottom": "0.2rem", "fontSize": "0.85rem"},
                 ),
             ]),
             html.Div([
-                html.Label("End:", style={"fontSize": "12px", "marginBottom": "1px"}),
+                html.Label("End:", style={"fontSize": "11px", "marginBottom": "0"}),
                 dbc.Select(
                     options=[{"label": "Автоматично", "value": "auto"}],
                     placeholder="Select an end point",
                     id=ids.END_POINT_DROPDOWN,
                     className="format-dropdown",
                     size=5,
+                    style={"minHeight": "30px", "paddingTop": "0.2rem", "paddingBottom": "0.2rem", "fontSize": "0.85rem"},
                 ),
             ]),
         ],
@@ -41,7 +43,7 @@ def create_trip_endpoints():
             "marginBottom": 0,
             "backgroundColor": "#E1E1E1",
             "border": "1px solid black",
-            "padding": "0.5rem",
+            "padding": "0.35rem",
             "borderRadius": "0.25rem",
         },
     )
