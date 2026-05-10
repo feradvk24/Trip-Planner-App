@@ -136,7 +136,9 @@ def build_trip_info(trip, registry):
     distance_text = f"{distance_m / 1000:.1f} km" if distance_m >= 1000 else f"{int(round(distance_m))} m"
     owner = trip.get("owner_name") or trip.get("owner_username")
     completed_at = trip.get("completed_at")
+    completion_rating = trip.get("completion_rating")
     completion_review_text = trip.get("completion_review_text")
+    has_completion_review = completion_rating is not None or bool(completion_review_text)
 
     return html.Div(
         [
@@ -182,7 +184,7 @@ def build_trip_info(trip, registry):
             html.Div(
                 [
                     html.H6("Trip Review", className="mb-2"),
-                    html.Div(_stars(trip.get("completion_rating")), style={"color": "#f2b01e", "fontSize": "1.1rem"}),
+                    html.Div(_stars(completion_rating), style={"color": "#f2b01e", "fontSize": "1.1rem"}),
                     html.Div(
                         completion_review_text if completion_review_text else "No written remarks.",
                         className="text-muted" if not completion_review_text else "",
@@ -193,7 +195,7 @@ def build_trip_info(trip, registry):
                     "borderBottom": "1px solid #e9ecef",
                     "padding": "1rem 0",
                 },
-            ) if completed_at else None,
+            ) if has_completion_review else None,
             html.Div(
                 [
                     html.H6("Stops", className="mb-2"),
