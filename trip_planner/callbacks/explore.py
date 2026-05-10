@@ -1,5 +1,6 @@
 from dash import ALL, Input, Output, Patch, State, ctx, html, no_update
 from dash.exceptions import PreventUpdate
+import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
@@ -223,11 +224,12 @@ def register_explore_callbacks(app, registry):
         Output(ids.DESTINATIONS_LIST, "data"),
         Input({"type": "marker", "index": ALL}, "n_dblclicks"),
         Input({"type": "add-marker-btn", "index": ALL}, "n_clicks"),
+        Input({"type": "search-add-marker-btn", "index": ALL}, "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
         prevent_initial_call=True,
     )
-    def add_marker_to_trip(dblclicks_list, add_clicks_list, selected):
-        if not ctx.triggered_id or not (any(dblclicks_list) or any(add_clicks_list)):
+    def add_marker_to_trip(dblclicks_list, add_clicks_list, search_add_clicks_list, selected):
+        if not ctx.triggered_id or not (any(dblclicks_list) or any(add_clicks_list) or any(search_add_clicks_list)):
             raise PreventUpdate
         if selected is None:
             selected = []
@@ -386,3 +388,48 @@ def register_explore_callbacks(app, registry):
                 matching_landmarks.append(landmark)
 
         return [{"label": f"{lm.name} - {lm.location}", "value": lm.id} for lm in matching_landmarks]
+
+
+    @app.callback(
+        Output(ids.ACTIVE_INFO_STORE, "data", allow_duplicate=True),
+        Output(ids.MAP, "viewport"),
+        Output(ids.SEARCH_POPUP_LAYER, "children"),
+        Input(ids.LANDMARK_SEARCH_DROPDOWN, "value"),
+        State(ids.DESTINATIONS_LIST, "data"),
+        prevent_initial_call=True,
+    )
+    def select_landmark_from_search(landmark_id, destination_ids):
+        if landmark_id is None:
+            return no_update, no_update, []
+        landmark_id = int(landmark_id)
+        landmark = registry.get_landmark(landmark_id)
+        if not landmark:
+            raise PreventUpdate
+        is_selected = landmark.id in (destination_ids or [])
+        return (
+            {"type": "landmark", "content": landmark.id},
+            {"center": [landmark.lat, landmark.lon], "zoom": 14, "transition": "setView"},
+            [
+                dl.Popup(
+                    html.Div([
+                        html.H5(landmark.name),
+                        html.H6(landmark.location),
+                        html.A(
+                            "Learn more",
+                            href=landmark.link,
+                            target="_blank",
+                            style={"display": "block", "text-align": "center"},
+                        ),
+                        dbc.Button(
+                            "Added to trip" if is_selected else "Add to trip",
+                            id={"type": "search-add-marker-btn", "index": landmark.id},
+                            color="success",
+                            size="sm",
+                            className="mt-2 w-100",
+                            disabled=is_selected,
+                        ),
+                    ]),
+                    position=[landmark.lat, landmark.lon],
+                )
+            ],
+        )

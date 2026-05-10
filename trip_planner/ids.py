@@ -1,3 +1,4 @@
+MAP = "map"
 SIDEBAR = "sidebar"
 INFO_SIDEBAR = "info-sidebar"
 INFO_SIDEBAR_TITLE = "info-sidebar-title"
@@ -90,6 +91,7 @@ ACTIVE_INFO_STORE = "active-info-store"
 
 # Map layers
 ALL_MARKERS_LAYER = "all-markers-layer"
+SEARCH_POPUP_LAYER = "search-popup-layer"
 PLANNED_TRIP_MARKERS_LAYER = "planned-trip-markers-layer"
 PLANNED_TRIP_POLYLINE_LAYER = "planned-trip-polyline-layer"
 LOADED_TRIP_MARKERS_LAYER = "loaded-trip-markers-layer"

@@ -23,6 +23,7 @@ def create_map(markers):
             dl.LayerGroup(id=ids.LOADED_TRIP_POLYLINE_LAYER),
             dl.LayerGroup(id=ids.USER_LOCATION_LAYER),
             dl.LayerGroup(id=ids.ALL_MARKERS_LAYER, children=markers),
+            dl.LayerGroup(id=ids.SEARCH_POPUP_LAYER, children=[]),
             dl.LayerGroup(id=ids.PLANNED_TRIP_MARKERS_LAYER, children=[]),
             dl.LayerGroup(id=ids.LOADED_TRIP_MARKERS_LAYER, children=[]),
             html.Div(
@@ -53,4 +54,5 @@ def create_map(markers):
         wheelPxPerZoomLevel=200,
         zoomAnimation=True,
         style={"width": "100%", "height": "100%"},
+        id=ids.MAP,
     )
