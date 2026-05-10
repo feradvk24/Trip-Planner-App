@@ -3,6 +3,7 @@ from dash import dcc, html
 from flask_login import current_user
 
 import ids
+from backend.crud import get_active_user_trip
 from layout.auth import create_login_layout
 from layout.info_sidebar import create_info_sidebar
 from layout.map import create_map
@@ -11,16 +12,17 @@ from layout.sidebar import create_sidebar, create_user_menu
 from styles import CONTENT_STYLE
 
 
-def create_stores():
+def create_stores(active_trip=None):
+    initial_mode = "trip" if active_trip else "explore"
     return [
         dcc.Store(id=ids.DESTINATIONS_LIST, data=[]),
         dcc.Store(id=ids.VISIT_ORDER_STORE, data=[]),
-        dcc.Store(id=ids.MODE_STORE, data="explore"),
+        dcc.Store(id=ids.MODE_STORE, data=initial_mode),
         dcc.Store(id=ids.BROWSE_OVERLAY_STORE, data=False),
         dcc.Store(id=ids.BROWSE_SAVED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.SELECTED_TRIP_STORE, data=None),
-        dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=None),
+        dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=active_trip),
         dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None),
         dcc.Store(id=ids.ACTIVE_INFO_STORE, data=None),
     ]
@@ -104,6 +106,7 @@ def create_main_content(markers):
 
 
 def create_authenticated_layout(markers):
+    active_trip = get_active_user_trip(current_user.id)
     return html.Div([
         dcc.Location(id="url"),
         dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0, update_now=True, timeout=10000),
@@ -111,7 +114,7 @@ def create_authenticated_layout(markers):
         create_info_sidebar(),
         create_main_content(markers),
         create_user_menu(),
-        *create_stores(),
+        *create_stores(active_trip),
         create_warn_modal(),
         create_success_toast(),
         create_share_trip_toast(),

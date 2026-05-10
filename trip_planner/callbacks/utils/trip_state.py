@@ -66,7 +66,7 @@ def trip_point_summary(registry, visit_order_ids, index, active_trip=None):
     return {"name": landmark.name, "location": landmark.location}
 
 
-def visit_stop(active_trip, clicked_index, current_username, update_progress):
+def visit_stop(active_trip, clicked_index, update_progress):
     if not active_trip or clicked_index is None:
         raise PreventUpdate
     stop_ids = active_trip.get("visit_order") or []
@@ -75,12 +75,11 @@ def visit_stop(active_trip, clicked_index, current_username, update_progress):
     if clicked_index >= actionable_stop_count(active_trip):
         raise PreventUpdate
 
-    if active_trip.get("owner_username", current_username) == current_username:
-        update_progress(
-            trip_id=active_trip["trip_id"],
-            new_current_index=clicked_index,
-            newly_visited_index=clicked_index,
-        )
+    update_progress(
+        trip_id=active_trip["trip_id"],
+        new_current_index=clicked_index,
+        newly_visited_index=clicked_index,
+    )
     visited = list(active_trip.get("visited_indices") or [])
     if clicked_index not in visited:
         visited.append(clicked_index)

@@ -143,7 +143,6 @@ def register_trip_callbacks(app, registry):
         Output(ids.LOADED_TRIP_POLYLINE_LAYER, "children"),
         Input(ids.ACTIVE_TRIP_STORE, "data"),
         Input(ids.MODE_STORE, "data"),
-        prevent_initial_call=True,
     )
     def render_trip_markers(active_trip, mode):
         if mode != "trip" or not active_trip:
@@ -173,7 +172,7 @@ def register_trip_callbacks(app, registry):
                 raise PreventUpdate
             clicked_index = ctx.triggered_id["index"]
 
-        updated_trip = visit_stop(active_trip, clicked_index, current_user.id, update_trip_progress)
+        updated_trip = visit_stop(active_trip, clicked_index, update_trip_progress)
         completion_review_state = (
             trip_completion_review_pane_state(updated_trip)
             if trip_complete(updated_trip)

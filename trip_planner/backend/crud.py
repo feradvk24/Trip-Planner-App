@@ -215,6 +215,55 @@ def get_user_trips(username: str, include_completion_status: bool = False) -> li
         db.close()
 
 
+def get_active_user_trip(username: str) -> dict | None:
+    """Return the user's active trip in the shape used by ACTIVE_TRIP_STORE."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user is None or user.active_trip_id is None:
+            return None
+        trip = (
+            db.query(UserTrip)
+            .filter(UserTrip.id == user.active_trip_id, UserTrip.user_id == user.id)
+            .first()
+        )
+        if trip is None:
+            user.active_trip_id = None
+            db.commit()
+            return None
+        return {**_trip_to_dict(trip), "trip_id": trip.id}
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def set_active_user_trip(username: str, trip_id: int) -> dict:
+    """Set one of the user's saved trips as the trip to load by default."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            raise ValueError(f"User '{username}' not found in database.")
+        trip = (
+            db.query(UserTrip)
+            .filter(UserTrip.id == trip_id, UserTrip.user_id == user.id)
+            .first()
+        )
+        if trip is None:
+            raise ValueError(f"Trip {trip_id} not found.")
+        user.active_trip_id = trip.id
+        db.commit()
+        db.refresh(trip)
+        return {**_trip_to_dict(trip), "trip_id": trip.id}
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
 def get_public_trips(include_completion_status: bool = False) -> list[dict]:
     """Return public trips from all users, newest first."""
     db = SessionLocal()
@@ -355,6 +404,8 @@ def delete_trip(username: str, trip_id: int) -> None:
         )
         if trip is None:
             raise ValueError(f"Trip {trip_id} not found.")
+        if user.active_trip_id == trip.id:
+            user.active_trip_id = None
         db.delete(trip)
         db.commit()
     except Exception:

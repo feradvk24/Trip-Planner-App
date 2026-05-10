@@ -3,7 +3,7 @@ from dash.exceptions import PreventUpdate
 from flask_login import current_user
 
 import ids
-from backend.crud import delete_trip, get_public_trips, get_user_trips, set_trip_public_status
+from backend.crud import delete_trip, get_public_trips, get_user_trips, set_active_user_trip, set_trip_public_status
 from callbacks.utils.trip_state import sanitize_shared_trip
 from callbacks.widgets.callback_widgets import build_load_trip_items, build_selected_object_items
 
@@ -103,19 +103,7 @@ def register_browse_callbacks(app, registry):
                 build_selected_object_items(registry, destination_ids),
             )
 
-        active_trip = {
-            "trip_id": trip["id"],
-            "name": trip.get("name"),
-            "visit_order": trip["visit_order"] or [],
-            "route_legs": trip["route_legs"],
-            "current_point_index": trip["current_point_index"],
-            "visited_indices": trip["visited_indices"],
-            "custom_start_location": trip["custom_start_location"],
-            "custom_end_location": trip["custom_end_location"],
-            "saved_user_location": trip["saved_user_location"],
-            "is_public": trip["is_public"],
-            "owner_username": trip.get("owner_username", current_user.id),
-        }
+        active_trip = set_active_user_trip(current_user.id, trip["id"])
         return active_trip, "trip", False, no_update, no_update, no_update
 
     @app.callback(

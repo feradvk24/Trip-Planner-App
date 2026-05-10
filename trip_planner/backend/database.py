@@ -44,10 +44,38 @@ def init_db():
     """Create all tables that are defined in models (safe to call on startup)."""
     import backend.models  # noqa: F401 — registers ORM models with Base
     Base.metadata.create_all(bind=engine)
+    _migrate_users()
     _migrate_user_trips()
     _migrate_reviews()
     _migrate_trip_completions()
     _migrate_landmark_images()
+
+
+def _migrate_users():
+    """Add columns introduced after initial user schema creation (idempotent)."""
+    migrations = [
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS active_trip_id INTEGER",
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_constraint
+                WHERE conname = 'users_active_trip_id_fkey'
+            ) THEN
+                ALTER TABLE users
+                ADD CONSTRAINT users_active_trip_id_fkey
+                FOREIGN KEY (active_trip_id) REFERENCES user_trips(id)
+                ON DELETE SET NULL;
+            END IF;
+        END $$;
+        """,
+        "CREATE INDEX IF NOT EXISTS ix_users_active_trip_id ON users (active_trip_id)",
+    ]
+    with engine.connect() as conn:
+        for stmt in migrations:
+            conn.execute(text(stmt))
+        conn.commit()
 
 
 def _migrate_user_trips():

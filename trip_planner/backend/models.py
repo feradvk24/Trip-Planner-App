@@ -9,6 +9,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(150), unique=True, nullable=False, index=True)
+    active_trip_id = Column(Integer, ForeignKey("user_trips.id", ondelete="SET NULL"), nullable=True)
     first_name = Column(String(100), nullable=False)
     last_name = Column(String(100), nullable=False)
     salt = Column(String(64), nullable=False)
