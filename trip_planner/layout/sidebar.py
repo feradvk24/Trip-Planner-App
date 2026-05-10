@@ -64,7 +64,8 @@ def create_trip_endpoints():
     )
 
 
-def create_sidebar():
+def create_sidebar(active_trip=None):
+    initial_mode = "trip" if active_trip else "explore"
     landmark_search = create_landmark_search()
     route_endpoints = create_trip_endpoints()
     selected_object_group = create_selected_object_group()
@@ -97,8 +98,8 @@ def create_sidebar():
 
     mode_toggle = dbc.ButtonGroup(
         [
-            dbc.Button("Explore", id=ids.MODE_BTN_EXPLORE, color="primary", outline=True, active=True, size="sm", style={"flex": "1"}),
-            dbc.Button("Trip", id=ids.MODE_BTN_TRIP, color="primary", outline=True, active=False, size="sm", style={"flex": "1"}),
+            dbc.Button("Explore", id=ids.MODE_BTN_EXPLORE, color="primary", outline=True, active=initial_mode == "explore", size="sm", style={"flex": "1"}),
+            dbc.Button("Trip", id=ids.MODE_BTN_TRIP, color="primary", outline=True, active=initial_mode == "trip", size="sm", style={"flex": "1"}),
             dbc.Button("Browse", id=ids.MODE_BTN_BROWSE, color="primary", outline=True, active=False, size="sm", style={"flex": "1"}),
         ],
         className="w-100",
@@ -123,7 +124,7 @@ def create_sidebar():
         selected_object_group,
         optimize_route_btn,
         html.Div([save_trip_btn], className="d-flex gap-2 w-100"),
-    ], id=ids.EXPLORE_PANEL, style={"display": "flex", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0})
+    ], id=ids.EXPLORE_PANEL, style={"display": "flex" if initial_mode == "explore" else "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0})
 
     trip_panel = html.Div([
         load_trip_btn,
@@ -138,7 +139,7 @@ def create_sidebar():
             },
         ),
         share_trip_btn,
-    ], id=ids.TRIP_PANEL, style={"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0})
+    ], id=ids.TRIP_PANEL, style={"display": "flex" if initial_mode == "trip" else "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0})
 
     browse_panel = html.Div(
         [],

@@ -77,7 +77,9 @@ def create_share_trip_toast():
     )
 
 
-def create_main_content(markers):
+def create_main_content(markers, active_trip=None):
+    initial_markers = [] if active_trip else markers
+
     return html.Div(
         id=ids.MAIN_CONTENT,
         style=CONTENT_STYLE,
@@ -88,7 +90,7 @@ def create_main_content(markers):
                         [
                             html.Div(
                                 [
-                                    create_map(markers),
+                                    create_map(initial_markers),
                                     create_browse_overlay(),
                                     create_landmark_review_pane(),
                                 ],
@@ -110,9 +112,9 @@ def create_authenticated_layout(markers):
     return html.Div([
         dcc.Location(id="url"),
         dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0, update_now=True, timeout=10000),
-        create_sidebar(),
+        create_sidebar(active_trip),
         create_info_sidebar(),
-        create_main_content(markers),
+        create_main_content(markers, active_trip),
         create_user_menu(),
         *create_stores(active_trip),
         create_warn_modal(),
