@@ -20,7 +20,16 @@ def create_map(markers):
                 interactive=False,
             ),
             dl.LayerGroup(id=ids.PLANNED_TRIP_POLYLINE_LAYER),
-            dl.LayerGroup(id=ids.LOADED_TRIP_POLYLINE_LAYER),
+            dl.Pane(
+                dl.LayerGroup(id=ids.LOADED_TRIP_POLYLINE_LAYER),
+                name="trip-route-pane",
+                style={"zIndex": 540},
+            ),
+            dl.Pane(
+                dl.LayerGroup(id=ids.LOADED_TRIP_OVERVIEW_POLYLINE_LAYER),
+                name="trip-overview-route-pane",
+                style={"zIndex": 560},
+            ),
             dl.LayerGroup(id=ids.USER_LOCATION_LAYER),
             dl.LayerGroup(id=ids.ALL_MARKERS_LAYER, children=markers),
             dl.LayerGroup(id=ids.SEARCH_POPUP_LAYER, children=[]),

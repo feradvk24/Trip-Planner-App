@@ -26,12 +26,12 @@ def build_trip_content(registry, active_trip):
     )
     active_leg_idx = active_route_leg_index(active_trip)
     is_trip_complete = trip_complete(active_trip)
+    next_action_idx = next_action_stop_index(active_trip)
     passed_coords = []
     current_coords = []
     remaining_coords = []
-    all_coords = []
+    full_trip_coords = [coord for segment in result.segments for coord in segment]
     for i, segment in enumerate(result.segments):
-        all_coords.extend(segment)
         if is_trip_complete or (active_leg_idx is not None and i < active_leg_idx):
             passed_coords.extend(segment)
         elif active_leg_idx is not None and i == active_leg_idx:
@@ -39,24 +39,39 @@ def build_trip_content(registry, active_trip):
         else:
             remaining_coords.extend(segment)
 
-    polylines = []
+    status_polylines = []
     if passed_coords:
-        polylines.append(html.Div(dl.Polyline(
-            positions=passed_coords, color="#888888", weight=9, opacity=0.6,
-        )))
-    unvisited_coords = current_coords + remaining_coords
-    if unvisited_coords:
-        polylines.append(html.Div(dl.Polyline(
-            positions=unvisited_coords, color="#333333", weight=10,
-        )))
+        status_polylines.append(dl.Polyline(
+            id="trip-passed-polyline",
+            positions=passed_coords,
+            color="#888888",
+            weight=9,
+            opacity=0.6,
+        ))
+    if remaining_coords:
+        status_polylines.append(dl.Polyline(
+            id="trip-remaining-polyline",
+            positions=remaining_coords,
+            color="#333333",
+            weight=10,
+        ))
     if current_coords:
-        polylines.append(html.Div(dl.Polyline(
-            positions=current_coords, color="#1a6fcf", weight=9,
-        )))
-    if all_coords:
-        polylines.append(html.Div(dl.Polyline(
-            positions=all_coords, color="white", weight=2, dashArray="10 16",
-        )))
+        status_polylines.append(dl.Polyline(
+            id="trip-current-polyline",
+            positions=current_coords,
+            color="#1a6fcf",
+            weight=9,
+        ))
+    overview_polylines = []
+    if full_trip_coords:
+        overview_polylines.append(dl.Polyline(
+            id="trip-overview-polyline",
+            positions=full_trip_coords,
+            color="white",
+            weight=2,
+            dashArray="10 16",
+            interactive=False,
+        ))
 
     markers = []
     saved_location_markers = []
@@ -84,7 +99,6 @@ def build_trip_content(registry, active_trip):
             )
         )
 
-    next_action_idx = next_action_stop_index(active_trip)
     display_num = 0
     for i, landmark_id in enumerate(stop_ids):
         landmark = registry.get_landmark(landmark_id)
@@ -137,4 +151,4 @@ def build_trip_content(registry, active_trip):
                 ],
             )
         )
-    return saved_location_markers + markers, polylines
+    return saved_location_markers + markers, status_polylines, overview_polylines

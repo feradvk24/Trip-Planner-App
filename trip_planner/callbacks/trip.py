@@ -141,14 +141,15 @@ def register_trip_callbacks(app, registry):
     @app.callback(
         Output(ids.LOADED_TRIP_MARKERS_LAYER, "children"),
         Output(ids.LOADED_TRIP_POLYLINE_LAYER, "children"),
+        Output(ids.LOADED_TRIP_OVERVIEW_POLYLINE_LAYER, "children"),
         Input(ids.ACTIVE_TRIP_STORE, "data"),
         Input(ids.MODE_STORE, "data"),
     )
     def render_trip_markers(active_trip, mode):
         if mode != "trip" or not active_trip:
-            return [], []
-        trip_markers, polylines = build_trip_content(registry, active_trip)
-        return trip_markers, polylines
+            return [], [], []
+        trip_markers, status_polylines, overview_polylines = build_trip_content(registry, active_trip)
+        return trip_markers, status_polylines, overview_polylines
 
     @app.callback(
         Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),
