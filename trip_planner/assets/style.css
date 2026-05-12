@@ -173,4 +173,47 @@
     .login-card-col .card-body {
         padding: 1rem;
     }
+
+    #sidebar {
+        display: none !important;
+    }
+
+    #main-content {
+        position: fixed !important;
+        top: 0 !important;
+        right: 0 !important;
+        bottom: auto !important;
+        left: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        height: 50dvh !important;
+        width: 100vw !important;
+    }
+
+    #main-content .container-fluid,
+    #main-content .row,
+    #main-content .col,
+    #map {
+        height: 100% !important;
+        min-height: 0 !important;
+    }
+
+    #info-sidebar {
+        position: fixed !important;
+        top: 50dvh !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 50dvh !important;
+        border-left: 0 !important;
+        border-top: 1px solid #dee2e6;
+        display: block !important;
+        overflow-y: auto !important;
+    }
+
+    #info-sidebar-body {
+        min-height: auto !important;
+        overflow: visible !important;
+    }
 }
