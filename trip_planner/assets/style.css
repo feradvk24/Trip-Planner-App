@@ -141,3 +141,36 @@
     color: #d1d5db;
     margin-top: 0.15rem;
 }
+
+@media (max-width: 768px) {
+    .login-page {
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .login-container {
+        margin-top: 0 !important;
+        max-width: 28rem;
+        padding: 0;
+        width: 100%;
+    }
+
+    .login-container > .row {
+        --bs-gutter-x: 0;
+        margin-left: 0;
+        margin-right: 0;
+        width: 100%;
+    }
+
+    .login-card-col {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .login-card-col .card-body {
+        padding: 1rem;
+    }
+}
