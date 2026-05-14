@@ -61,7 +61,11 @@ def register_review_callbacks(app):
             "" if is_trip_completion_review else "Leave a review",
             eyebrow_style,
             review_state.get("title", ""),
-            review_state.get("location", ""),
+            (
+                "Ready for another adventure? Select a new trip!"
+                if is_trip_completion_review else
+                review_state.get("location", "")
+            ),
             landmark_review_star_buttons(review_state.get("rating")),
             (
                 "Share your opinions about this trip"

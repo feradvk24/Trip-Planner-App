@@ -62,7 +62,7 @@ def trip_completion_review_pane_state(active_trip):
         "is_open": True,
         "review_type": "trip_completion",
         "trip_id": active_trip.get("trip_id"),
-        "title": "Trip Completed!",
+        "title": "Trip complete!",
         "location": trip_name,
         "rating": None,
     }
