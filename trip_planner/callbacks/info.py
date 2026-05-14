@@ -72,11 +72,13 @@ def register_info_callbacks(app, registry):
                 raise PreventUpdate
             stop_ids = trip_data.get("visit_order") or []
             next_stop_index = next_action_stop_index(trip_data)
-            if next_stop_index is None or next_stop_index >= len(stop_ids):
+            if next_stop_index is None:
                 return {
                     "type": "trip",
                     "content": None,
                 }
+            if next_stop_index >= len(stop_ids):
+                raise PreventUpdate
             return {
                 "type": "trip",
                 "content": stop_ids[next_stop_index],

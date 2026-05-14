@@ -19,7 +19,10 @@ def initial_active_info(active_trip=None):
 
     stop_ids = active_trip.get("visit_order") or []
     next_stop_index = next_action_stop_index(active_trip)
-    if next_stop_index is None or next_stop_index >= len(stop_ids):
+    if next_stop_index is None:
+        return None
+
+    if next_stop_index >= len(stop_ids):
         return None
 
     landmark_id = stop_ids[next_stop_index]

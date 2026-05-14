@@ -54,7 +54,7 @@ def trip_point_summary(registry, visit_order_ids, index, active_trip=None):
     if index is None or index < 0:
         return None
     if index == len(visit_order_ids) and active_trip and active_trip.get("custom_end_location"):
-        return {"name": "Home", "location": ""}
+        return {"name": "My location", "location": "Final stop"}
     if index >= len(visit_order_ids):
         return None
     landmark_id = visit_order_ids[index]

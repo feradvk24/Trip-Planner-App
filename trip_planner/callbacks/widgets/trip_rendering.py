@@ -75,27 +75,55 @@ def build_trip_content(registry, active_trip):
 
     markers = []
     saved_location_markers = []
-    saved_locations = []
     if custom_start:
-        saved_locations.append(("Start location", custom_start))
-    if custom_end:
-        saved_locations.append(("End location", custom_end))
-
-    grouped_locations = {}
-    for label, location in saved_locations:
-        key = (round(location["lat"], 7), round(location["lon"], 7))
-        grouped_locations.setdefault(key, {"labels": [], "location": location})
-        grouped_locations[key]["labels"].append(label)
-
-    for item in grouped_locations.values():
-        location = item["location"]
-        label = " / ".join(item["labels"])
         saved_location_markers.append(
             dl.Marker(
-                position=[location["lat"], location["lon"]],
+                position=[custom_start["lat"], custom_start["lon"]],
                 icon=house_icon(),
                 interactive=False,
-                children=[dl.Tooltip(label)],
+                children=[dl.Tooltip("Start location")],
+            )
+        )
+    if custom_end:
+        end_index = len(stop_ids)
+        if end_index in visited:
+            popup_extra = html.Div(
+                "\u2713 Visited",
+                style={"textAlign": "center", "color": "#9e9e9e", "marginTop": "0.5rem"},
+            )
+        elif end_index == next_action_idx:
+            popup_extra = dbc.Button(
+                "Visited",
+                id={"type": "visit-btn", "index": end_index},
+                color="success",
+                size="sm",
+                className="mt-2 w-100",
+            )
+        else:
+            popup_extra = dbc.Button(
+                "Visited",
+                id={"type": "visit-btn", "index": end_index},
+                color="success",
+                size="sm",
+                className="mt-2 w-100",
+                disabled=True,
+            )
+        saved_location_markers.append(
+            dl.Marker(
+                position=[custom_end["lat"], custom_end["lon"]],
+                icon=house_icon(),
+                children=[
+                    dl.Tooltip("End point"),
+                    dl.Popup(html.Div([
+                        html.H5("End point"),
+                        html.Div(
+                            "Mark this stop visited to complete your trip.",
+                            className="text-muted",
+                            style={"fontSize": "0.95rem"},
+                        ),
+                        popup_extra,
+                    ])),
+                ],
             )
         )
 
