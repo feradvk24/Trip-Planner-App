@@ -37,6 +37,18 @@ def _image_meta(image):
     return children
 
 
+def _learn_more_action(landmark):
+    if not landmark or not landmark.link or landmark.link == "#":
+        return []
+    return html.A(
+        "Learn more",
+        href=landmark.link,
+        target="_blank",
+        rel="noopener noreferrer",
+        className="btn btn-outline-primary btn-sm",
+    )
+
+
 def register_info_callbacks(app, registry):
     @app.callback(
         Output(ids.ACTIVE_INFO_STORE, "data"),
@@ -82,6 +94,7 @@ def register_info_callbacks(app, registry):
     @app.callback(
         Output(ids.INFO_SIDEBAR_TITLE, "children"),
         Output(ids.INFO_SIDEBAR_SUBTITLE, "children"),
+        Output(ids.INFO_SIDEBAR_ACTIONS, "children"),
         Output(ids.INFO_SIDEBAR_IMAGE_LINK, "hidden"),
         Output(ids.INFO_SIDEBAR_IMAGE_LINK, "href"),
         Output(ids.INFO_SIDEBAR_IMAGE_LINK, "title"),
@@ -107,26 +120,28 @@ def register_info_callbacks(app, registry):
         if browse_open:
             if selected_trip:
                 trip_name = selected_trip.get("name") or "Selected trip"
-                return trip_name, "Shared trip" if selected_trip.get("source") == "shared" else "Saved trip", True, None, "", True, None, "", [], build_trip_info(selected_trip, registry), {
+                return trip_name, "Shared trip" if selected_trip.get("source") == "shared" else "Saved trip", [], True, None, "", True, None, "", [], build_trip_info(selected_trip, registry), {
                     **base_style,
                     "display": "block",
                     "overflow": "hidden",
                 }
-            return "Browse Trips", "No trip selected", True, None, "", True, None, "", [], build_empty_info(), {
+            return "Browse Trips", "No trip selected", [], True, None, "", True, None, "", [], build_empty_info(), {
                 **base_style,
                 "display": "block",
             }
 
         if not active_info:
-            return "Details", "No selection", True, None, "", True, None, "", [], build_empty_info(), {
+            return "Details", "No selection", [], True, None, "", True, None, "", [], build_empty_info(), {
                 **base_style,
                 "display": "block",
             }
 
-        if active_info.get("type") == "trip":
+        if active_info.get("type") in ("trip", "landmark"):
             landmark = registry.get_landmark(active_info.get("content"))
             if not landmark:
-                return "Trip Details", "No next stop", True, None, "", True, None, "", [], build_empty_info(), {
+                title = "Trip Complete" if active_info.get("type") == "trip" else "Details"
+                subtitle = "No next stop" if active_info.get("type") == "trip" else "No selection"
+                return title, subtitle, [], True, None, "", True, None, "", [], build_empty_info(), {
                     **base_style,
                     "display": "block",
                 }
@@ -138,27 +153,7 @@ def register_info_callbacks(app, registry):
             image_title = _image_tooltip(image)
             review_summary = get_landmark_review_summary(landmark.id)
             reviews = get_landmark_reviews(landmark.id)
-            return "Trip Details", landmark.name, image_hidden, image_source_url, image_title, image_hidden, image_src, image_alt, _image_meta(image), build_landmark_info(landmark, review_summary, reviews), {
-                **base_style,
-                "display": "block",
-            }
-        elif active_info.get("type") == "landmark":
-
-            landmark = registry.get_landmark(active_info.get("content"))
-            if not landmark:
-                return "Details", "No selection", True, None, "", True, None, "", [], build_empty_info(), {
-                    **base_style,
-                    "display": "block",
-                }
-            image = get_landmark_image(landmark.id)
-            image_src = image.get("src_link") if image else None
-            image_hidden = hide_landmark_image or not image_src
-            image_source_url = image.get("image_source_url") or image_src if image else None
-            image_alt = _image_label(image)
-            image_title = _image_tooltip(image)
-            review_summary = get_landmark_review_summary(landmark.id)
-            reviews = get_landmark_reviews(landmark.id)
-            return "Landmark", landmark.name, image_hidden, image_source_url, image_title, image_hidden, image_src, image_alt, _image_meta(image), build_landmark_info(landmark, review_summary, reviews), {
+            return landmark.name, landmark.location, _learn_more_action(landmark), image_hidden, image_source_url, image_title, image_hidden, image_src, image_alt, _image_meta(image), build_landmark_info(landmark, review_summary, reviews), {
                 **base_style,
                 "display": "block",
             }

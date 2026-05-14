@@ -73,27 +73,6 @@ def build_landmark_info(landmark, review_summary, reviews):
         [
             html.Div(
                 [
-                    html.Div(
-                        [
-                            html.Div(
-                                "Landmark",
-                                style={"fontSize": "0.75rem", "color": "#6c757d", "textTransform": "uppercase"},
-                            ),
-                            html.H5(landmark.name, className="mb-1"),
-                            html.Div(landmark.location, className="text-muted", style={"fontSize": "0.9rem"}),
-                        ],
-                    ),
-                    html.A(
-                        "Learn more",
-                        href=landmark.link,
-                        target="_blank",
-                        className="btn btn-outline-primary btn-sm mt-3",
-                    ) if landmark.link and landmark.link != "#" else None,
-                ],
-                style={"borderBottom": "1px solid #e9ecef", "paddingBottom": "1rem"},
-            ),
-            html.Div(
-                [
                     html.Div(_stars(average_rating), style={"color": "#f2b01e", "fontSize": "1.4rem"}),
                     html.Div(
                         [

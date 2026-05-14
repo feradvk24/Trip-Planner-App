@@ -18,6 +18,15 @@ from callbacks.widgets.review_widgets import review_pane_state, trip_completion_
 from callbacks.widgets.trip_rendering import build_trip_content
 
 
+def hidden_next_visit_button():
+    return dbc.Button(
+        "Visit",
+        id=ids.TRIP_NEXT_VISIT_BTN,
+        disabled=True,
+        style={"display": "none"},
+    )
+
+
 def register_trip_callbacks(app, registry):
     @app.callback(
         Output(ids.TRIP_STATUS_PANEL, "children"),
@@ -26,11 +35,17 @@ def register_trip_callbacks(app, registry):
     )
     def render_trip_status(active_trip, position):
         if not active_trip:
-            return html.Div("Load a trip to see your progress.", className="text-muted small")
+            return html.Div([
+                html.Div("Load a trip to see your progress.", className="text-muted small"),
+                hidden_next_visit_button(),
+            ])
 
         stop_ids = active_trip.get("visit_order") or []
         if not stop_ids:
-            return html.Div("This trip has no destinations.", className="text-muted small")
+            return html.Div([
+                html.Div("This trip has no destinations.", className="text-muted small"),
+                hidden_next_visit_button(),
+            ])
 
         current_idx = clamp_stop_index(active_trip)
         is_trip_complete = trip_complete(active_trip)
@@ -109,7 +124,7 @@ def register_trip_callbacks(app, registry):
                     color="success",
                     size="sm",
                     className="mt-2 w-100",
-                ) if next_action_idx is not None and next_point else None,
+                ) if next_action_idx is not None and next_point else hidden_next_visit_button(),
                 html.Div(
                     [
                         html.Div("Distance to next", className="text-muted small"),

@@ -19,6 +19,10 @@ def create_info_sidebar():
                         id=ids.INFO_SIDEBAR_SUBTITLE,
                         style={"fontSize": "0.85rem", "color": "#6c757d"},
                     ),
+                    html.Div(
+                        id=ids.INFO_SIDEBAR_ACTIONS,
+                        style={"marginTop": "0.75rem"},
+                    ),
                     html.A(
                         [
                             html.Img(

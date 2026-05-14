@@ -216,4 +216,24 @@
         min-height: auto !important;
         overflow: visible !important;
     }
+
+    #user-menu {
+        right: 0.75rem !important;
+        top: 0.75rem !important;
+        z-index: 1060 !important;
+    }
+
+    #landmark-review-pane {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 11000 !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 1rem !important;
+    }
+
+    #landmark-review-pane > div {
+        max-height: calc(100dvh - 2rem);
+        overflow-y: auto;
+    }
 }

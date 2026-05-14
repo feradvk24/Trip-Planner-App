@@ -4,12 +4,32 @@ from flask_login import current_user
 
 import ids
 from backend.crud import get_active_user_trip
+from callbacks.utils.trip_state import next_action_stop_index
 from layout.auth import create_login_layout
 from layout.info_sidebar import create_info_sidebar
 from layout.map import create_map
 from layout.overlays import create_browse_overlay, create_landmark_review_pane
 from layout.sidebar import create_sidebar, create_user_menu
 from styles import CONTENT_STYLE
+
+
+def initial_active_info(active_trip=None):
+    if not active_trip:
+        return None
+
+    stop_ids = active_trip.get("visit_order") or []
+    next_stop_index = next_action_stop_index(active_trip)
+    if next_stop_index is None or next_stop_index >= len(stop_ids):
+        return None
+
+    landmark_id = stop_ids[next_stop_index]
+    if landmark_id == -1:
+        return None
+
+    return {
+        "type": "trip",
+        "content": landmark_id,
+    }
 
 
 def create_stores(active_trip=None):
@@ -24,7 +44,7 @@ def create_stores(active_trip=None):
         dcc.Store(id=ids.SELECTED_TRIP_STORE, data=None),
         dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=active_trip),
         dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None),
-        dcc.Store(id=ids.ACTIVE_INFO_STORE, data=None),
+        dcc.Store(id=ids.ACTIVE_INFO_STORE, data=initial_active_info(active_trip)),
     ]
 
 
@@ -92,7 +112,6 @@ def create_main_content(markers, active_trip=None):
                                 [
                                     create_map(initial_markers),
                                     create_browse_overlay(),
-                                    create_landmark_review_pane(),
                                 ],
                                 className="flex-grow-1",
                                 style={"minHeight": 0, "position": "relative"},
@@ -115,6 +134,7 @@ def create_authenticated_layout(markers):
         create_sidebar(active_trip),
         create_info_sidebar(),
         create_main_content(markers, active_trip),
+        create_landmark_review_pane(),
         create_user_menu(),
         *create_stores(active_trip),
         create_warn_modal(),

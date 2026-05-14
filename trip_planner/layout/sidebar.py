@@ -1,5 +1,6 @@
 import dash_bootstrap_components as dbc
 from dash import dcc, html
+from flask_login import current_user
 
 import ids
 from styles import SIDEBAR_STYLE
@@ -130,7 +131,14 @@ def create_sidebar(active_trip=None):
         load_trip_btn,
         html.Div(
             id=ids.TRIP_STATUS_PANEL,
-            children=[],
+            children=[
+                dbc.Button(
+                    "Visit",
+                    id=ids.TRIP_NEXT_VISIT_BTN,
+                    disabled=True,
+                    style={"display": "none"},
+                ),
+            ],
             style={
                 "backgroundColor": "#F8F9FA",
                 "border": "1px solid #D6D8DB",
@@ -164,10 +172,19 @@ def create_sidebar(active_trip=None):
 
 
 def create_user_menu():
+    username = current_user.id if current_user.is_authenticated else "User"
     return dbc.DropdownMenu(
         id=ids.USER_MENU,
         label=html.I(className="bi bi-person-circle", style={"fontSize": "1.25rem", "color": "black"}),
         children=[
+            dbc.DropdownMenuItem(
+                [
+                    html.Div("Signed in as", className="text-muted", style={"fontSize": "0.75rem"}),
+                    html.Div(username, style={"fontWeight": "600"}),
+                ],
+                header=True,
+            ),
+            dbc.DropdownMenuItem(divider=True),
             dbc.DropdownMenuItem("Logout", id=ids.LOGOUT_BUTTON, style={"color": "#dc3545"}),
         ],
         direction="down",

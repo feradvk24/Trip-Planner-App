@@ -175,9 +175,9 @@ def create_landmark_review_pane():
         id=ids.LANDMARK_REVIEW_PANE,
         style={
             "display": "none",
-            "position": "absolute",
+            "position": "fixed",
             "inset": 0,
-            "zIndex": 1001,
+            "zIndex": 11000,
             "alignItems": "center",
             "justifyContent": "center",
             "backgroundColor": "rgba(248, 249, 250, 0.42)",
