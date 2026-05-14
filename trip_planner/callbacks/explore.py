@@ -84,6 +84,8 @@ def register_explore_callbacks(app, registry):
         Output(ids.ROUTE_STATS_PANEL, "style"),
         Output(ids.EXPLORE_MAP_CACHE, "data"),
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
+        Output(ids.START_POINT_DROPDOWN, "disabled"),
+        Output(ids.END_POINT_DROPDOWN, "disabled"),
         Input(ids.VISIT_ORDER_STORE, "data"),
         State(ids.GEOLOCATION, "position"),
         State(ids.DESTINATIONS_LIST, "data"),
@@ -180,6 +182,8 @@ def register_explore_callbacks(app, registry):
             stats_style,
             explore_cache,
             build_selected_object_items(registry, destination_ids, allow_remove=False),
+            True,
+            True,
         )
 
     @app.callback(
@@ -195,6 +199,8 @@ def register_explore_callbacks(app, registry):
         Output(ids.ROUTE_STATS_PANEL, "style", allow_duplicate=True),
         Output(ids.EXPLORE_MAP_CACHE, "data", allow_duplicate=True),
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
+        Output(ids.START_POINT_DROPDOWN, "disabled", allow_duplicate=True),
+        Output(ids.END_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
         State(ids.OPTIMIZE_ROUTE_BTN, "children"),
@@ -216,6 +222,8 @@ def register_explore_callbacks(app, registry):
             {"display": "none"},
             None,
             build_selected_object_items(registry, destination_ids),
+            False,
+            False,
         )
 
     @app.callback(
@@ -284,11 +292,13 @@ def register_explore_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "style", allow_duplicate=True),
         Output(ids.ROUTE_STATS_PANEL, "style", allow_duplicate=True),
         Output(ids.EXPLORE_MAP_CACHE, "data", allow_duplicate=True),
+        Output(ids.START_POINT_DROPDOWN, "disabled", allow_duplicate=True),
+        Output(ids.END_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Input(ids.CLEAR_ALL_BTN, "n_clicks"),
         prevent_initial_call=True,
     )
     def clear_all(n_clicks):
-        return build_all_markers(registry.landmarks, []), [], [], [], [], [], optimize_route_button_children("Optimize Route"), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}, None
+        return build_all_markers(registry.landmarks, []), [], [], [], [], [], optimize_route_button_children("Optimize Route"), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}, None, False, False
 
     @app.callback(
         Output(ids.START_POINT_DROPDOWN, "options"),
