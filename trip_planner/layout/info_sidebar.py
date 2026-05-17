@@ -1,4 +1,4 @@
-from dash import html
+from dash import dcc, html
 
 import ids
 from styles import INFO_SIDEBAR_STYLE
@@ -23,40 +23,46 @@ def create_info_sidebar():
                         id=ids.INFO_SIDEBAR_ACTIONS,
                         style={"marginTop": "0.75rem"},
                     ),
-                    html.A(
-                        [
-                            html.Img(
-                                id=ids.INFO_SIDEBAR_IMAGE,
-                                src=None,
-                                alt="",
-                                hidden=True,
-                                style={
-                                    "width": "100%",
-                                    "height": "10rem",
-                                    "objectFit": "cover",
-                                    "border": "1px solid #e9ecef",
-                                    "borderRadius": "0.35rem",
-                                    "backgroundColor": "#f8f9fa",
-                                    "display": "block",
-                                },
-                            ),
-                            html.Div(
-                                id=ids.INFO_SIDEBAR_IMAGE_META,
-                                className="info-sidebar-image-meta",
-                            ),
-                        ],
-                        id=ids.INFO_SIDEBAR_IMAGE_LINK,
-                        className="info-sidebar-image-link",
-                        href=None,
-                        target="_blank",
-                        rel="noopener noreferrer",
-                        title="",
-                        hidden=True,
-                        style={
-                            "display": "block",
-                            "marginTop": "0.75rem",
-                            "cursor": "pointer",
-                        },
+                    dcc.Loading(
+                        html.A(
+                            [
+                                html.Img(
+                                    id=ids.INFO_SIDEBAR_IMAGE,
+                                    src=None,
+                                    alt="",
+                                    hidden=True,
+                                    style={
+                                        "width": "100%",
+                                        "height": "10rem",
+                                        "objectFit": "cover",
+                                        "border": "1px solid #e9ecef",
+                                        "borderRadius": "0.35rem",
+                                        "backgroundColor": "#f8f9fa",
+                                        "display": "block",
+                                    },
+                                ),
+                                html.Div(
+                                    id=ids.INFO_SIDEBAR_IMAGE_META,
+                                    className="info-sidebar-image-meta",
+                                ),
+                            ],
+                            id=ids.INFO_SIDEBAR_IMAGE_LINK,
+                            className="info-sidebar-image-link",
+                            href=None,
+                            target="_blank",
+                            rel="noopener noreferrer",
+                            title="",
+                            hidden=True,
+                            style={
+                                "display": "block",
+                                "marginTop": "0.75rem",
+                                "cursor": "pointer",
+                            },
+                        ),
+                        type="circle",
+                        color="#1a6fcf",
+                        delay_show=120,
+                        parent_className="info-sidebar-image-loading",
                     ),
                 ],
                 style={

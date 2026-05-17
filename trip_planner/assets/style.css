@@ -107,6 +107,14 @@
     text-decoration: none;
 }
 
+.info-sidebar-image-loading {
+    min-height: 0;
+}
+
+.info-sidebar-image-loading .dash-loading {
+    margin-top: 0.75rem;
+}
+
 .info-sidebar-image-meta {
     background: rgba(17, 24, 39, 0.84);
     border-radius: 0 0 0.35rem 0.35rem;
