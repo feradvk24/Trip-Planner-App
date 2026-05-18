@@ -1,8 +1,6 @@
-import requests
 import math
 import requests
 from functools import lru_cache
-from math import radians, cos, sin, asin, sqrt
 from typing import List, Optional, Tuple, NamedTuple
 
 from backend.landmark_registry import Landmark
@@ -14,13 +12,16 @@ def haversine(a: Landmark, b: Landmark) -> float:
     """
     R = 6371  # Earth radius in km
 
-    dlat = math.radians(b.lat - a.lat)
-    dlon = math.radians(b.lon - a.lon)
+    a_lat, a_lon = a.routing_coordinates()
+    b_lat, b_lon = b.routing_coordinates()
+
+    dlat = math.radians(b_lat - a_lat)
+    dlon = math.radians(b_lon - a_lon)
 
     sa = math.sin(dlat / 2)
     sb = math.sin(dlon / 2)
 
-    h = sa * sa + math.cos(math.radians(a.lat)) * math.cos(math.radians(b.lat)) * sb * sb
+    h = sa * sa + math.cos(math.radians(a_lat)) * math.cos(math.radians(b_lat)) * sb * sb
 
     distance = 2 * R * math.asin(math.sqrt(h))
     return distance
@@ -183,7 +184,7 @@ def fetch_route_steps(
     coord_pairs = []
     if start_point:
         coord_pairs.append(start_point)
-    coord_pairs.extend((w.lat, w.lon) for w in waypoints)
+    coord_pairs.extend(w.routing_coordinates() for w in waypoints)
     if end_point:
         coord_pairs.append(end_point)
 

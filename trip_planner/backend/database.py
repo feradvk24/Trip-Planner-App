@@ -44,11 +44,23 @@ def init_db():
     """Create all tables that are defined in models (safe to call on startup)."""
     import backend.models  # noqa: F401 — registers ORM models with Base
     Base.metadata.create_all(bind=engine)
+    _migrate_landmarks()
     _migrate_users()
     _migrate_user_trips()
     _migrate_reviews()
     _migrate_trip_completions()
     _migrate_landmark_images()
+
+
+def _migrate_landmarks():
+    """Add columns introduced after initial landmark schema creation."""
+    migrations = [
+        "ALTER TABLE landmarks ADD COLUMN IF NOT EXISTS access_point JSON",
+    ]
+    with engine.connect() as conn:
+        for stmt in migrations:
+            conn.execute(text(stmt))
+        conn.commit()
 
 
 def _migrate_users():

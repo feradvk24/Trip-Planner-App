@@ -26,6 +26,7 @@ class Landmark(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     link = Column(String(500), nullable=True)
+    access_point = Column(JSON, nullable=True)  # None or {"lat": ..., "lon": ...}
 
 
 class LandmarkImage(Base):

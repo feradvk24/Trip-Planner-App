@@ -22,6 +22,7 @@ from callbacks.widgets.callback_widgets import (
     button_label_text,
     optimize_route_button_children,
 )
+from callbacks.widgets.access_connectors import build_access_connector_polylines
 from styles import number_icon
 
 
@@ -104,6 +105,11 @@ def register_explore_callbacks(app, registry):
             html.Div(dl.Polyline(positions=segment, color=color, weight=5))
             for segment, color in zip(result.segments, colors)
         ]
+        access_connectors = build_access_connector_polylines(
+            (lm for lm in visit_order if lm.id != -1),
+            id_prefix="planned-access-connector",
+        )
+        route_lines = polylines + access_connectors
 
         start_is_my_location = visit_order_ids[0] == -1
         visit_num = {}
@@ -162,13 +168,13 @@ def register_explore_callbacks(app, registry):
             "pointerEvents": "none",
         }
         explore_cache = {
-            "polylines": polylines,
+            "polylines": route_lines,
             "tour_markers": tour_markers,
             "stats_content": stats_content,
             "stats_style": stats_style,
         }
         return (
-            polylines,
+            route_lines,
             True,
             [],
             tour_markers,

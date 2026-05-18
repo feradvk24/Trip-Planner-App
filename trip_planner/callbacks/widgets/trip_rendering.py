@@ -9,6 +9,7 @@ from callbacks.utils.trip_state import (
     next_action_stop_index,
     trip_complete,
 )
+from callbacks.widgets.access_connectors import build_access_connector_polylines
 from styles import current_point_icon, grayed_number_icon, house_icon, number_icon
 
 
@@ -19,8 +20,9 @@ def build_trip_content(registry, active_trip):
     custom_start = active_trip.get("custom_start_location")
     custom_end = active_trip.get("custom_end_location")
 
+    landmarks = registry.get_landmarks(stop_ids)
     result = fetch_route_steps(
-        registry.get_landmarks(stop_ids),
+        landmarks,
         start_point=location_tuple(custom_start),
         end_point=location_tuple(custom_end),
     )
@@ -62,6 +64,12 @@ def build_trip_content(registry, active_trip):
             color="#1a6fcf",
             weight=9,
         ))
+    status_polylines.extend(
+        build_access_connector_polylines(
+            landmarks,
+            id_prefix="trip-access-connector",
+        )
+    )
     overview_polylines = []
     if full_trip_coords:
         overview_polylines.append(dl.Polyline(
