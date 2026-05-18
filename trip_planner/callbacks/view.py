@@ -30,6 +30,7 @@ def register_view_callbacks(app, registry):
         Output(ids.EXPLORE_PANEL, "style"),
         Output(ids.TRIP_PANEL, "style"),
         Output(ids.BROWSE_PANEL, "style"),
+        Output(ids.LANDMARK_SEARCH_SHELL, "style"),
         Output(ids.MODE_BTN_EXPLORE, "active"),
         Output(ids.MODE_BTN_TRIP, "active"),
         Output(ids.MODE_BTN_BROWSE, "active"),
@@ -40,9 +41,11 @@ def register_view_callbacks(app, registry):
     def update_mode_panels(mode, browse_open):
         show = {"display": "flex", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0}
         hide = {"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0}
+        search_show = {"display": "block"}
+        search_hide = {"display": "none"}
         if mode == "trip":
-            return hide, show, hide, False, not browse_open, bool(browse_open)
-        return show, hide, hide, not browse_open, False, bool(browse_open)
+            return hide, show, hide, search_hide, False, not browse_open, bool(browse_open)
+        return show, hide, hide, search_show, not browse_open, False, bool(browse_open)
 
     @app.callback(
         Output(ids.BROWSE_OVERLAY, "style"),

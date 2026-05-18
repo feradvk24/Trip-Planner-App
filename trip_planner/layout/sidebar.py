@@ -14,7 +14,7 @@ def create_selected_object_group():
     )
 
 
-def create_landmark_search():
+def create_landmark_search(initial_mode="explore"):
     return html.Div(
         dcc.Dropdown(
             id=ids.LANDMARK_SEARCH_DROPDOWN,
@@ -25,7 +25,9 @@ def create_landmark_search():
             className="landmark-search-dropdown",
             style={"fontSize": "0.9rem"},
         ),
+        id=ids.LANDMARK_SEARCH_SHELL,
         className="landmark-search-shell",
+        style={"display": "block" if initial_mode == "explore" else "none"},
     )
 
 
@@ -67,7 +69,7 @@ def create_trip_endpoints():
 
 def create_sidebar(active_trip=None):
     initial_mode = "trip" if active_trip else "explore"
-    landmark_search = create_landmark_search()
+    landmark_search = create_landmark_search(initial_mode)
     route_endpoints = create_trip_endpoints()
     selected_object_group = create_selected_object_group()
     optimize_route_btn = dbc.Button(
