@@ -318,6 +318,27 @@ def update_trip_progress(trip_id: int, new_current_index: int, newly_visited_ind
             visited.append(newly_visited_index)
         trip.visited_indices = visited
         trip.current_point_index = new_current_index
+
+        visit_order = trip.visit_order or []
+        if 0 <= newly_visited_index < len(visit_order):
+            landmark_id = visit_order[newly_visited_index]
+            if landmark_id != -1:
+                existing_visit = (
+                    db.query(UserLandmarkVisit)
+                    .filter(
+                        UserLandmarkVisit.user_id == trip.user_id,
+                        UserLandmarkVisit.landmark_id == landmark_id,
+                        UserLandmarkVisit.trip_id == trip.id,
+                    )
+                    .first()
+                )
+                if existing_visit is None:
+                    db.add(UserLandmarkVisit(
+                        user_id=trip.user_id,
+                        landmark_id=landmark_id,
+                        trip_id=trip.id,
+                    ))
+
         db.commit()
     except Exception:
         db.rollback()
