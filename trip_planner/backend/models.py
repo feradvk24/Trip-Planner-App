@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Float, Integer, String, DateTime, ForeignKey, JSON
+from sqlalchemy import Boolean, Column, Float, Integer, String, DateTime, ForeignKey, JSON, UniqueConstraint
 from datetime import datetime, timezone
 
 from backend.database import Base
@@ -75,6 +75,20 @@ class TripCompletion(Base):
     completed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     rating = Column(Integer, nullable=True)  # 1-5 stars
     review_text = Column(String(1000), nullable=True)
+
+
+class UserLandmarkVisit(Base):
+    __tablename__ = "user_landmark_visits"
+    __table_args__ = (
+        UniqueConstraint("user_id", "landmark_id", "trip_id", name="uq_user_landmark_trip_visit"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    landmark_id = Column(Integer, ForeignKey("landmarks.id"), nullable=False, index=True)
+    trip_id = Column(Integer, ForeignKey("user_trips.id"), nullable=False, index=True)
+
+    visited_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
 
 class Review(Base):
