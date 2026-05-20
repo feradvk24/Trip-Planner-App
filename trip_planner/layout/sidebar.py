@@ -110,6 +110,17 @@ def create_sidebar(active_trip=None):
 
     explore_panel = html.Div([
         route_endpoints,
+        html.Div(
+            dbc.Checklist(
+                id=ids.HIDE_VISITED_LANDMARKS_FILTER,
+                options=[{"label": "Hide visited landmarks", "value": "hide_visited"}],
+                value=[],
+                switch=True,
+                className="small",
+                style={"margin": 0},
+            ),
+            style={"display": "flex", "justifyContent": "center"},
+        ),
         html.Div([
             html.P("Selected monuments:", className="lead", style={"marginBottom": 0}),
             html.Span(

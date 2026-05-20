@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
 from dash import html
 
-from layout.markers import create_marker, create_markers
+from layout.markers import create_markers
 from styles import checkbox_icon, pin_icon
 
 
@@ -18,12 +18,13 @@ def optimize_route_button_children(label):
     return [html.I(className=icon_class), label]
 
 
-def build_all_markers(landmarks, destination_ids):
-    return create_markers(landmarks, pin_icon, destination_ids, checkbox_icon)
-
-
-def build_marker(landmark, destination_ids):
-    return create_marker(landmark, pin_icon, destination_ids, checkbox_icon)
+def build_all_markers(landmarks, destination_ids, hidden_ids=None):
+    hidden_ids = set(hidden_ids or [])
+    visible_landmarks = [
+        landmark for landmark in landmarks
+        if landmark.id not in hidden_ids
+    ]
+    return create_markers(visible_landmarks, pin_icon, destination_ids, checkbox_icon)
 
 
 def build_load_trip_items(trips, allow_delete=True, show_owner=False):

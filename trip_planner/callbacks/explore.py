@@ -1,4 +1,4 @@
-from dash import ALL, Input, Output, Patch, State, ctx, html, no_update
+from dash import ALL, Input, Output, State, ctx, html, no_update
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
@@ -7,7 +7,7 @@ import matplotlib.colors as mcolors
 from flask_login import current_user
 
 import ids
-from backend.crud import save_trip, user_trip_name_exists
+from backend.crud import get_user_visited_landmark_ids, save_trip, user_trip_name_exists
 from backend.tsp_formulas import fetch_route_steps, solve_tsp
 from callbacks.utils.routing import (
     build_route_legs,
@@ -16,8 +16,6 @@ from callbacks.utils.routing import (
     resolve_visit_order_landmarks,
 )
 from callbacks.widgets.callback_widgets import (
-    build_all_markers,
-    build_marker,
     build_selected_object_items,
     button_label_text,
     optimize_route_button_children,
@@ -27,18 +25,10 @@ from styles import number_icon
 
 
 def register_explore_callbacks(app, registry):
-    landmark_layer_index = {
-        landmark.id: index for index, landmark in enumerate(registry.landmarks)
-    }
-
-    def patch_marker_layer(landmark_id, destination_ids):
-        marker_index = landmark_layer_index.get(landmark_id)
-        landmark = registry.get_landmark(landmark_id)
-        if marker_index is None or not landmark:
-            return build_all_markers(registry.landmarks, destination_ids)
-        patched_markers = Patch()
-        patched_markers[marker_index] = build_marker(landmark, destination_ids)
-        return patched_markers
+    def hidden_visited_landmark_ids(hide_visited):
+        if not hide_visited or not current_user.is_authenticated:
+            return set()
+        return get_user_visited_landmark_ids(current_user.id)
 
     @app.callback(
         Output(ids.WARN_MODAL, "is_open"),
@@ -71,18 +61,13 @@ def register_explore_callbacks(app, registry):
         return [lm.id for lm in visit_order], False
 
     @app.callback(
-        Output(ids.PLANNED_TRIP_POLYLINE_LAYER, "children"),
         Output(ids.SUCCESS_TOAST, "is_open"),
-        Output(ids.ALL_MARKERS_LAYER, "children"),
-        Output(ids.PLANNED_TRIP_MARKERS_LAYER, "children"),
         Output(ids.OPTIMIZE_ROUTE_BTN, "children"),
         Output(ids.OPTIMIZE_ROUTE_BTN, "color"),
         Output(ids.OPTIMIZE_ROUTE_BTN, "outline"),
         Output(ids.SAVE_TRIP_BTN, "disabled"),
         Output(ids.SAVE_TRIP_BTN, "color"),
         Output(ids.SAVE_TRIP_BTN, "style"),
-        Output(ids.ROUTE_STATS_PANEL, "children"),
-        Output(ids.ROUTE_STATS_PANEL, "style"),
         Output(ids.EXPLORE_MAP_CACHE, "data"),
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output(ids.START_POINT_DROPDOWN, "disabled"),
@@ -174,18 +159,13 @@ def register_explore_callbacks(app, registry):
             "stats_style": stats_style,
         }
         return (
-            route_lines,
             True,
-            [],
-            tour_markers,
             optimize_route_button_children("Modify Route"),
             "success",
             True,
             False,
             "info",
             {"flex": "1"},
-            stats_content,
-            stats_style,
             explore_cache,
             build_selected_object_items(registry, destination_ids, allow_remove=False),
             True,
@@ -193,16 +173,12 @@ def register_explore_callbacks(app, registry):
         )
 
     @app.callback(
-        Output(ids.PLANNED_TRIP_POLYLINE_LAYER, "children", allow_duplicate=True),
-        Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),
-        Output(ids.PLANNED_TRIP_MARKERS_LAYER, "children", allow_duplicate=True),
         Output(ids.OPTIMIZE_ROUTE_BTN, "children", allow_duplicate=True),
         Output(ids.OPTIMIZE_ROUTE_BTN, "color", allow_duplicate=True),
         Output(ids.OPTIMIZE_ROUTE_BTN, "outline", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "disabled", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "color", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "style", allow_duplicate=True),
-        Output(ids.ROUTE_STATS_PANEL, "style", allow_duplicate=True),
         Output(ids.EXPLORE_MAP_CACHE, "data", allow_duplicate=True),
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output(ids.START_POINT_DROPDOWN, "disabled", allow_duplicate=True),
@@ -216,16 +192,12 @@ def register_explore_callbacks(app, registry):
         if button_label_text(btn_label) != "Modify Route":
             raise PreventUpdate
         return (
-            [],
-            build_all_markers(registry.landmarks, destination_ids),
-            [],
             optimize_route_button_children("Optimize Route"),
             "success",
             False,
             True,
             "secondary",
             {"opacity": "0.45", "flex": "1"},
-            {"display": "none"},
             None,
             build_selected_object_items(registry, destination_ids),
             False,
@@ -233,7 +205,6 @@ def register_explore_callbacks(app, registry):
         )
 
     @app.callback(
-        Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),
         Output(ids.SELECTED_OBJECTS_GROUP, "children"),
         Output(ids.DESTINATIONS_LIST, "data"),
         Input({"type": "marker", "index": ALL}, "n_dblclicks"),
@@ -256,14 +227,9 @@ def register_explore_callbacks(app, registry):
             raise PreventUpdate
         updated_selection = [*selected, landmark_id]
 
-        return (
-            patch_marker_layer(landmark_id, updated_selection),
-            build_selected_object_items(registry, updated_selection),
-            updated_selection,
-        )
+        return build_selected_object_items(registry, updated_selection), updated_selection
 
     @app.callback(
-        Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
         Input({"type": "remove-selected-item", "index": ALL}, "n_clicks"),
@@ -277,16 +243,9 @@ def register_explore_callbacks(app, registry):
         landmark_id = ctx.triggered_id["index"]
         updated_selection = [selected_id for selected_id in selected if selected_id != landmark_id]
 
-        return (
-            patch_marker_layer(landmark_id, updated_selection),
-            build_selected_object_items(registry, updated_selection),
-            updated_selection,
-        )
+        return build_selected_object_items(registry, updated_selection), updated_selection
 
     @app.callback(
-        Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),
-        Output(ids.PLANNED_TRIP_MARKERS_LAYER, "children", allow_duplicate=True),
-        Output(ids.PLANNED_TRIP_POLYLINE_LAYER, "children", allow_duplicate=True),
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
         Output(ids.VISIT_ORDER_STORE, "data", allow_duplicate=True),
@@ -296,7 +255,6 @@ def register_explore_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "disabled", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "color", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "style", allow_duplicate=True),
-        Output(ids.ROUTE_STATS_PANEL, "style", allow_duplicate=True),
         Output(ids.EXPLORE_MAP_CACHE, "data", allow_duplicate=True),
         Output(ids.START_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Output(ids.END_POINT_DROPDOWN, "disabled", allow_duplicate=True),
@@ -304,7 +262,7 @@ def register_explore_callbacks(app, registry):
         prevent_initial_call=True,
     )
     def clear_all(n_clicks):
-        return build_all_markers(registry.landmarks, []), [], [], [], [], [], optimize_route_button_children("Optimize Route"), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, {"display": "none"}, None, False, False
+        return [], [], [], optimize_route_button_children("Optimize Route"), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, None, False, False
 
     @app.callback(
         Output(ids.START_POINT_DROPDOWN, "options"),
@@ -388,15 +346,19 @@ def register_explore_callbacks(app, registry):
     @app.callback(
         Output(ids.LANDMARK_SEARCH_DROPDOWN, "options"),
         Input(ids.LANDMARK_SEARCH_DROPDOWN, "search_value"),
+        Input(ids.HIDE_VISITED_LANDMARKS_FILTER, "value"),
     )
-    def update_search_options(search_value):
+    def update_search_options(search_value, hide_visited):
         query = " ".join((search_value or "").casefold().split())
         if len(query) < 3:
             return []
 
         query_terms = query.split()
+        hidden_ids = hidden_visited_landmark_ids(hide_visited)
         matching_landmarks = []
         for landmark in registry.landmarks:
+            if landmark.id in hidden_ids:
+                continue
             searchable_text = " ".join(
                 f"{landmark.name} {landmark.location}".casefold().split()
             )

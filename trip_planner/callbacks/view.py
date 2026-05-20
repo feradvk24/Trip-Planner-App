@@ -1,7 +1,9 @@
 from dash import Input, Output, State, ctx, no_update
 import dash_leaflet as dl
+from flask_login import current_user
 
 import ids
+from backend.crud import get_user_visited_landmark_ids
 from callbacks.widgets.callback_widgets import build_all_markers
 from styles import location_dot_icon
 
@@ -94,17 +96,18 @@ def register_view_callbacks(app, registry):
         ]
 
     @app.callback(
-        Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),
-        Output(ids.PLANNED_TRIP_MARKERS_LAYER, "children", allow_duplicate=True),
-        Output(ids.PLANNED_TRIP_POLYLINE_LAYER, "children", allow_duplicate=True),
-        Output(ids.ROUTE_STATS_PANEL, "children", allow_duplicate=True),
-        Output(ids.ROUTE_STATS_PANEL, "style", allow_duplicate=True),
+        Output(ids.ALL_MARKERS_LAYER, "children"),
+        Output(ids.PLANNED_TRIP_MARKERS_LAYER, "children"),
+        Output(ids.PLANNED_TRIP_POLYLINE_LAYER, "children"),
+        Output(ids.ROUTE_STATS_PANEL, "children"),
+        Output(ids.ROUTE_STATS_PANEL, "style"),
         Input(ids.MODE_STORE, "data"),
-        State(ids.EXPLORE_MAP_CACHE, "data"),
-        State(ids.DESTINATIONS_LIST, "data"),
-        prevent_initial_call="initial_duplicate",
+        Input(ids.HIDE_VISITED_LANDMARKS_FILTER, "value"),
+        Input(ids.EXPLORE_MAP_CACHE, "data"),
+        Input(ids.DESTINATIONS_LIST, "data"),
+        prevent_initial_call=True,
     )
-    def sync_explore_layers(mode, explore_cache, destination_ids):
+    def sync_explore_layers(mode, hide_visited, explore_cache, destination_ids):
         hidden_stats = {"display": "none"}
         if mode != "explore":
             return [], [], [], [], hidden_stats
@@ -116,4 +119,9 @@ def register_view_callbacks(app, registry):
                 explore_cache.get("stats_content", []),
                 explore_cache.get("stats_style", hidden_stats),
             )
-        return build_all_markers(registry.landmarks, destination_ids or []), [], [], [], hidden_stats
+        hidden_ids = (
+            get_user_visited_landmark_ids(current_user.id)
+            if hide_visited and current_user.is_authenticated else
+            set()
+        )
+        return build_all_markers(registry.landmarks, destination_ids or [], hidden_ids), [], [], [], hidden_stats
