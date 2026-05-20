@@ -1,7 +1,7 @@
 from typing import Optional
 
 from backend.database import SessionLocal
-from backend.models import Landmark, LandmarkImage, Review, TripCompletion, User, UserTrip
+from backend.models import Landmark, LandmarkImage, Review, TripCompletion, User, UserTrip, UserLandmarkVisit
 
 
 def _normalize_trip_name(name: str) -> str:
@@ -413,3 +413,118 @@ def delete_trip(username: str, trip_id: int) -> None:
         raise
     finally:
         db.close()
+
+
+def record_user_landmark_visit(username: str, trip_id: int, landmark_id: int) -> UserLandmarkVisit:
+    """Record a landmark visit for one of the user's trips."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            raise ValueError(f"User '{username}' not found in database.")
+
+        trip = (
+            db.query(UserTrip)
+            .filter(UserTrip.id == trip_id, UserTrip.user_id == user.id)
+            .first()
+        )
+        if trip is None:
+            raise ValueError(f"Trip {trip_id} not found.")
+
+        existing_visit = (
+            db.query(UserLandmarkVisit)
+            .filter(
+                UserLandmarkVisit.user_id == user.id,
+                UserLandmarkVisit.landmark_id == landmark_id,
+                UserLandmarkVisit.trip_id == trip.id,
+            )
+            .first()
+        )
+        if existing_visit:
+            return existing_visit
+
+        visit = UserLandmarkVisit(
+            user_id=user.id,
+            landmark_id=landmark_id,
+            trip_id=trip.id,
+        )
+        db.add(visit)
+        db.commit()
+        db.refresh(visit)
+        return visit
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def get_user_visited_landmark_ids(username: str) -> set[int]:
+    """Return distinct landmark IDs visited by the user across all trips."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            return set()
+
+        rows = (
+            db.query(UserLandmarkVisit.landmark_id)
+            .filter(UserLandmarkVisit.user_id == user.id)
+            .distinct()
+            .all()
+        )
+        return {landmark_id for (landmark_id,) in rows}
+    finally:
+        db.close()
+
+def get_user_landmark_visit_history(username: str, landmark_id: int | None = None) -> list[dict]:
+    """Return a user's landmark visit history, newest first."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            return []
+
+        query = (
+            db.query(UserLandmarkVisit, UserTrip)
+            .join(UserTrip, UserLandmarkVisit.trip_id == UserTrip.id)
+            .filter(UserLandmarkVisit.user_id == user.id)
+        )
+        if landmark_id is not None:
+            query = query.filter(UserLandmarkVisit.landmark_id == landmark_id)
+
+        visits = query.order_by(UserLandmarkVisit.visited_at.desc()).all()
+        return [
+            {
+                "id": visit.id,
+                "landmark_id": visit.landmark_id,
+                "trip_id": visit.trip_id,
+                "trip_name": trip.name,
+                "visited_at": visit.visited_at.strftime("%d %b %Y, %H:%M"),
+            }
+            for visit, trip in visits
+        ]
+    finally:
+        db.close()
+
+
+def check_for_user_visit(username: str, landmark_id: int) -> bool:
+    """Return whether the user has visited a landmark on any trip."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            return False
+
+        visit = (
+            db.query(UserLandmarkVisit.id)
+            .filter(
+                UserLandmarkVisit.user_id == user.id,
+                UserLandmarkVisit.landmark_id == landmark_id,
+            )
+            .first()
+        )
+        return visit is not None
+    finally:
+        db.close()
+
