@@ -1,4 +1,5 @@
 from dash import html
+import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 
 import ids
@@ -49,6 +50,20 @@ def create_map(markers):
                     "boxShadow": "0 1px 5px rgba(0,0,0,0.3)",
                     "fontSize": "0.85rem",
                     "lineHeight": "1.6",
+                    "pointerEvents": "none",
+                },
+            ),
+            html.Div(
+                dbc.Spinner(color="primary", type="border"),
+                id=ids.ROUTE_LOADING_OVERLAY,
+                style={
+                    "display": "none",
+                    "position": "absolute",
+                    "inset": 0,
+                    "zIndex": 2000,
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "background": "rgba(255,255,255,0.38)",
                     "pointerEvents": "none",
                 },
             ),

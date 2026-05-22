@@ -51,6 +51,7 @@ GEOLOCATION = "geolocation"
 USER_LOCATION_LAYER = "user-location-layer"
 
 ROUTE_STATS_PANEL = "route-stats-panel"
+ROUTE_LOADING_OVERLAY = "route-loading-overlay"
 
 # Mode toggle
 MODE_STORE = "mode-store"

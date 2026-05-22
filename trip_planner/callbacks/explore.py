@@ -76,7 +76,32 @@ def register_explore_callbacks(app, registry):
         State(ids.GEOLOCATION, "position"),
         State(ids.DESTINATIONS_LIST, "data"),
         prevent_initial_call=True,
-        running=[(Output(ids.OPTIMIZE_ROUTE_BTN, "disabled"), True, False)],
+        running=[
+            (Output(ids.OPTIMIZE_ROUTE_BTN, "disabled"), True, False),
+            (
+                Output(ids.ROUTE_LOADING_OVERLAY, "style"),
+                {
+                    "display": "flex",
+                    "position": "absolute",
+                    "inset": 0,
+                    "zIndex": 2000,
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "background": "rgba(255,255,255,0.38)",
+                    "pointerEvents": "none",
+                },
+                {
+                    "display": "none",
+                    "position": "absolute",
+                    "inset": 0,
+                    "zIndex": 2000,
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "background": "rgba(255,255,255,0.38)",
+                    "pointerEvents": "none",
+                },
+            ),
+        ],
     )
     def render_route(visit_order_ids, position, destination_ids):
         if not visit_order_ids:
