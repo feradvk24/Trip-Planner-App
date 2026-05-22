@@ -8,7 +8,7 @@ from flask_login import current_user
 
 import ids
 from backend.crud import get_user_visited_landmark_ids, save_trip, user_trip_name_exists
-from backend.tsp_formulas import fetch_route_steps, solve_tsp
+from backend.routing_service import fetch_route_steps, optimize_visit_order
 from callbacks.utils.routing import (
     build_route_legs,
     location_tuple,
@@ -57,8 +57,8 @@ def register_explore_callbacks(app, registry):
         landmarks = registry.get_landmarks(destination_ids)
         start_landmark = resolve_endpoint(registry, start_point_id, position)
         end_landmark = resolve_endpoint(registry, end_point_id, position)
-        visit_order = solve_tsp(landmarks, start_point=start_landmark, end_point=end_landmark)
-        return [lm.id for lm in visit_order], False
+        visit_order = optimize_visit_order(landmarks, start_point=start_landmark, end_point=end_landmark)
+        return visit_order, False
 
     @app.callback(
         Output(ids.SUCCESS_TOAST, "is_open"),

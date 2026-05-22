@@ -1,9 +1,8 @@
 import math
-import requests
-from functools import lru_cache
-from typing import List, Optional, Tuple, NamedTuple
+from typing import List, Optional
 
 from backend.landmark_registry import Landmark
+
 
 def haversine(a: Landmark, b: Landmark) -> float:
     """
@@ -46,7 +45,7 @@ def nearest_neighbor(
                 route = [remaining.pop(i)]
                 break
     elif start_point:
-        # External start point (e.g. user's current location) — not a destination
+        # External start point (e.g. user's current location) is not a destination.
         route = [start_point]
     else:
         route = [remaining.pop(0)]
@@ -78,7 +77,7 @@ def nearest_neighbor(
         # Close the loop: return to the start point
         route.append(route[0])
     elif end_point and not end_in_list:
-        # External end point (e.g. user's current location) — not a destination
+        # External end point (e.g. user's current location) is not a destination.
         route.append(end_point)
 
     return route
@@ -122,76 +121,6 @@ def two_opt(route, distance_func, fix_start=True, fix_end=False):
 
     return route
 
-class RouteResult(NamedTuple):
-    segments: List[List[Tuple[float, float]]]
-    distance_m: float   # total distance in metres
-    duration_s: float   # total duration in seconds
-    legs: List[dict]     # per-hop distance/duration metadata
-
-@lru_cache(maxsize=128)
-def _fetch_route_cached(coord_pairs: tuple) -> RouteResult:
-    """
-    Cached OSRM call. coord_pairs is a tuple of (lat, lon) tuples so it is
-    hashable and safe to use as an lru_cache key.
-    """
-    coords = ";".join(f"{lon},{lat}" for lat, lon in coord_pairs)
-    url = (
-        f"https://router.project-osrm.org/route/v1/driving/"
-        f"{coords}?overview=false&geometries=geojson&steps=true"
-    )
-
-    res = requests.get(url, timeout=15)
-    if res.status_code != 200:
-        raise Exception(f"Failed to fetch route: {res.status_code}")
-
-    data = res.json()
-    if "routes" not in data or len(data["routes"]) == 0:
-        raise Exception("No route found")
-
-    route = data["routes"][0]
-    road_segments = []
-    route_legs = []
-
-    for leg in route["legs"]:
-        leg_coords = []
-        for step in leg["steps"]:
-            leg_coords.extend((c[1], c[0]) for c in step["geometry"]["coordinates"])  # lat, lon
-        if leg_coords:
-            road_segments.append(leg_coords)
-        route_legs.append({
-            "distance_m": leg.get("distance", 0),
-            "duration_s": leg.get("duration", 0),
-        })
-
-    return RouteResult(
-        segments=road_segments,
-        distance_m=route.get("distance", 0),
-        duration_s=route.get("duration", 0),
-        legs=route_legs,
-    )
-
-
-def fetch_route_steps(
-    waypoints: List[Landmark],
-    start_point: Optional[Tuple[float, float]] = None,
-    end_point: Optional[Tuple[float, float]] = None,
-) -> RouteResult:
-    """
-    Returns road segments together with total distance and duration from OSRM.
-    Results are cached by waypoint coordinates — repeated calls with the same
-    visit order skip the HTTP request entirely.
-    """
-    coord_pairs = []
-    if start_point:
-        coord_pairs.append(start_point)
-    coord_pairs.extend(w.routing_coordinates() for w in waypoints)
-    if end_point:
-        coord_pairs.append(end_point)
-
-    if len(coord_pairs) < 2:
-        return RouteResult(segments=[], distance_m=0, duration_s=0, legs=[])
-    return _fetch_route_cached(tuple(coord_pairs))
-
 
 def solve_tsp(
     points: List[Landmark],
@@ -201,15 +130,3 @@ def solve_tsp(
     route = nearest_neighbor(points, start_point, end_point)
     route = two_opt(route, haversine, fix_start=bool(start_point), fix_end=bool(end_point))
     return route
-
-
-def generate_route(
-        points: List[Landmark],
-        start_point: Optional[Landmark] = None,
-        end_point: Optional[Landmark] = None
-) -> List[List[Tuple[float, float]]]:
-    if len(points) < 2:
-        return []
-
-    route = solve_tsp(points, start_point, end_point)
-    return fetch_route_steps(route)

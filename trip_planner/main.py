@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from backend.api_routes import register_api_routes
 from backend.auth import init_login_manager
 from backend.database import create_database_if_missing, init_db, shutdown_session
 from backend.landmark_registry import LandmarkRegistry
@@ -54,6 +55,7 @@ def logout():
 
 
 registry = LandmarkRegistry.from_database()
+register_api_routes(server, registry)
 markers = create_markers(registry.landmarks, pin_icon)
 app.layout = lambda: create_app_layout(markers)
 

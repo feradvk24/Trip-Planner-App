@@ -2,7 +2,7 @@ from dash import html
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 
-from backend.tsp_formulas import fetch_route_steps
+from backend.routing_service import fetch_route_steps
 from callbacks.utils.routing import location_tuple
 from callbacks.utils.trip_state import (
     active_route_leg_index,

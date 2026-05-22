@@ -1,4 +1,4 @@
-from backend.tsp_formulas import fetch_route_steps
+from backend.routing_service import fetch_route_steps
 from backend.landmark_registry import Landmark
 
 
