@@ -122,11 +122,63 @@ def two_opt(route, distance_func, fix_start=True, fix_end=False):
     return route
 
 
+def route_distance(route: List[Landmark]) -> float:
+    return sum(haversine(route[i], route[i + 1]) for i in range(len(route) - 1))
+
+
+def two_opt_by_distance(route: List[Landmark], fix_start=True, fix_end=False) -> List[Landmark]:
+    """
+    2-opt variant for open routes. It recomputes total route distance for each
+    candidate reversal, which lets automatic routes improve their first stop.
+    """
+    route = route.copy()
+    improved = True
+    epsilon = 1e-9
+
+    while improved:
+        improved = False
+        best_distance = route_distance(route)
+        first_index = 1 if fix_start else 0
+        last_index = len(route) - 2 if fix_end else len(route) - 1
+
+        for i in range(first_index, last_index):
+            for j in range(i + 1, last_index + 1):
+                if not fix_start and not fix_end and i == 0 and j == len(route) - 1:
+                    continue
+
+                candidate = route[:i] + list(reversed(route[i:j + 1])) + route[j + 1:]
+                candidate_distance = route_distance(candidate)
+                if candidate_distance + epsilon < best_distance:
+                    route = candidate
+                    best_distance = candidate_distance
+                    improved = True
+                    break
+            if improved:
+                break
+
+    return route
+
+
 def solve_tsp(
     points: List[Landmark],
     start_point: Optional[Landmark] = None,
     end_point: Optional[Landmark] = None
 ) -> List[Landmark]:
-    route = nearest_neighbor(points, start_point, end_point)
-    route = two_opt(route, haversine, fix_start=bool(start_point), fix_end=bool(end_point))
-    return route
+    if not points:
+        return []
+
+    if start_point:
+        route = nearest_neighbor(points, start_point, end_point)
+        return two_opt(route, haversine, fix_start=True, fix_end=bool(end_point))
+
+    best_route = None
+    best_distance = float("inf")
+    for candidate_start in points:
+        route = nearest_neighbor(points, candidate_start, end_point)
+        route = two_opt_by_distance(route, fix_start=False, fix_end=bool(end_point))
+        distance = route_distance(route)
+        if distance < best_distance:
+            best_distance = distance
+            best_route = route
+
+    return best_route or []
