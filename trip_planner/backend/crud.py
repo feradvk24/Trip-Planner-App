@@ -498,7 +498,7 @@ def get_user_visited_landmark_ids(username: str) -> set[int]:
     finally:
         db.close()
 
-def get_user_landmark_visit_history(username: str, landmark_id: int | None = None) -> list[dict]:
+def get_user_landmark_visit_history(username: str, landmark_id: int | None = None, limit: int | None = None) -> list[dict]:
     """Return a user's landmark visit history, newest first."""
     db = SessionLocal()
     try:
@@ -514,7 +514,11 @@ def get_user_landmark_visit_history(username: str, landmark_id: int | None = Non
         if landmark_id is not None:
             query = query.filter(UserLandmarkVisit.landmark_id == landmark_id)
 
-        visits = query.order_by(UserLandmarkVisit.visited_at.desc()).all()
+        query = query.order_by(UserLandmarkVisit.visited_at.desc())
+        if limit is not None:
+            query = query.limit(limit)
+
+        visits = query.all()
         return [
             {
                 "id": visit.id,

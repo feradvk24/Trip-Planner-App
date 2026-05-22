@@ -44,6 +44,7 @@ def create_stores(active_trip=None):
         dcc.Store(id=ids.BROWSE_OVERLAY_STORE, data=False),
         dcc.Store(id=ids.BROWSE_SAVED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[]),
+        dcc.Store(id=ids.BROWSE_VISIT_HISTORY_STORE, data=[]),
         dcc.Store(id=ids.SELECTED_TRIP_STORE, data=None),
         dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=active_trip),
         dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None),
