@@ -1,8 +1,12 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
+from flask_login import current_user
 
 import ids
+from backend.crud import get_user_trips
+from callbacks.widgets.callback_widgets import build_load_trip_items
+from layout.info_sidebar import create_info_sidebar
 from layout.sidebar import create_user_menu
 
 
@@ -10,29 +14,96 @@ dash.register_page(__name__, path="/browse", name="Browse")
 
 
 def layout(**kwargs):
+    saved_trips = (
+        get_user_trips(current_user.id, include_completion_status=True)
+        if current_user.is_authenticated else
+        []
+    )
     return html.Div(
         [
+            dcc.Store(id=ids.DESTINATIONS_LIST, data=[]),
+            dcc.Store(id=ids.VISIT_ORDER_STORE, data=[]),
+            dcc.Store(id=ids.MODE_STORE, data="browse"),
+            dcc.Store(id=ids.BROWSE_OVERLAY_STORE, data=True),
+            dcc.Store(id=ids.BROWSE_SAVED_TRIPS_STORE, data=saved_trips),
+            dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[]),
+            dcc.Store(id=ids.BROWSE_VISIT_HISTORY_STORE, data=[]),
+            dcc.Store(id=ids.SELECTED_TRIP_STORE, data=None),
+            dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=None),
+            dcc.Store(id=ids.ACTIVE_INFO_STORE, data=None),
+            html.Div(id=ids.SELECTED_OBJECTS_GROUP, style={"display": "none"}),
             create_user_menu(),
-            dbc.Container(
+            create_info_sidebar(),
+            html.Div(
                 [
-                    dcc.Link(
-                        [html.I(className="bi bi-arrow-left me-2"), "Back to map"],
-                        href="/",
-                        className="btn btn-outline-secondary btn-sm mb-3",
+                    html.Div(
+                        [
+                            dcc.Link(
+                                [html.I(className="bi bi-arrow-left me-2"), "Back to map"],
+                                href="/",
+                                className="btn btn-outline-secondary btn-sm",
+                            ),
+                            html.Div(
+                                [
+                                    html.H2("Browse Trips", className="mb-0"),
+                                    html.Div(
+                                        "Choose a saved or shared trip to preview its stops.",
+                                        className="text-muted",
+                                    ),
+                                ],
+                            ),
+                        ],
+                        className="d-flex align-items-center gap-3 mb-3",
                     ),
-                    html.H2("Browse Trips", className="mb-2"),
-                    html.P(
-                        "This page will replace the Browse overlay.",
-                        className="text-muted",
-                    ),
-                    dbc.Alert(
-                        "Next step: move saved trips, shared trips, visit history, and featured landmarks here.",
-                        color="info",
+                    dbc.Tabs(
+                        [
+                            dbc.Tab(
+                                html.Div(
+                                    dbc.ListGroup(
+                                        id=ids.LOAD_TRIP_LIST,
+                                        children=build_load_trip_items(saved_trips),
+                                        flush=True,
+                                    ),
+                                    id=ids.MY_SAVED_TRIPS_TAB,
+                                    className="p-3",
+                                    style={"height": "calc(100vh - 13rem)", "overflowY": "auto"},
+                                ),
+                                label="My Saved Trips",
+                                tab_id="my-saved-trips",
+                            ),
+                            dbc.Tab(
+                                html.Div(
+                                    dbc.ListGroup(id=ids.USER_SHARED_TRIPS_LIST, children=[], flush=True),
+                                    id=ids.USER_SHARED_TRIPS_TAB,
+                                    className="p-3",
+                                    style={"height": "calc(100vh - 13rem)", "overflowY": "auto"},
+                                ),
+                                label="User Shared Trips",
+                                tab_id="user-shared-trips",
+                            ),
+                            dbc.Tab(
+                                html.Div(
+                                    dbc.ListGroup(id=ids.VISIT_HISTORY_LIST, children=[], flush=True),
+                                    id=ids.VISIT_HISTORY_TAB,
+                                    className="p-3",
+                                    style={"height": "calc(100vh - 13rem)", "overflowY": "auto"},
+                                ),
+                                label="Visit History",
+                                tab_id="visit-history",
+                            ),
+                        ],
+                        id=ids.BROWSE_TABS,
+                        active_tab="my-saved-trips",
                     ),
                 ],
-                fluid=True,
-                className="py-4",
+                id=ids.PAGE_CONTENT,
+                style={
+                    "marginRight": "20rem",
+                    "height": "100vh",
+                    "overflow": "hidden",
+                    "padding": "1.5rem",
+                    "backgroundColor": "#f8f9fa",
+                },
             ),
         ],
-        id=ids.PAGE_CONTENT,
     )
