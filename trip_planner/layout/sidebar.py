@@ -184,8 +184,9 @@ def create_sidebar(active_trip=None):
     ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
 
 
-def create_user_menu():
+def create_user_menu(fix_to_right=False):
     username = current_user.id if current_user.is_authenticated else "User"
+    right_offset = "0.75rem" if fix_to_right else "21rem"
     return dbc.DropdownMenu(
         id=ids.USER_MENU,
         label=html.I(className="bi bi-person-circle", style={"fontSize": "1.25rem", "color": "black"}),
@@ -214,7 +215,7 @@ def create_user_menu():
         style={
             "position": "fixed",
             "top": "0.75rem",
-            "right": "21rem",
+            "right": right_offset,
             "zIndex": 1050,
         },
     )

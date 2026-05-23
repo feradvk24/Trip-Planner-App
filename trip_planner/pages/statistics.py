@@ -5,7 +5,7 @@ from flask_login import current_user
 
 import app_context
 import ids
-from backend.crud import get_user_landmark_visit_history
+from backend.crud import get_user_landmark_visit_history, get_user_monthly_landmark_visit_counts, total_landmark_visits_for_user
 from layout.sidebar import create_user_menu
 
 
@@ -13,6 +13,7 @@ dash.register_page(__name__, path="/statistics", name="Statistics")
 
 
 MAX_VISIT_HISTORY_ITEMS = 100
+MONTHLY_VISIT_CHART_MONTHS = 6
 
 
 def build_visit_history_items(registry, visits, limit=MAX_VISIT_HISTORY_ITEMS):
@@ -62,42 +63,147 @@ def build_visit_history_items(registry, visits, limit=MAX_VISIT_HISTORY_ITEMS):
     return items
 
 
+def build_monthly_visit_figure(monthly_visits):
+    months = [row["month"] for row in monthly_visits]
+    counts = [row["count"] for row in monthly_visits]
+    return {
+        "data": [
+            {
+                "type": "bar",
+                "x": months,
+                "y": counts,
+                "marker": {"color": "#0d6efd"},
+                "hovertemplate": "%{x}<br>%{y} visits<extra></extra>",
+            }
+        ],
+        "layout": {
+            "height": 320,
+            "margin": {"l": 48, "r": 16, "t": 12, "b": 48},
+            "paper_bgcolor": "white",
+            "plot_bgcolor": "white",
+            "xaxis": {"title": None, "fixedrange": True},
+            "yaxis": {
+                "title": "Visits",
+                "fixedrange": True,
+                "rangemode": "tozero",
+                "dtick": 1,
+            },
+            "showlegend": False,
+        },
+    }
+
+
+def build_total_visits(total_visits):
+    return html.Div(
+        [
+            html.Div("Total Landmark Visits", className="text-muted small", style={"textAlign": "center"}),
+            html.Div(
+                f"{total_visits}",
+                className="fs-4 fw-semibold",
+                style={"width": "100%", "textAlign": "center"},
+            ),
+        ],
+        className="d-flex flex-column align-items-start gap-1 py-3 px-4 border rounded",
+        style={"width": "10rem", "backgroundColor": "white"},
+    )
+
+
 def layout(**kwargs):
     visits = (
         get_user_landmark_visit_history(current_user.id, limit=MAX_VISIT_HISTORY_ITEMS)
         if current_user.is_authenticated else
         []
     )
+    monthly_visits = (
+        get_user_monthly_landmark_visit_counts(current_user.id, months=MONTHLY_VISIT_CHART_MONTHS)
+        if current_user.is_authenticated else
+        []
+    )
+    total_visits = total_landmark_visits_for_user(current_user.id) if current_user.is_authenticated else 0
+
     return html.Div(
         [
-            create_user_menu(),
+            create_user_menu(fix_to_right=True),
             dbc.Container(
                 [
-                    dcc.Link(
-                        [html.I(className="bi bi-arrow-left me-2"), "Back to map"],
-                        href="/",
-                        className="btn btn-outline-secondary btn-sm mb-3",
+                    html.Div(
+                        [
+                            dcc.Link(
+                                [html.I(className="bi bi-arrow-left me-2"), "Back to map"],
+                                href="/",
+                                className="btn btn-outline-secondary btn-sm mb-3",
+                            ),
+                            html.H2("Statistics", className="mb-2"),
+                            html.P(
+                                "Your trip statistics will live here.",
+                                className="text-muted mb-0",
+                            ),
+                        ],
+                        style={"flex": "0 0 auto"},
                     ),
-                    html.H2("Statistics", className="mb-2"),
-                    html.P(
-                        "Your trip statistics will live here.",
-                        className="text-muted",
-                    ),
-                    html.H4("Visit History", className="mt-4 mb-3"),
-                    dbc.ListGroup(
-                        id=ids.VISIT_HISTORY_LIST,
-                        children=build_visit_history_items(app_context.REGISTRY, visits),
-                        flush=True,
+                    html.Div(
+                        [
+                            html.Div(
+                                [
+                                    build_total_visits(total_visits),
+                                    html.H4("Landmark Visits", className="mt-4 mb-3"),
+                                    dcc.Graph(
+                                        figure=build_monthly_visit_figure(monthly_visits),
+                                        config={"displayModeBar": False},
+                                        style={"width": "100%"},
+                                    ),
+                                ],
+                                style={
+                                    "flex": "1 1 34rem",
+                                    "minWidth": "20rem",
+                                },
+                            ),
+                            html.Div(
+                                [
+                                    html.H4("Visit History", className="mb-3"),
+                                    dbc.ListGroup(
+                                        id=ids.VISIT_HISTORY_LIST,
+                                        children=build_visit_history_items(app_context.REGISTRY, visits),
+                                        flush=True,
+                                        style={
+                                            "flex": "1 1 auto",
+                                            "minHeight": 0,
+                                            "overflowY": "auto",
+                                        },
+                                    ),
+                                ],
+                                style={
+                                    "flex": "1 1 26rem",
+                                    "minWidth": "20rem",
+                                    "maxHeight": "100%",
+                                    "minHeight": 0,
+                                    "display": "flex",
+                                    "flexDirection": "column",
+                                },
+                            ),
+                        ],
                         style={
-                            "maxWidth": "52rem",
-                            "maxHeight": "calc(100vh - 13rem)",
-                            "overflowY": "auto",
+                            "display": "flex",
+                            "gap": "2rem",
+                            "alignItems": "flex-start",
+                            "flexWrap": "wrap",
+                            "flex": "1 1 auto",
+                            "minHeight": 0,
+                            "overflow": "hidden",
                         },
                     ),
                 ],
                 fluid=True,
                 className="py-4",
+                style={
+                    "height": "100vh",
+                    "display": "flex",
+                    "flexDirection": "column",
+                    "gap": "1.5rem",
+                    "overflow": "hidden",
+                },
             ),
         ],
         id=ids.PAGE_CONTENT,
+        style={"height": "100vh", "overflow": "hidden"},
     )
