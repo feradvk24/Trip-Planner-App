@@ -1,7 +1,8 @@
 from typing import Optional
+from datetime import datetime, timezone
 
 from backend.database import SessionLocal
-from backend.models import Landmark, LandmarkImage, Review, TripCompletion, User, UserTrip, UserLandmarkVisit
+from backend.models import FeaturedLandmark, Landmark, LandmarkImage, Review, TripCompletion, User, UserTrip, UserLandmarkVisit
 
 
 def _normalize_trip_name(name: str) -> str:
@@ -90,6 +91,53 @@ def _landmark_image_to_dict(image: LandmarkImage) -> dict:
         "license_url": image.license_url,
         "fetched_at": image.fetched_at.isoformat() if image.fetched_at else None,
     }
+
+
+def _featured_landmark_to_dict(featured: FeaturedLandmark, landmark: Landmark, image: LandmarkImage | None = None) -> dict:
+    image_data = _landmark_image_to_dict(image) if image else None
+    image_url = featured.image_url or (image_data or {}).get("src_link")
+    image_source_url = featured.image_source_url or (image_data or {}).get("image_source_url") or image_url
+    link_url = featured.primary_link_url or landmark.link
+    return {
+        "id": featured.id,
+        "landmark_id": landmark.id,
+        "name": landmark.name,
+        "location": landmark.location,
+        "latitude": landmark.latitude,
+        "longitude": landmark.longitude,
+        "title": featured.title or landmark.name,
+        "subtitle": featured.subtitle or landmark.location,
+        "description": featured.description,
+        "image_url": image_url,
+        "image_source_url": image_source_url,
+        "image_alt": featured.image_alt or landmark.name,
+        "primary_link_url": link_url,
+        "primary_link_label": featured.primary_link_label or "Learn more",
+        "starts_at": featured.starts_at.isoformat() if featured.starts_at else None,
+        "ends_at": featured.ends_at.isoformat() if featured.ends_at else None,
+    }
+
+
+def get_current_featured_landmark() -> dict | None:
+    """Return the currently scheduled featured landmark, newest active first."""
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    db = SessionLocal()
+    try:
+        row = (
+            db.query(FeaturedLandmark, Landmark, LandmarkImage)
+            .join(Landmark, FeaturedLandmark.landmark_id == Landmark.id)
+            .outerjoin(LandmarkImage, LandmarkImage.landmark_id == Landmark.id)
+            .filter(FeaturedLandmark.starts_at <= now)
+            .filter((FeaturedLandmark.ends_at.is_(None)) | (FeaturedLandmark.ends_at > now))
+            .order_by(FeaturedLandmark.starts_at.desc(), FeaturedLandmark.created_at.desc())
+            .first()
+        )
+        if not row:
+            return None
+        featured, landmark, image = row
+        return _featured_landmark_to_dict(featured, landmark, image)
+    finally:
+        db.close()
 
 
 def get_landmark_image(landmark_id: int) -> dict | None:
