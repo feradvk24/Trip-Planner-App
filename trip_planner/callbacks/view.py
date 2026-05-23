@@ -141,3 +141,5 @@ def register_view_callbacks(app, registry):
             set()
         )
         return build_all_markers(registry.landmarks, destination_ids or [], hidden_ids), [], [], [], hidden_stats
+
+

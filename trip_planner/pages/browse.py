@@ -23,7 +23,6 @@ def layout(**kwargs):
         [
             dcc.Store(id=ids.BROWSE_SAVED_TRIPS_STORE, data=saved_trips),
             dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[]),
-            dcc.Store(id=ids.BROWSE_VISIT_HISTORY_STORE, data=[]),
             dcc.Store(id=ids.SELECTED_TRIP_STORE, data=None),
             html.Div(id=ids.SELECTED_OBJECTS_GROUP, style={"display": "none"}),
             create_user_menu(),
@@ -124,16 +123,6 @@ def layout(**kwargs):
                                 ),
                                 label="User Shared Trips",
                                 tab_id="user-shared-trips",
-                            ),
-                            dbc.Tab(
-                                html.Div(
-                                    dbc.ListGroup(id=ids.VISIT_HISTORY_LIST, children=[], flush=True),
-                                    id=ids.VISIT_HISTORY_TAB,
-                                    className="p-3",
-                                    style={"height": "calc(100vh - 13rem)", "overflowY": "auto"},
-                                ),
-                                label="Visit History",
-                                tab_id="visit-history",
                             ),
                         ],
                         id=ids.BROWSE_TABS,

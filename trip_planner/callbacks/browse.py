@@ -1,4 +1,3 @@
-import dash_bootstrap_components as dbc
 from dash import ALL, Input, Output, State, ctx, html, no_update
 from dash.exceptions import PreventUpdate
 from flask import session
@@ -9,64 +8,12 @@ from backend.crud import (
     delete_trip,
     get_current_featured_landmark,
     get_public_trips,
-    get_user_landmark_visit_history,
     get_user_trips,
     set_active_user_trip,
     set_trip_public_status,
 )
 from callbacks.utils.trip_state import sanitize_shared_trip
 from callbacks.widgets.callback_widgets import build_load_trip_items, build_selected_object_items
-
-
-MAX_VISIT_HISTORY_ITEMS = 100
-
-
-def build_visit_history_items(registry, visits, limit=MAX_VISIT_HISTORY_ITEMS):
-    visits = (visits or [])[:limit]
-    if not visits:
-        return [
-            dbc.ListGroupItem(
-                html.Div(
-                    [
-                        html.Div("No visited landmarks yet.", className="fw-semibold"),
-                        html.Div(
-                            "Visited landmarks will appear here after you progress through a trip.",
-                            className="text-muted small",
-                        ),
-                    ],
-                    className="py-2",
-                )
-            )
-        ]
-
-    items = []
-    for visit in visits:
-        landmark = registry.get_landmark(visit.get("landmark_id"))
-        landmark_name = landmark.name if landmark else f"Landmark {visit.get('landmark_id')}"
-        landmark_location = landmark.location if landmark else ""
-        items.append(
-            dbc.ListGroupItem(
-                html.Div(
-                    [
-                        html.Div(
-                            [
-                                html.Div(landmark_name, className="fw-semibold"),
-                                html.Small(visit.get("visited_at", ""), className="text-muted"),
-                            ],
-                            className="d-flex justify-content-between gap-3",
-                        ),
-                        html.Div(landmark_location, className="text-muted small"),
-                        html.Div(
-                            f"Trip: {visit.get('trip_name', 'Unknown trip')}",
-                            className="small",
-                        ),
-                    ],
-                    className="d-flex flex-column gap-1",
-                )
-            )
-        )
-    return items
-
 
 def register_browse_callbacks(app, registry):
     @app.callback(
@@ -126,10 +73,8 @@ def register_browse_callbacks(app, registry):
     @app.callback(
         Output(ids.LOAD_TRIP_LIST, "children"),
         Output(ids.USER_SHARED_TRIPS_LIST, "children"),
-        Output(ids.VISIT_HISTORY_LIST, "children"),
         Output(ids.BROWSE_SAVED_TRIPS_STORE, "data"),
         Output(ids.BROWSE_SHARED_TRIPS_STORE, "data"),
-        Output(ids.BROWSE_VISIT_HISTORY_STORE, "data"),
         Output(ids.SELECTED_TRIP_STORE, "data", allow_duplicate=True),
         Input("url", "pathname"),
         Input(ids.BROWSE_OVERLAY_STORE, "data", allow_optional=True),
@@ -148,7 +93,7 @@ def register_browse_callbacks(app, registry):
             if selected_trip and selected_trip.get("id") == trip_id:
                 selected_trip_data = None
             trips = get_user_trips(current_user.id, include_completion_status=True)
-            return build_load_trip_items(trips), no_update, no_update, trips, no_update, no_update, selected_trip_data
+            return build_load_trip_items(trips), no_update, trips, no_update, selected_trip_data
 
         if not browse_open and not on_browse_page:
             raise PreventUpdate
@@ -156,22 +101,18 @@ def register_browse_callbacks(app, registry):
             selected_trip_data = None
 
         if active_tab == "featured-landmark":
-            return no_update, no_update, no_update, no_update, no_update, no_update, selected_trip_data
+            return no_update, no_update, no_update, no_update, selected_trip_data
 
         if active_tab == "my-saved-trips":
             trips = get_user_trips(current_user.id, include_completion_status=True)
-            return build_load_trip_items(trips), no_update, no_update, trips, no_update, no_update, selected_trip_data
+            return build_load_trip_items(trips), no_update, trips, no_update, selected_trip_data
 
         if active_tab == "user-shared-trips":
             trips = [
                 sanitize_shared_trip(trip) for trip in get_public_trips(include_completion_status=True)
                 if trip.get("owner_username") != current_user.id
             ]
-            return no_update, build_load_trip_items(trips, allow_delete=False, show_owner=True), no_update, no_update, trips, no_update, selected_trip_data
-
-        if active_tab == "visit-history":
-            visits = get_user_landmark_visit_history(current_user.id, limit=MAX_VISIT_HISTORY_ITEMS)
-            return no_update, no_update, build_visit_history_items(registry, visits), no_update, no_update, visits, selected_trip_data
+            return no_update, build_load_trip_items(trips, allow_delete=False, show_owner=True), no_update, trips, selected_trip_data
 
         raise PreventUpdate
 

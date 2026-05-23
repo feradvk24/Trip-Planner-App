@@ -43,20 +43,6 @@ def create_browse_overlay():
                                 label="User Shared Trips",
                                 tab_id="user-shared-trips",
                             ),
-                            dbc.Tab(
-                                html.Div(
-                                    dbc.ListGroup(
-                                        id=ids.VISIT_HISTORY_LIST,
-                                        children=[],
-                                        flush=True,
-                                    ),
-                                    id=ids.VISIT_HISTORY_TAB,
-                                    className="p-3",
-                                    style={"maxHeight": "30rem", "overflowY": "auto"},
-                                ),
-                                label="Visit History",
-                                tab_id="visit-history",
-                            ),
                         ],
                         id=ids.BROWSE_TABS,
                         active_tab="my-saved-trips",
