@@ -50,6 +50,7 @@ def init_db():
     _migrate_reviews()
     _migrate_trip_completions()
     _migrate_landmark_images()
+    _migrate_featured_landmarks()
 
 
 def _migrate_landmarks():
@@ -230,6 +231,30 @@ def _migrate_landmark_images():
         "ALTER TABLE landmark_images ADD COLUMN IF NOT EXISTS license_url VARCHAR(1000)",
         "ALTER TABLE landmark_images ADD COLUMN IF NOT EXISTS fetched_at TIMESTAMP",
         "CREATE INDEX IF NOT EXISTS ix_landmark_images_landmark_id ON landmark_images (landmark_id)",
+    ]
+    with engine.connect() as conn:
+        for stmt in migrations:
+            conn.execute(text(stmt))
+        conn.commit()
+
+
+def _migrate_featured_landmarks():
+    """Add columns/indexes for curated featured landmarks."""
+    migrations = [
+        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS title VARCHAR(200)",
+        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS subtitle VARCHAR(300)",
+        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS description VARCHAR(1500)",
+        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS image_url VARCHAR(1000)",
+        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS image_source_url VARCHAR(1000)",
+        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS image_alt VARCHAR(300)",
+        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS primary_link_url VARCHAR(1000)",
+        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS primary_link_label VARCHAR(100)",
+        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS starts_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
+        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS ends_at TIMESTAMP",
+        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
+        "CREATE INDEX IF NOT EXISTS ix_featured_landmarks_landmark_id ON featured_landmarks (landmark_id)",
+        "CREATE INDEX IF NOT EXISTS ix_featured_landmarks_starts_at ON featured_landmarks (starts_at)",
+        "CREATE INDEX IF NOT EXISTS ix_featured_landmarks_ends_at ON featured_landmarks (ends_at)",
     ]
     with engine.connect() as conn:
         for stmt in migrations:

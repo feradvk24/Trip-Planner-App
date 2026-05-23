@@ -59,6 +59,56 @@ def layout(**kwargs):
                         [
                             dbc.Tab(
                                 html.Div(
+                                    [
+                                        html.H3("Featured Landmark", className="mb-3"),
+                                        html.Div(
+                                            html.Img(
+                                                id=ids.FEATURED_LANDMARK_IMAGE,
+                                                src=None,
+                                                alt="Featured landmark",
+                                                style={
+                                                    "width": "100%",
+                                                    "height": "18rem",
+                                                    "objectFit": "cover",
+                                                    "border": "1px solid #dee2e6",
+                                                    "borderRadius": "0.35rem",
+                                                    "backgroundColor": "#e9ecef",
+                                                    "display": "block",
+                                                },
+                                            ),
+                                            style={
+                                                "maxWidth": "52rem",
+                                                "backgroundColor": "#ffffff",
+                                            },
+                                        ),
+                                        html.Div(
+                                            "Featured landmark details will appear here.",
+                                            id=ids.FEATURED_LANDMARK_TEXT,
+                                            className="text-muted mt-3",
+                                            style={
+                                                "maxWidth": "52rem",
+                                                "fontSize": "1rem",
+                                                "lineHeight": "1.5",
+                                            },
+                                        ),
+                                        html.A(
+                                            "Learn more",
+                                            id=ids.FEATURED_LANDMARK_LINK,
+                                            href="#",
+                                            target="_blank",
+                                            rel="noopener noreferrer",
+                                            className="btn btn-outline-primary mt-3",
+                                        ),
+                                    ],
+                                    id=ids.FEATURED_LANDMARK_TAB,
+                                    className="p-3",
+                                    style={"height": "calc(100vh - 13rem)", "overflowY": "auto"},
+                                ),
+                                label="Featured",
+                                tab_id="featured-landmark",
+                            ),
+                            dbc.Tab(
+                                html.Div(
                                     dbc.ListGroup(
                                         id=ids.LOAD_TRIP_LIST,
                                         children=build_load_trip_items(saved_trips),
@@ -93,7 +143,7 @@ def layout(**kwargs):
                             ),
                         ],
                         id=ids.BROWSE_TABS,
-                        active_tab="my-saved-trips",
+                        active_tab="featured-landmark",
                     ),
                 ],
                 id=ids.PAGE_CONTENT,

@@ -86,7 +86,7 @@ def register_browse_callbacks(app, registry):
     )
     def refresh_browse_saved_trips(pathname, browse_open, active_tab, delete_clicks_list, active_trip, selected_trip):
         on_browse_page = pathname == "/browse"
-        active_tab = active_tab or "my-saved-trips"
+        active_tab = active_tab or "featured-landmark"
         active_trip_data = no_update
         selected_trip_data = no_update
         if isinstance(ctx.triggered_id, dict) and ctx.triggered_id.get("type") == "delete-trip-item":
@@ -103,6 +103,9 @@ def register_browse_callbacks(app, registry):
             raise PreventUpdate
         if ctx.triggered_id in ("url", ids.BROWSE_OVERLAY_STORE, ids.BROWSE_TABS):
             selected_trip_data = None
+
+        if active_tab == "featured-landmark":
+            return no_update, no_update, no_update, active_trip_data, no_update, no_update, no_update, selected_trip_data
 
         if active_tab == "my-saved-trips":
             trips = get_user_trips(current_user.id, include_completion_status=True)
