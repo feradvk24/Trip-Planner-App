@@ -108,3 +108,6 @@ PLANNED_TRIP_POLYLINE_LAYER = "planned-trip-polyline-layer"
 LOADED_TRIP_MARKERS_LAYER = "loaded-trip-markers-layer"
 LOADED_TRIP_POLYLINE_LAYER = "loaded-trip-polyline-layer"
 LOADED_TRIP_OVERVIEW_POLYLINE_LAYER = "loaded-trip-overview-polyline-layer"
+
+# Statistics page
+STATISTICS_BUTTON = "statistics-button"

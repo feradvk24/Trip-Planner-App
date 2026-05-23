@@ -33,6 +33,16 @@ def register_view_callbacks(app, registry):
         if ctx.triggered_id == ids.BROWSE_CLOSE_BTN:
             return no_update, False, no_update
         return "explore", False, no_update
+    
+    @app.callback(
+        Output("url", "href", allow_duplicate=True),
+        Input(ids.STATISTICS_BUTTON, "n_clicks"),
+        prevent_initial_call=True,
+    )
+    def go_to_statistics(n_clicks):
+        if not n_clicks:
+            raise PreventUpdate
+        return "/statistics"
 
     @app.callback(
         Output(ids.EXPLORE_PANEL, "style"),

@@ -198,6 +198,8 @@ def create_user_menu():
                 header=True,
             ),
             dbc.DropdownMenuItem(divider=True),
+            dbc.DropdownMenuItem("Statistics", id=ids.STATISTICS_BUTTON),
+            dbc.DropdownMenuItem(divider=True),
             dbc.DropdownMenuItem("Logout", id=ids.LOGOUT_BUTTON, style={"color": "#dc3545"}),
         ],
         direction="down",
