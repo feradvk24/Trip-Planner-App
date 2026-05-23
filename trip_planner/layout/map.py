@@ -5,7 +5,11 @@ import dash_leaflet as dl
 import ids
 
 
-def create_map(markers):
+def create_map(markers, initial_viewport=None):
+    initial_center = initial_viewport["center"] if initial_viewport else [42.7, 25.0]
+    initial_zoom = initial_viewport["zoom"] if initial_viewport else 7.4
+    viewport_props = {"viewport": initial_viewport} if initial_viewport else {}
+
     return dl.Map(
         children=[
             dl.TileLayer(),
@@ -68,8 +72,8 @@ def create_map(markers):
                 },
             ),
         ],
-        center=[42.7, 25.0],
-        zoom=7.4,
+        center=initial_center,
+        zoom=initial_zoom,
         minZoom=7.4,
         maxBounds=[[41.0, 22.0], [44.3, 28.6]],
         maxBoundsViscosity=1.0,
@@ -79,4 +83,5 @@ def create_map(markers):
         zoomAnimation=True,
         style={"width": "100%", "height": "100%"},
         id=ids.MAP,
+        **viewport_props,
     )

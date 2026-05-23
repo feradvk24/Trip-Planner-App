@@ -36,29 +36,42 @@ def initial_active_info(active_trip=None):
     }
 
 
-def create_stores(active_trip=None, pending_browse_trip=None):
+def create_stores(active_trip=None, pending_browse_trip=None, focused_landmark_id=None):
     if pending_browse_trip:
         initial_mode = pending_browse_trip.get("mode") or "explore"
         initial_destinations = pending_browse_trip.get("destination_ids") or []
         initial_visit_order = pending_browse_trip.get("visit_order") or []
         initial_active_trip = pending_browse_trip.get("active_trip")
+        initial_info = initial_active_info(initial_active_trip)
+    elif focused_landmark_id:
+        initial_mode = "explore"
+        initial_destinations = []
+        initial_visit_order = []
+        initial_active_trip = None
+        initial_info = {
+            "type": "landmark",
+            "content": focused_landmark_id,
+        }
     else:
         initial_mode = "trip" if active_trip else "explore"
         initial_destinations = []
         initial_visit_order = []
         initial_active_trip = active_trip
+        initial_info = initial_active_info(initial_active_trip)
+
+    store_type = "memory" if focused_landmark_id else "session"
 
     return [
-        dcc.Store(id=ids.DESTINATIONS_LIST, data=initial_destinations, storage_type="session"),
-        dcc.Store(id=ids.VISIT_ORDER_STORE, data=initial_visit_order, storage_type="session"),
-        dcc.Store(id=ids.MODE_STORE, data=initial_mode, storage_type="session"),
+        dcc.Store(id=ids.DESTINATIONS_LIST, data=initial_destinations, storage_type=store_type),
+        dcc.Store(id=ids.VISIT_ORDER_STORE, data=initial_visit_order, storage_type=store_type),
+        dcc.Store(id=ids.MODE_STORE, data=initial_mode, storage_type=store_type),
         dcc.Store(id=ids.BROWSE_OVERLAY_STORE, data=False),
         dcc.Store(id=ids.BROWSE_SAVED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.SELECTED_TRIP_STORE, data=None),
-        dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=initial_active_trip, storage_type="session"),
-        dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None, storage_type="session"),
-        dcc.Store(id=ids.ACTIVE_INFO_STORE, data=initial_active_info(initial_active_trip), storage_type="session"),
+        dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=initial_active_trip, storage_type=store_type),
+        dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None, storage_type=store_type),
+        dcc.Store(id=ids.ACTIVE_INFO_STORE, data=initial_info, storage_type=store_type),
     ]
 
 
@@ -111,8 +124,15 @@ def create_share_trip_toast():
     )
 
 
-def create_main_content(markers, active_trip=None):
+def create_main_content(markers, active_trip=None, focused_landmark=None):
     initial_markers = [] if active_trip else markers
+    initial_viewport = None
+    if focused_landmark:
+        initial_viewport = {
+            "center": [focused_landmark.lat, focused_landmark.lon],
+            "zoom": 14,
+            "transition": "setView",
+        }
 
     return html.Div(
         id=ids.MAIN_CONTENT,
@@ -124,7 +144,7 @@ def create_main_content(markers, active_trip=None):
                         [
                             html.Div(
                                 [
-                                    create_map(initial_markers),
+                                    create_map(initial_markers, initial_viewport),
                                     create_browse_overlay(),
                                 ],
                                 className="flex-grow-1",
@@ -140,17 +160,29 @@ def create_main_content(markers, active_trip=None):
     )
 
 
-def create_authenticated_layout(markers, include_location=True):
+def create_authenticated_layout(markers, include_location=True, focused_landmark_id=None):
     pending_browse_trip = session.pop("pending_browse_trip", None)
-    active_trip = get_active_user_trip(current_user.id)
+    focused_landmark = None
+    if focused_landmark_id:
+        try:
+            import app_context
+
+            focused_landmark = app_context.REGISTRY.get_landmark(int(focused_landmark_id))
+        except (TypeError, ValueError, AttributeError):
+            focused_landmark = None
+
+    if focused_landmark:
+        active_trip = None
+    else:
+        active_trip = get_active_user_trip(current_user.id)
     children = [
         dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0, update_now=True, timeout=10000),
         create_sidebar(active_trip),
         create_info_sidebar(),
-        create_main_content(markers, active_trip),
+        create_main_content(markers, active_trip, focused_landmark),
         create_landmark_review_pane(),
         create_user_menu(),
-        *create_stores(active_trip, pending_browse_trip),
+        *create_stores(active_trip, pending_browse_trip, focused_landmark.id if focused_landmark else None),
         create_warn_modal(),
         create_success_toast(),
         create_share_trip_toast(),
