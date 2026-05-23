@@ -55,8 +55,6 @@ class FeaturedLandmark(Base):
     title = Column(String(200), nullable=True)
     description = Column(String(1500), nullable=True)
 
-    image_url = Column(String(1000), nullable=True)
-    image_source_url = Column(String(1000), nullable=True)
     image_alt = Column(String(300), nullable=True)
 
     primary_link_url = Column(String(1000), nullable=True)

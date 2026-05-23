@@ -53,7 +53,9 @@ def layout(**kwargs):
                             dbc.Tab(
                                 html.Div(
                                     [
-                                        html.H3("Featured Landmark", className="mb-3"),
+                                        html.Div(
+                                            id=ids.FEATURED_LANDMARK_NAME,
+                                        ),
                                         html.Div(
                                             html.Img(
                                                 id=ids.FEATURED_LANDMARK_IMAGE,
@@ -76,22 +78,39 @@ def layout(**kwargs):
                                         ),
                                         html.Div(
                                             "Featured landmark details will appear here.",
-                                            id=ids.FEATURED_LANDMARK_TEXT,
-                                            className="text-muted mt-3",
+                                            id=ids.FEATURED_LANDMARK_DESCRIPTION,
+                                            className="mt-3",
                                             style={
                                                 "maxWidth": "52rem",
                                                 "fontSize": "1rem",
                                                 "lineHeight": "1.5",
                                             },
                                         ),
-                                        html.A(
-                                            "Learn more",
-                                            id=ids.FEATURED_LANDMARK_LINK,
-                                            href="#",
-                                            target="_blank",
-                                            rel="noopener noreferrer",
-                                            className="btn btn-outline-primary mt-3",
-                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Col(
+                                                    html.A(
+                                                        "View in map",
+                                                        id=ids.FEATURED_LANDMARK_VIEW_MAP,
+                                                        href="#",
+                                                        className="btn btn-primary",
+                                                    ),
+                                                    width="auto",
+                                                ),
+                                                dbc.Col(
+                                                    html.A(
+                                                        "Learn more",
+                                                        id=ids.FEATURED_LANDMARK_LINK,
+                                                        href="#",
+                                                        target="_blank",
+                                                        rel="noopener noreferrer",
+                                                        className="btn btn-outline-primary",
+                                                    ),
+                                                    width="auto",
+                                                ),
+                                            ],
+                                            className="mt-3",
+                                        )
                                     ],
                                     id=ids.FEATURED_LANDMARK_TAB,
                                     className="p-3",

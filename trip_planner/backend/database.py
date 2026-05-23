@@ -242,10 +242,7 @@ def _migrate_featured_landmarks():
     """Add columns/indexes for curated featured landmarks."""
     migrations = [
         "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS title VARCHAR(200)",
-        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS subtitle VARCHAR(300)",
         "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS description VARCHAR(1500)",
-        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS image_url VARCHAR(1000)",
-        "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS image_source_url VARCHAR(1000)",
         "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS image_alt VARCHAR(300)",
         "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS primary_link_url VARCHAR(1000)",
         "ALTER TABLE featured_landmarks ADD COLUMN IF NOT EXISTS primary_link_label VARCHAR(100)",
@@ -255,6 +252,9 @@ def _migrate_featured_landmarks():
         "CREATE INDEX IF NOT EXISTS ix_featured_landmarks_landmark_id ON featured_landmarks (landmark_id)",
         "CREATE INDEX IF NOT EXISTS ix_featured_landmarks_starts_at ON featured_landmarks (starts_at)",
         "CREATE INDEX IF NOT EXISTS ix_featured_landmarks_ends_at ON featured_landmarks (ends_at)",
+        "ALTER TABLE featured_landmarks DROP COLUMN IF EXISTS subtitle",
+        "ALTER TABLE featured_landmarks DROP COLUMN IF EXISTS image_url",
+        "ALTER TABLE featured_landmarks DROP COLUMN IF EXISTS image_source_url",
     ]
     with engine.connect() as conn:
         for stmt in migrations:

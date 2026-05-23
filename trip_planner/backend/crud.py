@@ -106,8 +106,8 @@ def _landmark_image_to_dict(image: LandmarkImage) -> dict:
 
 def _featured_landmark_to_dict(featured: FeaturedLandmark, landmark: Landmark, image: LandmarkImage | None = None) -> dict:
     image_data = _landmark_image_to_dict(image) if image else None
-    image_url = featured.image_url or (image_data or {}).get("src_link")
-    image_source_url = featured.image_source_url or (image_data or {}).get("image_source_url") or image_url
+    image_src = (image_data or {}).get("src_link")
+    image_source_url = (image_data or {}).get("image_source_url") or image_src
     link_url = featured.primary_link_url or landmark.link
     return {
         "id": featured.id,
@@ -117,9 +117,8 @@ def _featured_landmark_to_dict(featured: FeaturedLandmark, landmark: Landmark, i
         "latitude": landmark.latitude,
         "longitude": landmark.longitude,
         "title": featured.title or landmark.name,
-        "subtitle": featured.subtitle or landmark.location,
         "description": featured.description,
-        "image_url": image_url,
+        "src_link": image_src,
         "image_source_url": image_source_url,
         "image_alt": featured.image_alt or landmark.name,
         "primary_link_url": link_url,

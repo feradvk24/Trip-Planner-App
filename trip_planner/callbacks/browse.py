@@ -19,10 +19,13 @@ def register_browse_callbacks(app, registry):
     @app.callback(
         Output(ids.FEATURED_LANDMARK_IMAGE, "src"),
         Output(ids.FEATURED_LANDMARK_IMAGE, "alt"),
-        Output(ids.FEATURED_LANDMARK_TEXT, "children"),
+        Output(ids.FEATURED_LANDMARK_DESCRIPTION, "children"),
         Output(ids.FEATURED_LANDMARK_LINK, "href"),
         Output(ids.FEATURED_LANDMARK_LINK, "children"),
         Output(ids.FEATURED_LANDMARK_LINK, "style"),
+        Output(ids.FEATURED_LANDMARK_NAME, "children"),
+        Output(ids.FEATURED_LANDMARK_VIEW_MAP, "href"),
+        Output(ids.FEATURED_LANDMARK_VIEW_MAP, "style"),
         Input("url", "pathname"),
         Input(ids.BROWSE_TABS, "active_tab"),
     )
@@ -37,37 +40,31 @@ def register_browse_callbacks(app, registry):
             return (
                 None,
                 "Featured landmark",
-                html.Div(
-                    [
-                        html.Div("No featured landmark yet.", className="fw-semibold"),
-                        html.Div(
-                            "Request a featured landmark to display curated content here.",
-                            className="text-muted",
-                        ),
-                    ]
-                ),
+                "Request a featured landmark to display curated content here.",
                 "#",
                 "Learn more",
+                hidden_link_style,
+                html.H3("Nothing to display. Request a feature!", className="mb-3"),
+                "#",
                 hidden_link_style,
             )
 
         title = featured.get("title") or featured.get("name") or "Featured Landmark"
-        subtitle = featured.get("subtitle")
         description = featured.get("description") or "No description has been added for this featured landmark yet."
         link_url = featured.get("primary_link_url")
         return (
-            featured.get("image_url"),
+            featured.get("src_link"),
             featured.get("image_alt") or title,
-            html.Div(
-                [
-                    html.H4(title, className="mb-1"),
-                    html.Div(subtitle, className="text-muted mb-3") if subtitle else None,
-                    html.Div(description),
-                ]
-            ),
+            description,
             link_url or "#",
             featured.get("primary_link_label") or "Learn more",
             visible_link_style if link_url else hidden_link_style,
+            [
+                html.H3(featured.get("name") or "Featured Post", className="mb-3"),
+                html.H4(featured.get("location") or "", className="mb-2 text-muted"),
+            ],
+            f"/?mode=explore&focus_landmark={featured.get('landmark_id')}" if featured.get("landmark_id") else "#",
+            visible_link_style if featured.get("landmark_id") else hidden_link_style,
         )
 
     @app.callback(
