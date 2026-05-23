@@ -1,6 +1,7 @@
 import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
+from flask import session
 from flask_login import current_user
 
 import ids
@@ -35,20 +36,30 @@ def initial_active_info(active_trip=None):
     }
 
 
-def create_stores(active_trip=None):
-    initial_mode = "trip" if active_trip else "explore"
+def create_stores(active_trip=None, pending_browse_trip=None):
+    if pending_browse_trip:
+        initial_mode = pending_browse_trip.get("mode") or "explore"
+        initial_destinations = pending_browse_trip.get("destination_ids") or []
+        initial_visit_order = pending_browse_trip.get("visit_order") or []
+        initial_active_trip = pending_browse_trip.get("active_trip")
+    else:
+        initial_mode = "trip" if active_trip else "explore"
+        initial_destinations = []
+        initial_visit_order = []
+        initial_active_trip = active_trip
+
     return [
-        dcc.Store(id=ids.DESTINATIONS_LIST, data=[]),
-        dcc.Store(id=ids.VISIT_ORDER_STORE, data=[]),
-        dcc.Store(id=ids.MODE_STORE, data=initial_mode),
+        dcc.Store(id=ids.DESTINATIONS_LIST, data=initial_destinations, storage_type="session"),
+        dcc.Store(id=ids.VISIT_ORDER_STORE, data=initial_visit_order, storage_type="session"),
+        dcc.Store(id=ids.MODE_STORE, data=initial_mode, storage_type="session"),
         dcc.Store(id=ids.BROWSE_OVERLAY_STORE, data=False),
         dcc.Store(id=ids.BROWSE_SAVED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.BROWSE_VISIT_HISTORY_STORE, data=[]),
         dcc.Store(id=ids.SELECTED_TRIP_STORE, data=None),
-        dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=active_trip),
-        dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None),
-        dcc.Store(id=ids.ACTIVE_INFO_STORE, data=initial_active_info(active_trip)),
+        dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=initial_active_trip, storage_type="session"),
+        dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None, storage_type="session"),
+        dcc.Store(id=ids.ACTIVE_INFO_STORE, data=initial_active_info(initial_active_trip), storage_type="session"),
     ]
 
 
@@ -131,6 +142,7 @@ def create_main_content(markers, active_trip=None):
 
 
 def create_authenticated_layout(markers, include_location=True):
+    pending_browse_trip = session.pop("pending_browse_trip", None)
     active_trip = get_active_user_trip(current_user.id)
     children = [
         dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0, update_now=True, timeout=10000),
@@ -139,7 +151,7 @@ def create_authenticated_layout(markers, include_location=True):
         create_main_content(markers, active_trip),
         create_landmark_review_pane(),
         create_user_menu(),
-        *create_stores(active_trip),
+        *create_stores(active_trip, pending_browse_trip),
         create_warn_modal(),
         create_success_toast(),
         create_share_trip_toast(),

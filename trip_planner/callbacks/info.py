@@ -106,18 +106,20 @@ def register_info_callbacks(app, registry):
         Output(ids.INFO_SIDEBAR_IMAGE_META, "children"),
         Output(ids.INFO_SIDEBAR_BODY, "children"),
         Output(ids.INFO_SIDEBAR_BODY, "style"),
-        Input(ids.ACTIVE_INFO_STORE, "data"),
+        Input(ids.ACTIVE_INFO_STORE, "data", allow_optional=True),
         Input(ids.SELECTED_TRIP_STORE, "data"),
-        Input(ids.BROWSE_OVERLAY_STORE, "data"),
-        Input(ids.MODE_STORE, "data"),
+        Input(ids.BROWSE_OVERLAY_STORE, "data", allow_optional=True),
+        Input(ids.MODE_STORE, "data", allow_optional=True),
+        Input("url", "pathname"),
     )
-    def render_info_sidebar(active_info, selected_trip, browse_open, mode):
+    def render_info_sidebar(active_info, selected_trip, browse_open, mode, pathname):
         base_style = {
             "flex": "1 1 auto",
             "minHeight": 0,
             "overflowY": "auto",
         }
         hide_landmark_image = mode not in ("explore", "trip")
+        browse_open = browse_open or pathname == "/browse"
 
         if browse_open:
             if selected_trip:

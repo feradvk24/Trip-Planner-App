@@ -21,16 +21,10 @@ def layout(**kwargs):
     )
     return html.Div(
         [
-            dcc.Store(id=ids.DESTINATIONS_LIST, data=[]),
-            dcc.Store(id=ids.VISIT_ORDER_STORE, data=[]),
-            dcc.Store(id=ids.MODE_STORE, data="browse"),
-            dcc.Store(id=ids.BROWSE_OVERLAY_STORE, data=True),
             dcc.Store(id=ids.BROWSE_SAVED_TRIPS_STORE, data=saved_trips),
             dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[]),
             dcc.Store(id=ids.BROWSE_VISIT_HISTORY_STORE, data=[]),
             dcc.Store(id=ids.SELECTED_TRIP_STORE, data=None),
-            dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=None),
-            dcc.Store(id=ids.ACTIVE_INFO_STORE, data=None),
             html.Div(id=ids.SELECTED_OBJECTS_GROUP, style={"display": "none"}),
             create_user_menu(),
             create_info_sidebar(),

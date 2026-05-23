@@ -31,6 +31,22 @@ def register_explore_callbacks(app, registry):
         return get_user_visited_landmark_ids(current_user.id)
 
     @app.callback(
+        Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
+        Input(ids.MODE_STORE, "data"),
+        Input(ids.DESTINATIONS_LIST, "data"),
+        Input(ids.EXPLORE_MAP_CACHE, "data"),
+        prevent_initial_call="initial_duplicate",
+    )
+    def hydrate_selected_objects(mode, destination_ids, explore_cache):
+        if mode != "explore":
+            raise PreventUpdate
+        return build_selected_object_items(
+            registry,
+            destination_ids or [],
+            allow_remove=not bool(explore_cache),
+        )
+
+    @app.callback(
         Output(ids.WARN_MODAL, "is_open"),
         Input("warn-modal-close", "n_clicks"),
         prevent_initial_call=True,
