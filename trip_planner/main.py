@@ -2,11 +2,13 @@ import dash_bootstrap_components as dbc
 from dash import Dash
 from flask import redirect, request
 from flask_login import current_user, logout_user
+from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
+import app_context
 from backend.api_routes import register_api_routes
 from backend.auth import init_login_manager
 from backend.database import create_database_if_missing, init_db, shutdown_session
@@ -20,6 +22,8 @@ app = Dash(
     __name__,
     external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP],
     suppress_callback_exceptions=True,
+    use_pages=True,
+    pages_folder=str(Path(__file__).parent / "pages"),
 )
 server = app.server
 
@@ -57,6 +61,8 @@ def logout():
 registry = LandmarkRegistry.from_database()
 register_api_routes(server, registry)
 markers = create_markers(registry.landmarks, pin_icon)
+app_context.REGISTRY = registry
+app_context.MARKERS = markers
 app.layout = lambda: create_app_layout(markers)
 
 register_callbacks(app, registry)

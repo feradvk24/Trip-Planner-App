@@ -1,3 +1,4 @@
+import dash
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 from flask_login import current_user
@@ -5,7 +6,6 @@ from flask_login import current_user
 import ids
 from backend.crud import get_active_user_trip
 from callbacks.utils.trip_state import next_action_stop_index
-from layout.auth import create_login_layout
 from layout.info_sidebar import create_info_sidebar
 from layout.map import create_map
 from layout.overlays import create_browse_overlay, create_landmark_review_pane
@@ -130,10 +130,9 @@ def create_main_content(markers, active_trip=None):
     )
 
 
-def create_authenticated_layout(markers):
+def create_authenticated_layout(markers, include_location=True):
     active_trip = get_active_user_trip(current_user.id)
-    return html.Div([
-        dcc.Location(id="url"),
+    children = [
         dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0, update_now=True, timeout=10000),
         create_sidebar(active_trip),
         create_info_sidebar(),
@@ -145,13 +144,14 @@ def create_authenticated_layout(markers):
         create_success_toast(),
         create_share_trip_toast(),
         create_save_trip_modal(),
-    ])
+    ]
+    if include_location:
+        children.insert(0, dcc.Location(id="url"))
+    return html.Div(children)
 
 
 def create_app_layout(markers):
-    if current_user.is_authenticated:
-        return create_authenticated_layout(markers)
     return html.Div([
         dcc.Location(id="url"),
-        create_login_layout(),
+        dash.page_container,
     ])

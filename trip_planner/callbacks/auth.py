@@ -17,6 +17,8 @@ def register_auth_callbacks(app):
         prevent_initial_call=True,
     )
     def handle_login(n_clicks, username, password):
+        if not n_clicks:
+            raise PreventUpdate
         if not username or not password:
             return no_update, "Please enter both username and password.", True
         if verify_user(username, password):
@@ -31,6 +33,8 @@ def register_auth_callbacks(app):
         prevent_initial_call=True,
     )
     def toggle_register_fields(n_clicks, current_style):
+        if not n_clicks:
+            raise PreventUpdate
         if current_style and current_style.get("display") == "none":
             return {"display": "block"}
         return {"display": "none"}
@@ -48,6 +52,8 @@ def register_auth_callbacks(app):
         prevent_initial_call=True,
     )
     def handle_register(n_clicks, username, password, first_name, last_name, fields_style):
+        if not n_clicks:
+            raise PreventUpdate
         if fields_style and fields_style.get("display") == "none":
             raise PreventUpdate
         if not username or not password:
@@ -69,6 +75,8 @@ def register_auth_callbacks(app):
         prevent_initial_call=True,
     )
     def handle_logout(n_clicks):
+        if not n_clicks:
+            raise PreventUpdate
         from flask_login import logout_user as _logout
         _logout()
         return "/login"

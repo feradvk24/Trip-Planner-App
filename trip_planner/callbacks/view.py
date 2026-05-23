@@ -1,4 +1,5 @@
 from dash import Input, Output, State, ctx, no_update
+from dash.exceptions import PreventUpdate
 import dash_leaflet as dl
 from flask_login import current_user
 
@@ -12,6 +13,7 @@ def register_view_callbacks(app, registry):
     @app.callback(
         Output(ids.MODE_STORE, "data"),
         Output(ids.BROWSE_OVERLAY_STORE, "data"),
+        Output("url", "href", allow_duplicate=True),
         Input(ids.MODE_BTN_EXPLORE, "n_clicks"),
         Input(ids.MODE_BTN_TRIP, "n_clicks"),
         Input(ids.MODE_BTN_BROWSE, "n_clicks"),
@@ -20,13 +22,17 @@ def register_view_callbacks(app, registry):
         prevent_initial_call=True,
     )
     def switch_mode(explore_clicks, trip_clicks, browse_clicks, load_trip_clicks, browse_close_clicks):
+        if not any([explore_clicks, trip_clicks, browse_clicks, load_trip_clicks, browse_close_clicks]):
+            raise PreventUpdate
         if ctx.triggered_id == ids.MODE_BTN_TRIP:
-            return "trip", False
-        if ctx.triggered_id in (ids.MODE_BTN_BROWSE, ids.LOAD_TRIP_BTN):
-            return no_update, True
+            return "trip", False, no_update
+        if ctx.triggered_id == ids.MODE_BTN_BROWSE:
+            return no_update, False, "/browse"
+        if ctx.triggered_id == ids.LOAD_TRIP_BTN:
+            return no_update, True, no_update
         if ctx.triggered_id == ids.BROWSE_CLOSE_BTN:
-            return no_update, False
-        return "explore", False
+            return no_update, False, no_update
+        return "explore", False, no_update
 
     @app.callback(
         Output(ids.EXPLORE_PANEL, "style"),
