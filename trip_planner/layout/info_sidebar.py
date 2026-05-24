@@ -2,20 +2,20 @@ from dash import dcc, html
 
 import ids
 from styles import INFO_SIDEBAR_STYLE
+from i18n import t
 
-
-def create_info_sidebar():
+def create_info_sidebar(lang="bg"):
     return html.Aside(
         [
             html.Div(
                 [
                     html.Div(
-                        "Details",
+                        t("info_sidebar.title", lang=lang),
                         id=ids.INFO_SIDEBAR_TITLE,
                         style={"fontSize": "1.6rem", "fontWeight": "700", "lineHeight": "1.15"},
                     ),
                     html.Div(
-                        "No selection",
+                        t("info_sidebar.no_selection", lang=lang),
                         id=ids.INFO_SIDEBAR_SUBTITLE,
                         style={"fontSize": "0.85rem", "color": "#6c757d"},
                     ),
@@ -78,7 +78,7 @@ def create_info_sidebar():
                         style={"marginBottom": "0.5rem"},
                     ),
                     html.Div(
-                        "Details will appear here.",
+                        t("info_sidebar.details", lang=lang),
                         style={"color": "#6c757d", "fontSize": "0.95rem"},
                     ),
                 ],

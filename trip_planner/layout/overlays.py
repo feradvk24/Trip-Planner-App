@@ -2,16 +2,16 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 
 import ids
+from i18n import t
 
-
-def create_browse_overlay():
+def create_browse_overlay(lang="bg"):
     return html.Div(
         [
             html.Div(
                 [
                     html.Div(
                         [
-                            html.H4("Browse Trips", className="mb-0"),
+                            html.H4(t("browse_overlay.title", lang=lang), className="mb-0"),
                             html.Button(
                                 id=ids.BROWSE_CLOSE_BTN,
                                 type="button",
@@ -30,7 +30,7 @@ def create_browse_overlay():
                                     className="p-3",
                                     style={"height": "calc(100% - 3rem)", "overflowY": "auto"},
                                 ),
-                                label="My Saved Trips",
+                                label=t("browse_overlay.my_saved_trips", lang=lang),
                                 tab_id="my-saved-trips",
                             ),
                             dbc.Tab(
@@ -40,7 +40,7 @@ def create_browse_overlay():
                                     className="p-3",
                                     style={"height": "calc(100% - 3rem)", "overflowY": "auto"},
                                 ),
-                                label="User Shared Trips",
+                                label=t("browse_overlay.user_shared_trips", lang=lang),
                                 tab_id="user-shared-trips",
                             ),
                         ],
@@ -75,7 +75,7 @@ def create_browse_overlay():
     )
 
 
-def create_landmark_review_pane():
+def create_landmark_review_pane(lang="bg"):
     return html.Div(
         [
             dcc.Store(id=ids.LANDMARK_REVIEW_STATE_STORE, data={"is_open": False}),
@@ -86,7 +86,7 @@ def create_landmark_review_pane():
                             html.Div(
                                 [
                                     html.Div(
-                                        "Leave a review",
+                                        t("landmark_review.eyebrow", lang=lang),
                                         id=ids.LANDMARK_REVIEW_EYEBROW,
                                         style={"fontSize": "0.8rem", "color": "#6C757D"},
                                     ),
@@ -110,7 +110,7 @@ def create_landmark_review_pane():
                     dbc.Alert(id=ids.LANDMARK_REVIEW_ALERT, is_open=False, color="danger", duration=3500),
                     html.Div(
                         [
-                            dbc.Label("Rating", className="mb-1"),
+                            dbc.Label(t("landmark_review.rating", lang=lang), className="mb-1"),
                             html.Div(
                                 [
                                     html.Button(
@@ -132,10 +132,10 @@ def create_landmark_review_pane():
                     ),
                     html.Div(
                         [
-                            dbc.Label("Review", html_for=ids.LANDMARK_REVIEW_TEXT, className="mb-1"),
+                            dbc.Label(t("landmark_review.review", lang=lang), html_for=ids.LANDMARK_REVIEW_TEXT, className="mb-1"),
                             dbc.Textarea(
                                 id=ids.LANDMARK_REVIEW_TEXT,
-                                placeholder="Share what stood out about this landmark.",
+                                placeholder=t("landmark_review.placeholder", lang=lang),
                                 maxLength=1000,
                                 rows=5,
                             ),
@@ -145,12 +145,12 @@ def create_landmark_review_pane():
                     html.Div(
                         [
                             dbc.Button(
-                                [html.I(className="bi bi-send me-2"), "Submit"],
+                                [html.I(className="bi bi-send me-2"), t("landmark_review.submit", lang=lang)],
                                 id=ids.LANDMARK_REVIEW_SUBMIT_BTN,
                                 color="primary",
                             ),
                             dbc.Button(
-                                "Skip",
+                                t("landmark_review.skip", lang=lang),
                                 id=ids.LANDMARK_REVIEW_SKIP_BTN,
                                 color="secondary",
                                 outline=True,

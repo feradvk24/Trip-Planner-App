@@ -1,9 +1,10 @@
 import dash_bootstrap_components as dbc
 from dash import html
 import dash_leaflet as dl
+from i18n import t
 
 
-def create_marker(landmark, pin_icon, selected_ids=None, selected_icon=None):
+def create_marker(landmark, pin_icon, selected_ids=None, selected_icon=None, lang="bg"):
     selected_ids = set(selected_ids or [])
     selected_icon = selected_icon or pin_icon
     is_selected = landmark.id in selected_ids
@@ -15,13 +16,13 @@ def create_marker(landmark, pin_icon, selected_ids=None, selected_icon=None):
                 html.H5(landmark.name),
                 html.H6(landmark.location),
                 html.A(
-                    "Learn more",
+                    t("marker.learn_more", lang=lang),
                     href=landmark.link,
                     target="_blank",
                     style={"display": "block", "text-align": "center"},
                 ),
                 dbc.Button(
-                    "Added to trip" if is_selected else "Add to trip",
+                    t("marker.add_to_trip", lang=lang) if not is_selected else t("marker.in_trip", lang=lang),
                     id={"type": "add-marker-btn", "index": landmark.id},
                     color="success",
                     size="sm",
@@ -35,8 +36,8 @@ def create_marker(landmark, pin_icon, selected_ids=None, selected_icon=None):
     )
 
 
-def create_markers(landmarks, pin_icon, selected_ids=None, selected_icon=None):
+def create_markers(landmarks, pin_icon, selected_ids=None, selected_icon=None, lang="bg"):
     return [
-        create_marker(landmark, pin_icon, selected_ids, selected_icon)
+        create_marker(landmark, pin_icon, selected_ids, selected_icon, lang)
         for landmark in landmarks
     ]

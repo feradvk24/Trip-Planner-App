@@ -12,7 +12,7 @@ from layout.map import create_map
 from layout.overlays import create_browse_overlay, create_landmark_review_pane
 from layout.sidebar import create_sidebar, create_user_menu
 from styles import CONTENT_STYLE
-
+from i18n import t
 
 def initial_active_info(active_trip=None):
     if not active_trip:
@@ -75,34 +75,34 @@ def create_stores(active_trip=None, pending_browse_trip=None, focused_landmark_i
     ]
 
 
-def create_save_trip_modal():
+def create_save_trip_modal(lang="bg"):
     return dbc.Modal([
-        dbc.ModalHeader(dbc.ModalTitle("Save Trip")),
+        dbc.ModalHeader(dbc.ModalTitle(t("save_trip_modal.title", lang=lang))),
         dbc.ModalBody([
             dbc.Alert(id=ids.SAVE_TRIP_ALERT, is_open=False, color="danger", duration=4000),
-            dbc.Label("Trip name"),
-            dbc.Input(id=ids.SAVE_TRIP_NAME_INPUT, placeholder="e.g. Summer Rhodope trip", maxLength=200),
+            dbc.Label(t("save_trip_modal.trip_name", lang=lang)),
+            dbc.Input(id=ids.SAVE_TRIP_NAME_INPUT, placeholder=t("save_trip_modal.placeholder", lang=lang), maxLength=200),
         ]),
         dbc.ModalFooter([
-            dbc.Button("Save", id=ids.SAVE_TRIP_CONFIRM_BTN, color="info"),
-            dbc.Button("Cancel", id="save-trip-cancel-btn", color="secondary", outline=True, className="ms-2"),
+            dbc.Button(t("save_trip_modal.save", lang=lang), id=ids.SAVE_TRIP_CONFIRM_BTN, color="info"),
+            dbc.Button(t("save_trip_modal.cancel", lang=lang), id="save-trip-cancel-btn", color="secondary", outline=True, className="ms-2"),
         ]),
     ], id=ids.SAVE_TRIP_MODAL, is_open=False)
 
 
-def create_warn_modal():
+def create_warn_modal(lang="bg"):
     return dbc.Modal([
-        dbc.ModalHeader(dbc.ModalTitle("Cannot optimize route")),
-        dbc.ModalBody("Please select at least 2 monuments before optimizing the route."),
-        dbc.ModalFooter(dbc.Button("OK", id="warn-modal-close", color="primary")),
+        dbc.ModalHeader(dbc.ModalTitle(t("warn_modal.title", lang=lang))),
+        dbc.ModalBody(t("warn_modal.message", lang=lang)),
+        dbc.ModalFooter(dbc.Button(t("warn_modal.ok", lang=lang), id="warn-modal-close", color="primary")),
     ], id=ids.WARN_MODAL, is_open=False)
 
 
-def create_success_toast():
+def create_success_toast(lang="bg"):
     return dbc.Toast(
-        "Route Optimized",
+        t("success_toast.message", lang=lang),
         id=ids.SUCCESS_TOAST,
-        header="Success!",
+        header=t("success_toast.header", lang=lang),
         icon="success",
         is_open=False,
         dismissable=True,
@@ -111,11 +111,11 @@ def create_success_toast():
     )
 
 
-def create_share_trip_toast():
+def create_share_trip_toast(lang="bg"):
     return dbc.Toast(
-        "",
+        t("share_trip_toast.message", lang=lang),
         id=ids.SHARE_TRIP_TOAST,
-        header="Share Trip",
+        header=t("share_trip_toast.header", lang=lang),
         icon="info",
         is_open=False,
         dismissable=True,
@@ -178,15 +178,15 @@ def create_authenticated_layout(markers, include_location=True, focused_landmark
     children = [
         dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0, update_now=True, timeout=10000),
         create_sidebar(active_trip, lang=lang),
-        create_info_sidebar(),
+        create_info_sidebar(lang=lang),
         create_main_content(markers, active_trip, focused_landmark),
-        create_landmark_review_pane(),
+        create_landmark_review_pane(lang=lang),
         create_user_menu(lang=lang),
         *create_stores(active_trip, pending_browse_trip, focused_landmark.id if focused_landmark else None),
-        create_warn_modal(),
-        create_success_toast(),
-        create_share_trip_toast(),
-        create_save_trip_modal(),
+        create_warn_modal(lang=lang),
+        create_success_toast(lang=lang),
+        create_share_trip_toast(lang=lang),
+        create_save_trip_modal(lang=lang),
     ]
     if include_location:
         children.insert(0, dcc.Location(id="url"))
