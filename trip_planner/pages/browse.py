@@ -25,7 +25,7 @@ def layout(lang="bg", **kwargs):
             dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[]),
             dcc.Store(id=ids.SELECTED_TRIP_STORE, data=None),
             html.Div(id=ids.SELECTED_OBJECTS_GROUP, style={"display": "none"}),
-            create_user_menu(),
+            create_user_menu(lang=lang),
             create_info_sidebar(),
             html.Div(
                 [

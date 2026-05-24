@@ -181,7 +181,7 @@ def create_authenticated_layout(markers, include_location=True, focused_landmark
         create_info_sidebar(),
         create_main_content(markers, active_trip, focused_landmark),
         create_landmark_review_pane(),
-        create_user_menu(),
+        create_user_menu(lang=lang),
         *create_stores(active_trip, pending_browse_trip, focused_landmark.id if focused_landmark else None),
         create_warn_modal(),
         create_success_toast(),

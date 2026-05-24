@@ -123,7 +123,7 @@ def layout(lang="bg", **kwargs):
 
     return html.Div(
         [
-            create_user_menu(fix_to_right=True),
+            create_user_menu(fix_to_right=True, lang=lang),
             dbc.Container(
                 [
                     html.Div(

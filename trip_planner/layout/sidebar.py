@@ -173,7 +173,7 @@ def create_sidebar(active_trip=None, lang="bg"):
         html.Div([
             html.Div([
                 html.Img(src="/assets/icon.svg", style={"height": "24px", "marginRight": "0.5rem"}),
-                html.Span(t("app.name"), style={"fontSize": "1.25rem", "fontWeight": "600"}),
+                html.Span(t("app.name", lang=lang), style={"fontSize": "1.25rem", "fontWeight": "600"}),
             ], className="d-flex align-items-center justify-content-center"),
             html.Hr(style={"margin": 0}),
         ], style={"display": "flex", "flexDirection": "column", "gap": "0.25rem"}),
