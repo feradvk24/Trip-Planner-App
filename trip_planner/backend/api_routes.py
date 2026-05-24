@@ -55,7 +55,7 @@ def _resolve_trip_endpoint(registry, endpoint, field_name):
 
 
 def register_api_routes(server, registry):
-    @server.post("/api/routes/osrm-trip-routing")
+    @server.post("/api/osrm-trip-routing")
     def osrm_trip_routing():
         payload = request.get_json(silent=True) or {}
         coordinates = payload.get("coordinates")
@@ -83,7 +83,7 @@ def register_api_routes(server, registry):
 
         return jsonify(route_result_to_dict(result))
 
-    @server.post("/api/trips/optimize-visit-order")
+    @server.post("/api/optimize-visit-order")
     def optimize_visit_order():
         payload = request.get_json(silent=True) or {}
         landmark_ids = payload.get("landmark_ids")

@@ -94,7 +94,7 @@ def _post_route_to_flask_endpoint(coord_pairs: tuple) -> RouteResult:
         ]
     }
     data = post_json_to_endpoint(
-        "/api/routes/osrm-trip-routing",
+        "/api/osrm-trip-routing",
         payload,
         "ROUTE_API_URL",
         "Route API returned an error",
@@ -136,7 +136,7 @@ def _endpoint_payload(point: Optional[Landmark]) -> Optional[dict]:
 
 def _post_optimize_to_flask_endpoint(payload: dict) -> list[int]:
     data = post_json_to_endpoint(
-        "/api/trips/optimize-visit-order",
+        "/api/optimize-visit-order",
         payload,
         "OPTIMIZE_VISIT_ORDER_API_URL",
         "Trip API returned an error",
