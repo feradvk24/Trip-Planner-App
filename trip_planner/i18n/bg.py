@@ -49,4 +49,14 @@ TRANSLATIONS = {
     "marker.learn_more": "Научи повече",
     "marker.add_to_trip": "Добави",
     "marker.in_trip": "Добавено",
+
+    "browse.title": "Преглед на пътувания",
+    "browse.subtitle": "Изберете запазено или споделено пътуване, за да видите неговите спирки.",
+    "browse.featured": "Препоръчано",
+    "browse.view_in_map": "Преглед в картата",
+    "browse.learn_more": "Научи повече",
+    "browse.featured_landmark": "Препоръчителна забележителност",
+    "browse.featured_landmark_details": "Подробности за препоръчителната забележителност ще се появят тук.",
+    "browse.my_saved_trips": "Моите запазени пътувания",
+    "browse.user_shared_trips": "Споделени пътувания от потребители",
 }

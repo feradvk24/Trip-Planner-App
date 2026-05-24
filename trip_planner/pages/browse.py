@@ -6,14 +6,18 @@ from flask_login import current_user
 import ids
 from backend.crud import get_user_trips
 from callbacks.widgets.callback_widgets import build_load_trip_items
+from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
+from i18n import t
 from layout.info_sidebar import create_info_sidebar
 from layout.sidebar import create_user_menu
 
-
-dash.register_page(__name__, path_template="/<lang>/browse", name="Browse")
+dash.register_page(__name__, path_template="/<lang>/browse", name="Browse", order=1)
 
 
 def layout(lang="bg", **kwargs):
+    if lang not in SUPPORTED_LANGUAGES:
+        lang = DEFAULT_LANGUAGE
+
     saved_trips = (
         get_user_trips(current_user.id, include_completion_status=True)
         if current_user.is_authenticated else
@@ -33,14 +37,14 @@ def layout(lang="bg", **kwargs):
                         [
                             dcc.Link(
                                 [html.I(className="bi bi-arrow-left me-2"), "Back to map"],
-                                href="/",
+                                href=f"/{lang}",
                                 className="btn btn-outline-secondary btn-sm",
                             ),
                             html.Div(
                                 [
-                                    html.H2("Browse Trips", className="mb-0"),
+                                    html.H2(t("browse.title", lang=lang), className="mb-0"),
                                     html.Div(
-                                        "Choose a saved or shared trip to preview its stops.",
+                                        t("browse.subtitle", lang=lang),
                                         className="text-muted",
                                     ),
                                 ],
@@ -60,7 +64,7 @@ def layout(lang="bg", **kwargs):
                                             html.Img(
                                                 id=ids.FEATURED_LANDMARK_IMAGE,
                                                 src=None,
-                                                alt="Featured landmark",
+                                                alt=t("browse.featured_landmark", lang=lang),
                                                 style={
                                                     "width": "100%",
                                                     "height": "18rem",
@@ -77,7 +81,7 @@ def layout(lang="bg", **kwargs):
                                             },
                                         ),
                                         html.Div(
-                                            "Featured landmark details will appear here.",
+                                            t("browse.featured_landmark_details", lang=lang),
                                             id=ids.FEATURED_LANDMARK_DESCRIPTION,
                                             className="mt-3",
                                             style={
@@ -90,7 +94,7 @@ def layout(lang="bg", **kwargs):
                                             [
                                                 dbc.Col(
                                                     html.A(
-                                                        "View in map",
+                                                        t("browse.view_in_map", lang=lang),
                                                         id=ids.FEATURED_LANDMARK_VIEW_MAP,
                                                         href="#",
                                                         className="btn btn-primary",
@@ -99,7 +103,7 @@ def layout(lang="bg", **kwargs):
                                                 ),
                                                 dbc.Col(
                                                     html.A(
-                                                        "Learn more",
+                                                        t("browse.learn_more", lang=lang),
                                                         id=ids.FEATURED_LANDMARK_LINK,
                                                         href="#",
                                                         target="_blank",
@@ -116,7 +120,7 @@ def layout(lang="bg", **kwargs):
                                     className="p-3",
                                     style={"height": "calc(100vh - 13rem)", "overflowY": "auto"},
                                 ),
-                                label="Featured",
+                                label=t("browse.featured", lang=lang),
                                 tab_id="featured-landmark",
                             ),
                             dbc.Tab(
@@ -130,7 +134,7 @@ def layout(lang="bg", **kwargs):
                                     className="p-3",
                                     style={"height": "calc(100vh - 13rem)", "overflowY": "auto"},
                                 ),
-                                label="My Saved Trips",
+                                label=t("browse.my_saved_trips", lang=lang),
                                 tab_id="my-saved-trips",
                             ),
                             dbc.Tab(
@@ -140,7 +144,7 @@ def layout(lang="bg", **kwargs):
                                     className="p-3",
                                     style={"height": "calc(100vh - 13rem)", "overflowY": "auto"},
                                 ),
-                                label="User Shared Trips",
+                                label=t("browse.user_shared_trips", lang=lang),
                                 tab_id="user-shared-trips",
                             ),
                         ],

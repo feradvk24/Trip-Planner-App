@@ -10,5 +10,5 @@ dash.register_page(__name__, path="/login", name="Login")
 
 def layout(**kwargs):
     if current_user.is_authenticated:
-        return dcc.Location(id="login-redirect", href="/")
+        return dcc.Location(id="login-redirect", href="/bg")
     return create_login_layout()

@@ -200,7 +200,10 @@ def create_user_menu(fix_to_right=False, lang="bg"):
                 header=True,
             ),
             dbc.DropdownMenuItem(divider=True),
-            dbc.DropdownMenuItem(t("sidebar.statistics", lang=lang), id=ids.STATISTICS_BUTTON),
+            dbc.DropdownMenuItem(
+                t("sidebar.statistics", lang=lang),
+                href=f"/{lang}/statistics",
+            ),
             dbc.DropdownMenuItem(divider=True),
             html.Div(
                 [

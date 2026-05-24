@@ -9,10 +9,30 @@ from callbacks.widgets.callback_widgets import build_all_markers
 from styles import location_dot_icon
 from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
 
+
+def get_language_from_path(pathname):
+    parts = (pathname or "/").strip("/").split("/")
+    if parts and parts[0] in SUPPORTED_LANGUAGES:
+        return parts[0]
+    return DEFAULT_LANGUAGE
+
+
+def localized_page_path(pathname, page_path):
+    language = get_language_from_path(pathname)
+    page_path = "/" + page_path.strip("/")
+    if page_path == "/":
+        return f"/{language}"
+    return f"/{language}{page_path}"
+
 def language_path(pathname, language):
+    if language not in SUPPORTED_LANGUAGES:
+        language = DEFAULT_LANGUAGE
+
     parts = (pathname or "/").strip("/").split("/")
 
     if parts and parts[0] in SUPPORTED_LANGUAGES:
+        parts = parts[1:]
+    elif parts and parts[0] in {"browse", "statistics"}:
         parts = parts[1:]
 
     path_without_language = "/".join(parts)
@@ -33,31 +53,25 @@ def register_view_callbacks(app, registry):
         Input(ids.MODE_BTN_BROWSE, "n_clicks"),
         Input(ids.LOAD_TRIP_BTN, "n_clicks"),
         Input(ids.BROWSE_CLOSE_BTN, "n_clicks"),
+        State("url", "pathname"),
         prevent_initial_call=True,
     )
-    def switch_mode(explore_clicks, trip_clicks, browse_clicks, load_trip_clicks, browse_close_clicks):
+    def switch_mode(explore_clicks, trip_clicks, browse_clicks, load_trip_clicks, browse_close_clicks, pathname):
         if not any([explore_clicks, trip_clicks, browse_clicks, load_trip_clicks, browse_close_clicks]):
             raise PreventUpdate
         if ctx.triggered_id == ids.MODE_BTN_TRIP:
             return "trip", False, no_update
         if ctx.triggered_id == ids.MODE_BTN_BROWSE:
-            return no_update, False, "/browse"
+            target_path = localized_page_path(pathname, "/browse")
+            if target_path == pathname:
+                return no_update, False, no_update
+            return no_update, False, target_path
         if ctx.triggered_id == ids.LOAD_TRIP_BTN:
             return no_update, True, no_update
         if ctx.triggered_id == ids.BROWSE_CLOSE_BTN:
             return no_update, False, no_update
         return "explore", False, no_update
     
-    @app.callback(
-        Output("url", "href", allow_duplicate=True),
-        Input(ids.STATISTICS_BUTTON, "n_clicks"),
-        prevent_initial_call=True,
-    )
-    def go_to_statistics(n_clicks):
-        if not n_clicks:
-            raise PreventUpdate
-        return "/statistics"
-
     @app.callback(
         Output(ids.EXPLORE_PANEL, "style"),
         Output(ids.TRIP_PANEL, "style"),

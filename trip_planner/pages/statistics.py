@@ -6,10 +6,11 @@ from flask_login import current_user
 import app_context
 import ids
 from backend.crud import get_user_landmark_visit_history, get_user_monthly_landmark_visit_counts, total_landmark_visits_for_user
+from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
 from layout.sidebar import create_user_menu
 
 
-dash.register_page(__name__, path_template="/<lang>/statistics", name="Statistics")
+dash.register_page(__name__, path_template="/<lang>/statistics", name="Statistics", order=2)
 
 
 MAX_VISIT_HISTORY_ITEMS = 100
@@ -109,6 +110,9 @@ def build_total_visits(total_visits):
 
 
 def layout(lang="bg", **kwargs):
+    if lang not in SUPPORTED_LANGUAGES:
+        lang = DEFAULT_LANGUAGE
+
     visits = (
         get_user_landmark_visit_history(current_user.id, limit=MAX_VISIT_HISTORY_ITEMS)
         if current_user.is_authenticated else
@@ -130,7 +134,7 @@ def layout(lang="bg", **kwargs):
                         [
                             dcc.Link(
                                 [html.I(className="bi bi-arrow-left me-2"), "Back to map"],
-                                href="/",
+                                href=f"/{lang}",
                                 className="btn btn-outline-secondary btn-sm mb-3",
                             ),
                             html.H2("Statistics", className="mb-2"),
