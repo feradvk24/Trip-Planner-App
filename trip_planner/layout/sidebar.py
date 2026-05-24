@@ -4,6 +4,7 @@ from flask_login import current_user
 
 import ids
 from styles import SIDEBAR_STYLE
+from i18n import t
 
 
 def create_selected_object_group():
@@ -14,12 +15,12 @@ def create_selected_object_group():
     )
 
 
-def create_landmark_search(initial_mode="explore"):
+def create_landmark_search(initial_mode="explore", lang="bg"):
     return html.Div(
         dcc.Dropdown(
             id=ids.LANDMARK_SEARCH_DROPDOWN,
             options=[],
-            placeholder="Search landmark...",
+            placeholder=t("sidebar.search_landmark", lang=lang),
             searchable=True,
             clearable=True,
             className="landmark-search-dropdown",
@@ -31,14 +32,14 @@ def create_landmark_search(initial_mode="explore"):
     )
 
 
-def create_trip_endpoints():
+def create_trip_endpoints(lang="bg"):
     return html.Div(
         [
             html.Div([
-                html.Label("Start:", style={"fontSize": "11px", "marginBottom": "0"}),
+                html.Label(t("sidebar.start_point", lang=lang), style={"fontSize": "11px", "marginBottom": "0"}),
                 dbc.Select(
-                    options=[{"label": "Автоматично", "value": "auto"}],
-                    placeholder="Select a start point",
+                    options=[{"label": t("sidebar.auto", lang=lang), "value": "auto"}],
+                    placeholder=t("sidebar.select_start_point", lang=lang),
                     id=ids.START_POINT_DROPDOWN,
                     className="format-dropdown",
                     size=5,
@@ -46,10 +47,10 @@ def create_trip_endpoints():
                 ),
             ]),
             html.Div([
-                html.Label("End:", style={"fontSize": "11px", "marginBottom": "0"}),
+                html.Label(t("sidebar.end_point", lang=lang), style={"fontSize": "11px", "marginBottom": "0"}),
                 dbc.Select(
-                    options=[{"label": "Автоматично", "value": "auto"}],
-                    placeholder="Select an end point",
+                    options=[{"label": t("sidebar.auto", lang=lang), "value": "auto"}],
+                    placeholder=t("sidebar.select_end_point", lang=lang),
                     id=ids.END_POINT_DROPDOWN,
                     className="format-dropdown",
                     size=5,
@@ -67,19 +68,19 @@ def create_trip_endpoints():
     )
 
 
-def create_sidebar(active_trip=None):
+def create_sidebar(active_trip=None, lang="bg"):
     initial_mode = "trip" if active_trip else "explore"
-    landmark_search = create_landmark_search(initial_mode)
-    route_endpoints = create_trip_endpoints()
+    landmark_search = create_landmark_search(initial_mode, lang)
+    route_endpoints = create_trip_endpoints(lang)
     selected_object_group = create_selected_object_group()
     optimize_route_btn = dbc.Button(
-        [html.I(className="bi bi-signpost-split me-2"), "Optimize Route"],
+        [html.I(className="bi bi-signpost-split me-2"), t("sidebar.optimize_route", lang=lang)],
         color="success",
         className="mt-2",
         id=ids.OPTIMIZE_ROUTE_BTN,
     )
     save_trip_btn = dbc.Button(
-        [html.I(className="bi bi-save me-2"), "Save Trip"],
+        [html.I(className="bi bi-save me-2"), t("sidebar.save_trip", lang=lang)],
         color="secondary",
         className="mt-1",
         id=ids.SAVE_TRIP_BTN,
@@ -87,13 +88,13 @@ def create_sidebar(active_trip=None):
         style={"opacity": "0.45", "flex": "1"},
     )
     load_trip_btn = dbc.Button(
-        [html.I(className="bi bi-folder2-open me-2"), "Load Trip"],
+        [html.I(className="bi bi-folder2-open me-2"), t("sidebar.load_trip", lang=lang)],
         color="info",
         className="mt-1 w-100",
         id=ids.LOAD_TRIP_BTN,
     )
     share_trip_btn = dbc.Button(
-        [html.I(className="bi bi-share me-2"), "Share Trip"],
+        [html.I(className="bi bi-share me-2"), t("sidebar.share_trip", lang=lang)],
         color="info",
         className="mt-1 w-100",
         id=ids.SHARE_TRIP_BTN,
@@ -113,7 +114,7 @@ def create_sidebar(active_trip=None):
         html.Div(
             dbc.Checklist(
                 id=ids.HIDE_VISITED_LANDMARKS_FILTER,
-                options=[{"label": "Hide visited landmarks", "value": "hide_visited"}],
+                options=[{"label": t("sidebar.hide_visited_landmarks", lang=lang), "value": "hide_visited"}],
                 value=[],
                 switch=True,
                 className="small",
@@ -122,9 +123,9 @@ def create_sidebar(active_trip=None):
             style={"display": "flex", "justifyContent": "center"},
         ),
         html.Div([
-            html.P("Selected monuments:", className="lead", style={"marginBottom": 0}),
+            html.P(t("sidebar.selected_monuments", lang=lang), className="lead", style={"marginBottom": 0}),
             html.Span(
-                "Clear all",
+                t("sidebar.clear_all", lang=lang),
                 id=ids.CLEAR_ALL_BTN,
                 style={
                     "fontSize": "0.75rem",
@@ -146,7 +147,7 @@ def create_sidebar(active_trip=None):
             id=ids.TRIP_STATUS_PANEL,
             children=[
                 dbc.Button(
-                    "Visit",
+                    t("sidebar.visit", lang=lang),
                     id=ids.TRIP_NEXT_VISIT_BTN,
                     disabled=True,
                     style={"display": "none"},
@@ -172,7 +173,7 @@ def create_sidebar(active_trip=None):
         html.Div([
             html.Div([
                 html.Img(src="/assets/icon.svg", style={"height": "24px", "marginRight": "0.5rem"}),
-                html.Span("Bulgarian Monuments", style={"fontSize": "1.25rem", "fontWeight": "600"}),
+                html.Span(t("app.name"), style={"fontSize": "1.25rem", "fontWeight": "600"}),
             ], className="d-flex align-items-center justify-content-center"),
             html.Hr(style={"margin": 0}),
         ], style={"display": "flex", "flexDirection": "column", "gap": "0.25rem"}),
@@ -184,7 +185,7 @@ def create_sidebar(active_trip=None):
     ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
 
 
-def create_user_menu(fix_to_right=False):
+def create_user_menu(fix_to_right=False, lang="bg"):
     username = current_user.id if current_user.is_authenticated else "User"
     right_offset = "0.75rem" if fix_to_right else "21rem"
     return dbc.DropdownMenu(
@@ -193,15 +194,32 @@ def create_user_menu(fix_to_right=False):
         children=[
             dbc.DropdownMenuItem(
                 [
-                    html.Div("Signed in as", className="text-muted", style={"fontSize": "0.75rem"}),
+                    html.Div(t("sidebar.signed_in_as", lang=lang), className="text-muted", style={"fontSize": "0.75rem"}),
                     html.Div(username, style={"fontWeight": "600"}),
                 ],
                 header=True,
             ),
             dbc.DropdownMenuItem(divider=True),
-            dbc.DropdownMenuItem("Statistics", id=ids.STATISTICS_BUTTON),
+            dbc.DropdownMenuItem(t("sidebar.statistics", lang=lang), id=ids.STATISTICS_BUTTON),
             dbc.DropdownMenuItem(divider=True),
-            dbc.DropdownMenuItem("Logout", id=ids.LOGOUT_BUTTON, style={"color": "#dc3545"}),
+            html.Div(
+                [
+                    html.Div(t("sidebar.language", lang=lang), className="text-muted", style={"fontSize": "0.75rem", "marginBottom": "0.25rem"}),
+                    dbc.RadioItems(
+                        id=ids.LANGUAGE_RADIO,
+                        options=[
+                            {"label": t("sidebar.bulgarian", lang=lang), "value": "bg"},
+                            {"label": t("sidebar.english", lang=lang), "value": "en"},
+                        ],
+                        value=lang,
+                        inline=False,
+                        className="small",
+
+                    ),
+                ],
+                style={"margin-left": "0.5rem"},
+            ),
+            dbc.DropdownMenuItem(t("sidebar.logout", lang=lang), id=ids.LOGOUT_BUTTON, style={"color": "#dc3545"}),
         ],
         direction="down",
         align_end=True,

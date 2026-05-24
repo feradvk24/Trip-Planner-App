@@ -112,3 +112,5 @@ LOADED_TRIP_OVERVIEW_POLYLINE_LAYER = "loaded-trip-overview-polyline-layer"
 
 # Statistics page
 STATISTICS_BUTTON = "statistics-button"
+
+LANGUAGE_RADIO = "language-radio"

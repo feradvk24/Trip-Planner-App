@@ -160,7 +160,7 @@ def create_main_content(markers, active_trip=None, focused_landmark=None):
     )
 
 
-def create_authenticated_layout(markers, include_location=True, focused_landmark_id=None):
+def create_authenticated_layout(markers, include_location=True, focused_landmark_id=None, lang="bg"):
     pending_browse_trip = session.pop("pending_browse_trip", None)
     focused_landmark = None
     if focused_landmark_id:
@@ -177,7 +177,7 @@ def create_authenticated_layout(markers, include_location=True, focused_landmark
         active_trip = get_active_user_trip(current_user.id)
     children = [
         dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0, update_now=True, timeout=10000),
-        create_sidebar(active_trip),
+        create_sidebar(active_trip, lang=lang),
         create_info_sidebar(),
         create_main_content(markers, active_trip, focused_landmark),
         create_landmark_review_pane(),

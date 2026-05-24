@@ -9,7 +9,7 @@ from backend.crud import get_user_landmark_visit_history, get_user_monthly_landm
 from layout.sidebar import create_user_menu
 
 
-dash.register_page(__name__, path="/statistics", name="Statistics")
+dash.register_page(__name__, path_template="/<lang>/statistics", name="Statistics")
 
 
 MAX_VISIT_HISTORY_ITEMS = 100
@@ -108,7 +108,7 @@ def build_total_visits(total_visits):
     )
 
 
-def layout(**kwargs):
+def layout(lang="bg", **kwargs):
     visits = (
         get_user_landmark_visit_history(current_user.id, limit=MAX_VISIT_HISTORY_ITEMS)
         if current_user.is_authenticated else

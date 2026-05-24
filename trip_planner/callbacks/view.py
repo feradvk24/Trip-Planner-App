@@ -7,6 +7,20 @@ import ids
 from backend.crud import get_user_visited_landmark_ids
 from callbacks.widgets.callback_widgets import build_all_markers
 from styles import location_dot_icon
+from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
+
+def language_path(pathname, language):
+    parts = (pathname or "/").strip("/").split("/")
+
+    if parts and parts[0] in SUPPORTED_LANGUAGES:
+        parts = parts[1:]
+
+    path_without_language = "/".join(parts)
+
+    if path_without_language:
+        return f"/{language}/{path_without_language}"
+
+    return f"/{language}"
 
 
 def register_view_callbacks(app, registry):
@@ -141,3 +155,21 @@ def register_view_callbacks(app, registry):
             set()
         )
         return build_all_markers(registry.landmarks, destination_ids or [], hidden_ids), [], [], [], hidden_stats
+
+
+    @app.callback(
+        Output("url", "href", allow_duplicate=True),
+        Input(ids.LANGUAGE_RADIO, "value"),
+        State("url", "pathname"),
+        prevent_initial_call=True,
+    )
+    def reload_with_selected_language(selected_language, current_path):
+        if not selected_language:
+            raise PreventUpdate
+
+        new_path = language_path(current_path, selected_language)
+
+        if new_path == current_path:
+            raise PreventUpdate
+
+        return new_path

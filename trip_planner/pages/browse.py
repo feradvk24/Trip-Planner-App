@@ -10,10 +10,10 @@ from layout.info_sidebar import create_info_sidebar
 from layout.sidebar import create_user_menu
 
 
-dash.register_page(__name__, path="/browse", name="Browse")
+dash.register_page(__name__, path_template="/<lang>/browse", name="Browse")
 
 
-def layout(**kwargs):
+def layout(lang="bg", **kwargs):
     saved_trips = (
         get_user_trips(current_user.id, include_completion_status=True)
         if current_user.is_authenticated else
