@@ -13,7 +13,13 @@ from backend.crud import (
     set_trip_public_status,
 )
 from callbacks.utils.trip_state import sanitize_shared_trip
+from callbacks.utils.get_language import get_language_from_url
 from callbacks.widgets.callback_widgets import build_load_trip_items, build_selected_object_items
+from i18n import t
+
+
+def is_browse_path(pathname):
+    return (pathname or "").rstrip("/").endswith("/browse")
 
 def register_browse_callbacks(app, registry):
     @app.callback(
@@ -30,40 +36,41 @@ def register_browse_callbacks(app, registry):
         Input(ids.BROWSE_TABS, "active_tab"),
     )
     def render_featured_landmark(pathname, active_tab):
+        lang = get_language_from_url(pathname)
         hidden_link_style = {"display": "none"}
         visible_link_style = {"display": "inline-block"}
-        if pathname != "/browse" or active_tab != "featured-landmark":
+        if not is_browse_path(pathname) or active_tab != "featured-landmark":
             raise PreventUpdate
 
         featured = get_current_featured_landmark()
         if not featured:
             return (
                 None,
-                "Featured landmark",
-                "Request a featured landmark to display curated content here.",
+                t("browse.featured_landmark", lang=lang),
+                t("browse.featured_request", lang=lang),
                 "#",
-                "Learn more",
+                t("browse.learn_more", lang=lang),
                 hidden_link_style,
-                html.H3("Nothing to display. Request a feature!", className="mb-3"),
+                html.H3(t("browse.nothing_to_display", lang=lang), className="mb-3"),
                 "#",
                 hidden_link_style,
             )
 
-        title = featured.get("title") or featured.get("name") or "Featured Landmark"
-        description = featured.get("description") or "No description has been added for this featured landmark yet."
+        title = featured.get("title") or featured.get("name") or t("browse.featured_landmark", lang=lang)
+        description = featured.get("description") or t("browse.no_featured_description", lang=lang)
         link_url = featured.get("primary_link_url")
         return (
             featured.get("src_link"),
             featured.get("image_alt") or title,
             description,
             link_url or "#",
-            featured.get("primary_link_label") or "Learn more",
+            featured.get("primary_link_label") or t("browse.learn_more", lang=lang),
             visible_link_style if link_url else hidden_link_style,
             [
-                html.H3(featured.get("name") or "Featured Post", className="mb-3"),
+                html.H3(featured.get("name") or t("browse.featured_post", lang=lang), className="mb-3"),
                 html.H4(featured.get("location") or "", className="mb-2 text-muted"),
             ],
-            f"/?mode=explore&focus_landmark={featured.get('landmark_id')}" if featured.get("landmark_id") else "#",
+            f"/{lang}?mode=explore&focus_landmark={featured.get('landmark_id')}" if featured.get("landmark_id") else "#",
             visible_link_style if featured.get("landmark_id") else hidden_link_style,
         )
 
@@ -81,7 +88,8 @@ def register_browse_callbacks(app, registry):
         prevent_initial_call=True,
     )
     def refresh_browse_saved_trips(pathname, browse_open, active_tab, delete_clicks_list, selected_trip):
-        on_browse_page = pathname == "/browse"
+        lang = get_language_from_url(pathname)
+        on_browse_page = is_browse_path(pathname)
         active_tab = active_tab or "featured-landmark"
         selected_trip_data = no_update
         if isinstance(ctx.triggered_id, dict) and ctx.triggered_id.get("type") == "delete-trip-item":
@@ -90,7 +98,7 @@ def register_browse_callbacks(app, registry):
             if selected_trip and selected_trip.get("id") == trip_id:
                 selected_trip_data = None
             trips = get_user_trips(current_user.id, include_completion_status=True)
-            return build_load_trip_items(trips), no_update, trips, no_update, selected_trip_data
+            return build_load_trip_items(trips, lang=lang), no_update, trips, no_update, selected_trip_data
 
         if not browse_open and not on_browse_page:
             raise PreventUpdate
@@ -102,14 +110,14 @@ def register_browse_callbacks(app, registry):
 
         if active_tab == "my-saved-trips":
             trips = get_user_trips(current_user.id, include_completion_status=True)
-            return build_load_trip_items(trips), no_update, trips, no_update, selected_trip_data
+            return build_load_trip_items(trips, lang=lang), no_update, trips, no_update, selected_trip_data
 
         if active_tab == "user-shared-trips":
             trips = [
                 sanitize_shared_trip(trip) for trip in get_public_trips(include_completion_status=True)
                 if trip.get("owner_username") != current_user.id
             ]
-            return no_update, build_load_trip_items(trips, allow_delete=False, show_owner=True), no_update, trips, selected_trip_data
+            return no_update, build_load_trip_items(trips, allow_delete=False, show_owner=True, lang=lang), no_update, trips, selected_trip_data
 
         raise PreventUpdate
 
@@ -139,11 +147,13 @@ def register_browse_callbacks(app, registry):
         Output("url", "href", allow_duplicate=True),
         Input(ids.SELECT_TRIP_BTN, "n_clicks"),
         State(ids.SELECTED_TRIP_STORE, "data"),
+        State("url", "href"),
         prevent_initial_call=True,
     )
-    def load_selected_trip(n_clicks, trip):
+    def load_selected_trip(n_clicks, trip, href):
         if not n_clicks or not trip:
             raise PreventUpdate
+        lang = get_language_from_url(href)
         shared_trip = trip.get("source") == "shared"
         if shared_trip:
             destination_ids = trip.get("landmark_ids") or trip.get("visit_order") or []
@@ -156,8 +166,8 @@ def register_browse_callbacks(app, registry):
                 "visit_order": visit_order,
             }
             return (
-                build_selected_object_items(registry, destination_ids),
-                "/",
+                build_selected_object_items(registry, destination_ids, lang=lang),
+                f"/{lang}",
             )
 
         active_trip = set_active_user_trip(current_user.id, trip["id"])
@@ -169,7 +179,7 @@ def register_browse_callbacks(app, registry):
         }
         return (
             no_update,
-            "/",
+            f"/{lang}",
         )
 
     @app.callback(
@@ -180,21 +190,23 @@ def register_browse_callbacks(app, registry):
         Output(ids.SHARE_TRIP_TOAST, "is_open"),
         Input(ids.SHARE_TRIP_BTN, "n_clicks"),
         State(ids.ACTIVE_TRIP_STORE, "data"),
+        State("url", "href"),
         prevent_initial_call=True,
     )
-    def share_trip(n_clicks, active_trip):
+    def share_trip(n_clicks, active_trip, href):
         if not n_clicks:
             raise PreventUpdate
+        lang = get_language_from_url(href)
         if not active_trip or not active_trip.get("trip_id"):
-            return no_update, "Load a trip before sharing it.", "Trip not loaded", "warning", True
+            return no_update, t("share_trip.load_before_sharing", lang=lang), t("share_trip.not_loaded", lang=lang), "warning", True
         if active_trip.get("is_public"):
-            return no_update, "This trip is already shared.", "Already shared", "info", True
+            return no_update, t("share_trip.already_shared_message", lang=lang), t("share_trip.already_shared", lang=lang), "info", True
 
         trip_id = active_trip["trip_id"]
         username = current_user.id
         try:
             set_trip_public_status(username, trip_id, True)
         except Exception as e:
-            return no_update, f"Could not share this trip: {e}", "Sharing failed", "danger", True
+            return no_update, f"{t('share_trip.failed_message', lang=lang)}: {e}", t("share_trip.failed", lang=lang), "danger", True
 
-        return {**active_trip, "is_public": True}, "Trip shared successfully.", "Shared", "success", True
+        return {**active_trip, "is_public": True}, t("share_trip.success_message", lang=lang), t("share_trip.shared", lang=lang), "success", True

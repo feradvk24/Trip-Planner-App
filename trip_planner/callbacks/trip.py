@@ -5,6 +5,7 @@ from flask_login import current_user
 
 import ids
 from backend.crud import update_trip_progress
+from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import format_distance, get_route_legs
 from callbacks.utils.trip_state import (
     active_route_leg_index,
@@ -16,11 +17,12 @@ from callbacks.utils.trip_state import (
 )
 from callbacks.widgets.review_widgets import review_pane_state, trip_completion_review_pane_state
 from callbacks.widgets.trip_rendering import build_trip_content
+from i18n import t
 
 
-def hidden_next_visit_button():
+def hidden_next_visit_button(lang="bg"):
     return dbc.Button(
-        "Visit",
+        t("sidebar.visit", lang=lang),
         id=ids.TRIP_NEXT_VISIT_BTN,
         disabled=True,
         style={"display": "none"},
@@ -32,19 +34,21 @@ def register_trip_callbacks(app, registry):
         Output(ids.TRIP_STATUS_PANEL, "children"),
         Input(ids.ACTIVE_TRIP_STORE, "data"),
         Input(ids.GEOLOCATION, "position"),
+        State("url", "href"),
     )
-    def render_trip_status(active_trip, position):
+    def render_trip_status(active_trip, position, href):
+        lang = get_language_from_url(href)
         if not active_trip:
             return html.Div([
-                html.Div("Load a trip to see your progress.", className="text-muted small"),
-                hidden_next_visit_button(),
+                html.Div(t("trip_status.load_trip_progress", lang=lang), className="text-muted small"),
+                hidden_next_visit_button(lang=lang),
             ])
 
         stop_ids = active_trip.get("visit_order") or []
         if not stop_ids:
             return html.Div([
-                html.Div("This trip has no destinations.", className="text-muted small"),
-                hidden_next_visit_button(),
+                html.Div(t("trip_status.no_destinations", lang=lang), className="text-muted small"),
+                hidden_next_visit_button(lang=lang),
             ])
 
         current_idx = clamp_stop_index(active_trip)
@@ -98,7 +102,7 @@ def register_trip_callbacks(app, registry):
             if not point:
                 return html.Div([
                     html.Div(label, className="text-muted small"),
-                    html.Div("Trip complete", style={"fontWeight": "600"}),
+                    html.Div(t("trip_status.trip_complete", lang=lang), style={"fontWeight": "600"}),
                 ])
             return html.Div([
                 html.Div(label, className="text-muted small"),
@@ -106,28 +110,28 @@ def register_trip_callbacks(app, registry):
                 html.Div(point["location"], className="text-muted small") if point["location"] else None,
             ])
 
-        point_sections = [point_block("Next", next_point)]
+        point_sections = [point_block(t("trip_status.next", lang=lang), next_point)]
         if show_current_point:
             point_sections = [
-                point_block("Current", current_point),
+                point_block(t("trip_status.current", lang=lang), current_point),
                 html.Hr(style={"margin": "0.5rem 0"}),
                 *point_sections,
             ]
 
         return html.Div(
             [
-                html.H6("Trip progress", className="mb-2"),
+                html.H6(t("trip_status.trip_progress", lang=lang), className="mb-2"),
                 *point_sections,
                 dbc.Button(
-                    "Visit",
+                    t("sidebar.visit", lang=lang),
                     id=ids.TRIP_NEXT_VISIT_BTN,
                     color="success",
                     size="sm",
                     className="mt-2 w-100",
-                ) if next_action_idx is not None and next_point else hidden_next_visit_button(),
+                ) if next_action_idx is not None and next_point else hidden_next_visit_button(lang=lang),
                 html.Div(
                     [
-                        html.Div("Distance to next", className="text-muted small"),
+                        html.Div(t("trip_status.distance_to_next", lang=lang), className="text-muted small"),
                         html.Div(
                             format_distance(distance_to_next) if next_point else "0 m",
                             style={"fontWeight": "600"},
@@ -139,11 +143,11 @@ def register_trip_callbacks(app, registry):
                 html.Div(
                     [
                         html.Div([
-                            html.Div("Passed", className="text-muted small"),
+                            html.Div(t("trip_status.passed", lang=lang), className="text-muted small"),
                             html.Div(format_distance(passed_distance), style={"fontWeight": "600"}),
                         ]),
                         html.Div([
-                            html.Div("Remaining", className="text-muted small"),
+                            html.Div(t("trip_status.remaining", lang=lang), className="text-muted small"),
                             html.Div(format_distance(remaining_distance), style={"fontWeight": "600"}),
                         ], style={"textAlign": "right"}),
                     ],
@@ -159,11 +163,13 @@ def register_trip_callbacks(app, registry):
         Output(ids.LOADED_TRIP_OVERVIEW_POLYLINE_LAYER, "children"),
         Input(ids.ACTIVE_TRIP_STORE, "data"),
         Input(ids.MODE_STORE, "data"),
+        State("url", "href"),
     )
-    def render_trip_markers(active_trip, mode):
+    def render_trip_markers(active_trip, mode, href):
         if mode != "trip" or not active_trip:
             return [], [], []
-        trip_markers, status_polylines, overview_polylines = build_trip_content(registry, active_trip)
+        lang = get_language_from_url(href)
+        trip_markers, status_polylines, overview_polylines = build_trip_content(registry, active_trip, lang=lang)
         return trip_markers, status_polylines, overview_polylines
 
     @app.callback(

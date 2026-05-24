@@ -3,45 +3,47 @@ from dash.exceptions import PreventUpdate
 
 import ids
 from backend.crud import get_landmark_image, get_landmark_review_summary, get_landmark_reviews
+from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.trip_state import next_action_stop_index
 from callbacks.widgets.info_widgets import build_empty_info, build_landmark_info, build_trip_info
+from i18n import t
 
 
-def _image_label(image):
+def _image_label(image, lang="bg"):
     if not image:
         return ""
-    return image.get("commons_file") or "Landmark image"
+    return image.get("commons_file") or t("info_sidebar.landmark_image", lang=lang)
 
 
-def _image_tooltip(image):
+def _image_tooltip(image, lang="bg"):
     if not image:
         return ""
 
-    parts = [_image_label(image)]
+    parts = [_image_label(image, lang=lang)]
     author = image.get("author")
     if author:
-        parts.append(f"Author: {author}")
+        parts.append(f"{t('info_sidebar.author', lang=lang)}: {author}")
     return "\n".join(part for part in parts if part)
 
 
-def _image_meta(image):
+def _image_meta(image, lang="bg"):
     if not image:
         return []
 
     children = [
-        html.Div(_image_label(image), className="info-sidebar-image-label"),
+        html.Div(_image_label(image, lang=lang), className="info-sidebar-image-label"),
     ]
     author = image.get("author")
     if author:
-        children.append(html.Div(f"Author: {author}", className="info-sidebar-image-author"))
+        children.append(html.Div(f"{t('info_sidebar.author', lang=lang)}: {author}", className="info-sidebar-image-author"))
     return children
 
 
-def _learn_more_action(landmark):
+def _learn_more_action(landmark, lang="bg"):
     if not landmark or not landmark.link or landmark.link == "#":
         return []
     return html.A(
-        "Learn more",
+        t("marker.learn_more", lang=lang),
         href=landmark.link,
         target="_blank",
         rel="noopener noreferrer",
@@ -113,29 +115,31 @@ def register_info_callbacks(app, registry):
         Input("url", "pathname"),
     )
     def render_info_sidebar(active_info, selected_trip, browse_open, mode, pathname):
+        lang = get_language_from_url(pathname)
         base_style = {
             "flex": "1 1 auto",
             "minHeight": 0,
             "overflowY": "auto",
         }
         hide_landmark_image = mode not in ("explore", "trip")
-        browse_open = browse_open or pathname == "/browse"
+        browse_open = browse_open or (pathname or "").rstrip("/").endswith("/browse")
 
         if browse_open:
             if selected_trip:
-                trip_name = selected_trip.get("name") or "Selected trip"
-                return trip_name, "Shared trip" if selected_trip.get("source") == "shared" else "Saved trip", [], True, None, "", True, None, "", [], build_trip_info(selected_trip, registry), {
+                trip_name = selected_trip.get("name") or t("info_sidebar.selected_trip", lang=lang)
+                subtitle = t("info_sidebar.shared_trip", lang=lang) if selected_trip.get("source") == "shared" else t("info_sidebar.saved_trip", lang=lang)
+                return trip_name, subtitle, [], True, None, "", True, None, "", [], build_trip_info(selected_trip, registry, lang=lang), {
                     **base_style,
                     "display": "block",
                     "overflow": "hidden",
                 }
-            return "Browse Trips", "No trip selected", [], True, None, "", True, None, "", [], build_empty_info(), {
+            return t("browse.title", lang=lang), t("info_sidebar.no_trip_selected", lang=lang), [], True, None, "", True, None, "", [], build_empty_info(lang=lang), {
                 **base_style,
                 "display": "block",
             }
 
         if not active_info:
-            return "Details", "No selection", [], True, None, "", True, None, "", [], build_empty_info(), {
+            return t("info_sidebar.title", lang=lang), t("info_sidebar.no_selection", lang=lang), [], True, None, "", True, None, "", [], build_empty_info(lang=lang), {
                 **base_style,
                 "display": "block",
             }
@@ -143,9 +147,9 @@ def register_info_callbacks(app, registry):
         if active_info.get("type") in ("trip", "landmark"):
             landmark = registry.get_landmark(active_info.get("content"))
             if not landmark:
-                title = "Trip Complete" if active_info.get("type") == "trip" else "Details"
-                subtitle = "No next stop" if active_info.get("type") == "trip" else "No selection"
-                return title, subtitle, [], True, None, "", True, None, "", [], build_empty_info(), {
+                title = t("trip_status.trip_complete", lang=lang) if active_info.get("type") == "trip" else t("info_sidebar.title", lang=lang)
+                subtitle = t("trip_status.no_next_stop", lang=lang) if active_info.get("type") == "trip" else t("info_sidebar.no_selection", lang=lang)
+                return title, subtitle, [], True, None, "", True, None, "", [], build_empty_info(lang=lang), {
                     **base_style,
                     "display": "block",
                 }
@@ -153,11 +157,11 @@ def register_info_callbacks(app, registry):
             image_src = image.get("src_link") if image else None
             image_hidden = hide_landmark_image or not image_src
             image_source_url = image.get("image_source_url") or image_src if image else None
-            image_alt = _image_label(image)
-            image_title = _image_tooltip(image)
+            image_alt = _image_label(image, lang=lang)
+            image_title = _image_tooltip(image, lang=lang)
             review_summary = get_landmark_review_summary(landmark.id)
             reviews = get_landmark_reviews(landmark.id)
-            return landmark.name, landmark.location, _learn_more_action(landmark), image_hidden, image_source_url, image_title, image_hidden, image_src, image_alt, _image_meta(image), build_landmark_info(landmark, review_summary, reviews), {
+            return landmark.name, landmark.location, _learn_more_action(landmark, lang=lang), image_hidden, image_source_url, image_title, image_hidden, image_src, image_alt, _image_meta(image, lang=lang), build_landmark_info(landmark, review_summary, reviews, lang=lang), {
                 **base_style,
                 "display": "block",
             }

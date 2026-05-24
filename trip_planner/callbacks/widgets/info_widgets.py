@@ -2,16 +2,17 @@ import dash_bootstrap_components as dbc
 from dash import html
 
 import ids
+from i18n import t
 
 
-def _stars(rating):
+def _stars(rating, lang="bg"):
     if rating is None:
-        return "No ratings yet"
+        return t("reviews.no_ratings", lang=lang)
     rounded = int(round(rating))
     return "★" * rounded + "☆" * (5 - rounded)
 
 
-def build_empty_info():
+def build_empty_info(lang="bg"):
     return html.Div(
         [
             html.Div(
@@ -19,7 +20,7 @@ def build_empty_info():
                 style={"marginBottom": "0.5rem"},
             ),
             html.Div(
-                "No information to display yet.",
+                t("info_sidebar.no_information", lang=lang),
                 style={"color": "#6c757d", "fontSize": "0.95rem"},
             ),
         ],
@@ -34,23 +35,23 @@ def build_empty_info():
     )
 
 
-def build_review_item(review):
+def build_review_item(review, lang="bg"):
     review_text = review.get("review_text")
     return html.Div(
         [
             html.Div(
                 [
-                    html.Span(_stars(review.get("rating")), style={"color": "#f2b01e", "fontSize": "0.9rem"}),
+                    html.Span(_stars(review.get("rating"), lang=lang), style={"color": "#f2b01e", "fontSize": "0.9rem"}),
                     html.Small(review.get("created_at"), className="text-muted"),
                 ],
                 style={"display": "flex", "justifyContent": "space-between", "gap": "0.75rem"},
             ),
             html.Div(
-                review.get("user_name") or review.get("username") or "User",
+                review.get("user_name") or review.get("username") or t("generic.user", lang=lang),
                 style={"fontWeight": "600", "fontSize": "0.9rem", "marginTop": "0.25rem"},
             ),
             html.Div(
-                review_text if review_text else "No written remarks.",
+                review_text if review_text else t("reviews.no_written_remarks", lang=lang),
                 className="text-muted" if not review_text else "",
                 style={"fontSize": "0.9rem", "marginTop": "0.25rem", "lineHeight": "1.35"},
             ),
@@ -64,20 +65,20 @@ def build_review_item(review):
     )
 
 
-def build_landmark_info(landmark, review_summary, reviews):
+def build_landmark_info(landmark, review_summary, reviews, lang="bg"):
     average_rating = review_summary.get("average_rating")
     review_count = review_summary.get("review_count", 0)
-    rating_text = f"{average_rating:.1f}" if average_rating is not None else "No score"
+    rating_text = f"{average_rating:.1f}" if average_rating is not None else t("reviews.no_score", lang=lang)
 
     return html.Div(
         [
             html.Div(
                 [
-                    html.Div(_stars(average_rating), style={"color": "#f2b01e", "fontSize": "1.4rem"}),
+                    html.Div(_stars(average_rating, lang=lang), style={"color": "#f2b01e", "fontSize": "1.4rem"}),
                     html.Div(
                         [
                             html.Span(rating_text, style={"fontWeight": "700"}),
-                            html.Span(f" from {review_count} review{'s' if review_count != 1 else ''}", className="text-muted"),
+                            html.Span(f" {t('reviews.from_count', lang=lang).format(count=review_count)}", className="text-muted"),
                         ],
                         style={"fontSize": "0.95rem"},
                     ),
@@ -86,13 +87,13 @@ def build_landmark_info(landmark, review_summary, reviews):
             ),
             html.Div(
                 [
-                    html.H6("Reviews", className="mb-2"),
+                    html.H6(t("reviews.title", lang=lang), className="mb-2"),
                     html.Div(
-                        [build_review_item(review) for review in reviews]
+                        [build_review_item(review, lang=lang) for review in reviews]
                         if reviews else
                         [
                             dbc.Alert(
-                                "No reviews for this landmark yet.",
+                                t("reviews.none_for_landmark", lang=lang),
                                 color="light",
                                 className="mb-0",
                             )
@@ -107,7 +108,7 @@ def build_landmark_info(landmark, review_summary, reviews):
     )
 
 
-def build_trip_info(trip, registry):
+def build_trip_info(trip, registry, lang="bg"):
     destination_ids = [lid for lid in (trip.get("visit_order") or trip.get("landmark_ids") or []) if lid != -1]
     destinations = registry.get_landmarks(destination_ids)
     route_legs = trip.get("route_legs") or []
@@ -124,10 +125,10 @@ def build_trip_info(trip, registry):
             html.Div(
                 [
                     html.Div(
-                        "Shared trip" if trip.get("source") == "shared" else "Saved trip",
+                        t("info_sidebar.shared_trip", lang=lang) if trip.get("source") == "shared" else t("info_sidebar.saved_trip", lang=lang),
                         style={"fontSize": "0.75rem", "color": "#6c757d", "textTransform": "uppercase"},
                     ),
-                    html.Div(f"By {owner}", className="text-muted", style={"fontSize": "0.9rem"}) if owner else None,
+                    html.Div(f"{t('info_sidebar.by', lang=lang)} {owner}", className="text-muted", style={"fontSize": "0.9rem"}) if owner else None,
                     html.Div(trip.get("created_at"), className="text-muted", style={"fontSize": "0.85rem"}) if trip.get("created_at") else None,
                 ],
                 style={"borderBottom": "1px solid #e9ecef", "paddingBottom": "1rem"},
@@ -136,14 +137,14 @@ def build_trip_info(trip, registry):
                 [
                     html.Div(
                         [
-                            html.Div("Destinations", className="text-muted", style={"fontSize": "0.8rem"}),
+                            html.Div(t("info_sidebar.destinations", lang=lang), className="text-muted", style={"fontSize": "0.8rem"}),
                             html.Div(str(len(destination_ids)), style={"fontWeight": "700"}),
                         ],
                     ),
                     html.Div(
                         [
-                            html.Div("Distance", className="text-muted", style={"fontSize": "0.8rem"}),
-                            html.Div(distance_text if route_legs else "Unknown", style={"fontWeight": "700"}),
+                            html.Div(t("info_sidebar.distance", lang=lang), className="text-muted", style={"fontSize": "0.8rem"}),
+                            html.Div(distance_text if route_legs else t("generic.unknown", lang=lang), style={"fontWeight": "700"}),
                         ],
                     ),
                 ],
@@ -156,16 +157,16 @@ def build_trip_info(trip, registry):
                 },
             ),
             dbc.Alert(
-                f"Completed: {completed_at}",
+                f"{t('trip_list.completed', lang=lang)}: {completed_at}",
                 color="success",
                 className="mt-3 mb-0",
             ) if completed_at else None,
             html.Div(
                 [
-                    html.H6("Trip Review", className="mb-2"),
-                    html.Div(_stars(completion_rating), style={"color": "#f2b01e", "fontSize": "1.1rem"}),
+                    html.H6(t("info_sidebar.trip_review", lang=lang), className="mb-2"),
+                    html.Div(_stars(completion_rating, lang=lang), style={"color": "#f2b01e", "fontSize": "1.1rem"}),
                     html.Div(
-                        completion_review_text if completion_review_text else "No written remarks.",
+                        completion_review_text if completion_review_text else t("reviews.no_written_remarks", lang=lang),
                         className="text-muted" if not completion_review_text else "",
                         style={"fontSize": "0.9rem", "marginTop": "0.35rem", "lineHeight": "1.35"},
                     ),
@@ -177,7 +178,7 @@ def build_trip_info(trip, registry):
             ) if has_completion_review else None,
             html.Div(
                 [
-                    html.H6("Stops", className="mb-2"),
+                    html.H6(t("info_sidebar.stops", lang=lang), className="mb-2"),
                     html.Div(
                         [
                             html.Div(
@@ -193,7 +194,7 @@ def build_trip_info(trip, registry):
                                 },
                             )
                             for landmark in destinations
-                        ] or [dbc.Alert("No destinations to show.", color="light", className="mb-0")],
+                        ] or [dbc.Alert(t("info_sidebar.no_destinations", lang=lang), color="light", className="mb-0")],
                         style={
                             "display": "flex",
                             "flexDirection": "column",
@@ -214,7 +215,7 @@ def build_trip_info(trip, registry):
                 },
             ),
             dbc.Button(
-                "Select Trip",
+                t("info_sidebar.select_trip", lang=lang),
                 id=ids.SELECT_TRIP_BTN,
                 color="info",
                 className="w-100 mt-3",

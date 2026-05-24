@@ -1,6 +1,7 @@
 from dash import html
 from dash.exceptions import PreventUpdate
 
+from i18n import t
 
 def landmark_review_pane_style(display="none"):
     return {
@@ -16,13 +17,13 @@ def landmark_review_pane_style(display="none"):
     }
 
 
-def landmark_review_star_buttons(rating=None):
+def landmark_review_star_buttons(rating=None, lang="bg"):
     rating = int(rating or 0)
     return [
         html.Button(
             [
                 html.I(className="bi bi-star-fill"),
-                html.Span(f"{i} stars", className="visually-hidden"),
+                html.Span(t("landmark_review.stars", lang=lang).format(count=i), className="visually-hidden"),
             ],
             id={"type": "landmark-review-star-btn", "index": i},
             type="button",

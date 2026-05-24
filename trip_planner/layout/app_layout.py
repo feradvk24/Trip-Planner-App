@@ -124,7 +124,7 @@ def create_share_trip_toast(lang="bg"):
     )
 
 
-def create_main_content(markers, active_trip=None, focused_landmark=None):
+def create_main_content(markers, active_trip=None, focused_landmark=None, lang="bg"):
     initial_markers = [] if active_trip else markers
     initial_viewport = None
     if focused_landmark:
@@ -145,7 +145,7 @@ def create_main_content(markers, active_trip=None, focused_landmark=None):
                             html.Div(
                                 [
                                     create_map(initial_markers, initial_viewport),
-                                    create_browse_overlay(),
+                                    create_browse_overlay(lang=lang),
                                 ],
                                 className="flex-grow-1",
                                 style={"minHeight": 0, "position": "relative"},
@@ -179,7 +179,7 @@ def create_authenticated_layout(markers, include_location=True, focused_landmark
         dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0, update_now=True, timeout=10000),
         create_sidebar(active_trip, lang=lang),
         create_info_sidebar(lang=lang),
-        create_main_content(markers, active_trip, focused_landmark),
+        create_main_content(markers, active_trip, focused_landmark, lang=lang),
         create_landmark_review_pane(lang=lang),
         create_user_menu(lang=lang),
         *create_stores(active_trip, pending_browse_trip, focused_landmark.id if focused_landmark else None),

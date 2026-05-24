@@ -9,6 +9,7 @@ from flask_login import current_user
 import ids
 from backend.crud import get_user_visited_landmark_ids, save_trip, user_trip_name_exists
 from backend.routing_service import fetch_route_steps, optimize_visit_order
+from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import (
     build_route_legs,
     location_tuple,
@@ -21,6 +22,7 @@ from callbacks.widgets.callback_widgets import (
     optimize_route_button_children,
 )
 from callbacks.widgets.access_connectors import build_access_connector_polylines
+from i18n import t
 from styles import number_icon
 
 
@@ -35,15 +37,18 @@ def register_explore_callbacks(app, registry):
         Input(ids.MODE_STORE, "data"),
         Input(ids.DESTINATIONS_LIST, "data"),
         Input(ids.EXPLORE_MAP_CACHE, "data"),
+        State("url", "href"),
         prevent_initial_call="initial_duplicate",
     )
-    def hydrate_selected_objects(mode, destination_ids, explore_cache):
+    def hydrate_selected_objects(mode, destination_ids, explore_cache, href):
         if mode != "explore":
             raise PreventUpdate
+        lang = get_language_from_url(href)
         return build_selected_object_items(
             registry,
             destination_ids or [],
             allow_remove=not bool(explore_cache),
+            lang=lang,
         )
 
     @app.callback(
@@ -63,10 +68,12 @@ def register_explore_callbacks(app, registry):
         State(ids.END_POINT_DROPDOWN, "value"),
         State(ids.OPTIMIZE_ROUTE_BTN, "children"),
         State(ids.GEOLOCATION, "position"),
+        State("url", "href"),
         prevent_initial_call=True,
     )
-    def compute_route(n_clicks, destination_ids, start_point_id, end_point_id, btn_label, position):
-        if button_label_text(btn_label) == "Modify Route":
+    def compute_route(n_clicks, destination_ids, start_point_id, end_point_id, btn_label, position, href):
+        lang = get_language_from_url(href)
+        if button_label_text(btn_label) == t("route.modify_route", lang=lang):
             raise PreventUpdate
         if not destination_ids or len(destination_ids) < 2:
             return no_update, True
@@ -91,6 +98,7 @@ def register_explore_callbacks(app, registry):
         Input(ids.VISIT_ORDER_STORE, "data"),
         State(ids.GEOLOCATION, "position"),
         State(ids.DESTINATIONS_LIST, "data"),
+        State("url", "href"),
         prevent_initial_call=True,
         running=[
             (Output(ids.OPTIMIZE_ROUTE_BTN, "disabled"), True, False),
@@ -119,9 +127,10 @@ def register_explore_callbacks(app, registry):
             ),
         ],
     )
-    def render_route(visit_order_ids, position, destination_ids):
+    def render_route(visit_order_ids, position, destination_ids, href):
         if not visit_order_ids:
             raise PreventUpdate
+        lang = get_language_from_url(href)
         visit_order = resolve_visit_order_landmarks(registry, visit_order_ids, position=position)
 
         result = fetch_route_steps(visit_order)
@@ -159,7 +168,7 @@ def register_explore_callbacks(app, registry):
                             html.H5(lm.name),
                             html.H6(lm.location),
                             html.A(
-                                "Learn more",
+                                t("marker.learn_more", lang=lang),
                                 href=lm.link,
                                 target="_blank",
                                 style={"display": "block", "text-align": "center"},
@@ -176,8 +185,8 @@ def register_explore_callbacks(app, registry):
         minutes = remainder // 60
         duration_str = f"{hours}h {minutes}min" if hours else f"{minutes} min"
         stats_content = [
-            html.Div([html.B("\U0001f3ce\ufe0f Distance: "), f"{distance_km:.1f} km"]),
-            html.Div([html.B("\u23f1\ufe0f Travel time: "), duration_str]),
+            html.Div([html.B(f"{t('route.distance', lang=lang)}: "), f"{distance_km:.1f} km"]),
+            html.Div([html.B(f"{t('route.travel_time', lang=lang)}: "), duration_str]),
         ]
         stats_style = {
             "display": "block",
@@ -201,14 +210,14 @@ def register_explore_callbacks(app, registry):
         }
         return (
             True,
-            optimize_route_button_children("Modify Route"),
+            optimize_route_button_children(t("route.modify_route", lang=lang), is_modify=True),
             "success",
             True,
             False,
             "info",
             {"flex": "1"},
             explore_cache,
-            build_selected_object_items(registry, destination_ids, allow_remove=False),
+            build_selected_object_items(registry, destination_ids, allow_remove=False, lang=lang),
             True,
             True,
         )
@@ -227,20 +236,22 @@ def register_explore_callbacks(app, registry):
         Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
         State(ids.OPTIMIZE_ROUTE_BTN, "children"),
+        State("url", "href"),
         prevent_initial_call=True,
     )
-    def modify_route(n_clicks, destination_ids, btn_label):
-        if button_label_text(btn_label) != "Modify Route":
+    def modify_route(n_clicks, destination_ids, btn_label, href):
+        lang = get_language_from_url(href)
+        if button_label_text(btn_label) != t("route.modify_route", lang=lang):
             raise PreventUpdate
         return (
-            optimize_route_button_children("Optimize Route"),
+            optimize_route_button_children(t("sidebar.optimize_route", lang=lang)),
             "success",
             False,
             True,
             "secondary",
             {"opacity": "0.45", "flex": "1"},
             None,
-            build_selected_object_items(registry, destination_ids),
+            build_selected_object_items(registry, destination_ids, lang=lang),
             False,
             False,
         )
@@ -252,9 +263,10 @@ def register_explore_callbacks(app, registry):
         Input({"type": "add-marker-btn", "index": ALL}, "n_clicks"),
         Input({"type": "search-add-marker-btn", "index": ALL}, "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
+        State("url", "href"),
         prevent_initial_call=True,
     )
-    def add_marker_to_trip(dblclicks_list, add_clicks_list, search_add_clicks_list, selected):
+    def add_marker_to_trip(dblclicks_list, add_clicks_list, search_add_clicks_list, selected, href):
         if not ctx.triggered_id or not (any(dblclicks_list) or any(add_clicks_list) or any(search_add_clicks_list)):
             raise PreventUpdate
         if selected is None:
@@ -267,24 +279,27 @@ def register_explore_callbacks(app, registry):
         if not landmark:
             raise PreventUpdate
         updated_selection = [*selected, landmark_id]
+        lang = get_language_from_url(href)
 
-        return build_selected_object_items(registry, updated_selection), updated_selection
+        return build_selected_object_items(registry, updated_selection, lang=lang), updated_selection
 
     @app.callback(
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
         Input({"type": "remove-selected-item", "index": ALL}, "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
+        State("url", "href"),
         prevent_initial_call=True,
     )
-    def remove_marker_from_trip(remove_clicks_list, selected):
+    def remove_marker_from_trip(remove_clicks_list, selected, href):
         if not ctx.triggered_id or not any(remove_clicks_list):
             raise PreventUpdate
         selected = selected or []
         landmark_id = ctx.triggered_id["index"]
         updated_selection = [selected_id for selected_id in selected if selected_id != landmark_id]
+        lang = get_language_from_url(href)
 
-        return build_selected_object_items(registry, updated_selection), updated_selection
+        return build_selected_object_items(registry, updated_selection, lang=lang), updated_selection
 
     @app.callback(
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
@@ -300,10 +315,12 @@ def register_explore_callbacks(app, registry):
         Output(ids.START_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Output(ids.END_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Input(ids.CLEAR_ALL_BTN, "n_clicks"),
+        State("url", "href"),
         prevent_initial_call=True,
     )
-    def clear_all(n_clicks):
-        return [], [], [], optimize_route_button_children("Optimize Route"), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, None, False, False
+    def clear_all(n_clicks, href):
+        lang = get_language_from_url(href)
+        return [], [], [], optimize_route_button_children(t("sidebar.optimize_route", lang=lang)), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, None, False, False
 
     @app.callback(
         Output(ids.START_POINT_DROPDOWN, "options"),
@@ -314,14 +331,16 @@ def register_explore_callbacks(app, registry):
         Input(ids.GEOLOCATION, "position"),
         State(ids.START_POINT_DROPDOWN, "value"),
         State(ids.END_POINT_DROPDOWN, "value"),
+        State("url", "href"),
         prevent_initial_call=True,
     )
-    def update_dropdown_options(destination_ids, position, start_point_id, end_point_id):
+    def update_dropdown_options(destination_ids, position, start_point_id, end_point_id, href):
+        lang = get_language_from_url(href)
         landmarks = registry.get_landmarks(destination_ids or [])
-        auto_option = {"label": "Automatic", "value": "auto"}
+        auto_option = {"label": t("sidebar.auto", lang=lang), "value": "auto"}
         base_options = [auto_option]
         if position:
-            base_options.append({"label": "My location", "value": "my_location"})
+            base_options.append({"label": t("route.my_location", lang=lang), "value": "my_location"})
         options = base_options + [{"label": l.name, "value": str(l.id)} for l in landmarks]
         option_values = {option["value"] for option in options}
         start_point_value = start_point_id if start_point_id in option_values else "auto"
@@ -351,14 +370,16 @@ def register_explore_callbacks(app, registry):
         State(ids.START_POINT_DROPDOWN, "value"),
         State(ids.END_POINT_DROPDOWN, "value"),
         State(ids.GEOLOCATION, "position"),
+        State("url", "href"),
         prevent_initial_call=True,
     )
-    def confirm_save_trip(n_clicks, name, landmark_ids, visit_order, start_value, end_value, position):
+    def confirm_save_trip(n_clicks, name, landmark_ids, visit_order, start_value, end_value, position, href):
+        lang = get_language_from_url(href)
         if not name or not name.strip():
-            return True, "Please enter a trip name.", True
+            return True, t("save_trip_modal.enter_name", lang=lang), True
         trip_name = name.strip()
         if user_trip_name_exists(current_user.id, trip_name):
-            return True, "You already have a saved trip with this name.", True
+            return True, t("save_trip_modal.name_exists", lang=lang), True
         saved_user_location = {"lat": position["lat"], "lon": position["lon"]} if position else None
         custom_start_location = saved_user_location if start_value == "my_location" else None
         custom_end_location = saved_user_location if end_value == "my_location" else None
@@ -381,7 +402,7 @@ def register_explore_callbacks(app, registry):
                 saved_user_location=saved_user_location,
             )
         except Exception as e:
-            return True, f"Failed to save trip: {e}", True
+            return True, f"{t('save_trip_modal.failed', lang=lang)}: {e}", True
         return False, "", False
 
     @app.callback(
@@ -415,11 +436,13 @@ def register_explore_callbacks(app, registry):
         Output(ids.SEARCH_POPUP_LAYER, "children"),
         Input(ids.LANDMARK_SEARCH_DROPDOWN, "value"),
         State(ids.DESTINATIONS_LIST, "data"),
+        State("url", "href"),
         prevent_initial_call=True,
     )
-    def select_landmark_from_search(landmark_id, destination_ids):
+    def select_landmark_from_search(landmark_id, destination_ids, href):
         if landmark_id is None:
             return no_update, no_update, []
+        lang = get_language_from_url(href)
         landmark_id = int(landmark_id)
         landmark = registry.get_landmark(landmark_id)
         if not landmark:
@@ -434,13 +457,13 @@ def register_explore_callbacks(app, registry):
                         html.H5(landmark.name),
                         html.H6(landmark.location),
                         html.A(
-                            "Learn more",
+                            t("marker.learn_more", lang=lang),
                             href=landmark.link,
                             target="_blank",
                             style={"display": "block", "text-align": "center"},
                         ),
                         dbc.Button(
-                            "Added to trip" if is_selected else "Add to trip",
+                            t("marker.in_trip", lang=lang) if is_selected else t("marker.add_to_trip", lang=lang),
                             id={"type": "search-add-marker-btn", "index": landmark.id},
                             color="success",
                             size="sm",

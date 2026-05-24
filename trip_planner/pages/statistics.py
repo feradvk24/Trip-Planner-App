@@ -6,7 +6,7 @@ from flask_login import current_user
 import app_context
 import ids
 from backend.crud import get_user_landmark_visit_history, get_user_monthly_landmark_visit_counts, total_landmark_visits_for_user
-from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
+from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, t
 from layout.sidebar import create_user_menu
 
 
@@ -17,16 +17,16 @@ MAX_VISIT_HISTORY_ITEMS = 100
 MONTHLY_VISIT_CHART_MONTHS = 6
 
 
-def build_visit_history_items(registry, visits, limit=MAX_VISIT_HISTORY_ITEMS):
+def build_visit_history_items(registry, visits, limit=MAX_VISIT_HISTORY_ITEMS, lang="bg"):
     visits = (visits or [])[:limit]
     if not visits:
         return [
             dbc.ListGroupItem(
                 html.Div(
                     [
-                        html.Div("No visited landmarks yet.", className="fw-semibold"),
+                        html.Div(t("statistics.no_visited_landmarks", lang=lang), className="fw-semibold"),
                         html.Div(
-                            "Visited landmarks will appear here after you progress through a trip.",
+                            t("statistics.visited_landmarks_will_appear", lang=lang),
                             className="text-muted small",
                         ),
                     ],
@@ -94,10 +94,10 @@ def build_monthly_visit_figure(monthly_visits):
     }
 
 
-def build_total_visits(total_visits):
+def build_total_visits(total_visits, lang="bg"):
     return html.Div(
         [
-            html.Div("Total Landmark Visits", className="text-muted small", style={"textAlign": "center"}),
+            html.Div(t("statistics.total_landmark_visits", lang=lang), className="text-muted small", style={"textAlign": "center"}),
             html.Div(
                 f"{total_visits}",
                 className="fs-4 fw-semibold",
@@ -137,9 +137,9 @@ def layout(lang="bg", **kwargs):
                                 href=f"/{lang}",
                                 className="btn btn-outline-secondary btn-sm mb-3",
                             ),
-                            html.H2("Statistics", className="mb-2"),
+                            html.H2(t("statistics.title", lang=lang), className="mb-2"),
                             html.P(
-                                "Your trip statistics will live here.",
+                                t("statistics.subtitle", lang=lang),
                                 className="text-muted mb-0",
                             ),
                         ],
@@ -149,8 +149,8 @@ def layout(lang="bg", **kwargs):
                         [
                             html.Div(
                                 [
-                                    build_total_visits(total_visits),
-                                    html.H4("Landmark Visits", className="mt-4 mb-3"),
+                                    build_total_visits(total_visits, lang=lang),
+                                    html.H4(t("statistics.landmark_visits", lang=lang), className="mt-4 mb-3"),
                                     dcc.Graph(
                                         figure=build_monthly_visit_figure(monthly_visits),
                                         config={"displayModeBar": False},
@@ -164,7 +164,7 @@ def layout(lang="bg", **kwargs):
                             ),
                             html.Div(
                                 [
-                                    html.H4("Visit History", className="mb-3"),
+                                    html.H4(t("statistics.visit_history", lang=lang), className="mb-3"),
                                     dbc.ListGroup(
                                         id=ids.VISIT_HISTORY_LIST,
                                         children=build_visit_history_items(app_context.REGISTRY, visits),

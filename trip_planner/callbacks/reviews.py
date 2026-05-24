@@ -4,7 +4,9 @@ from flask_login import current_user
 
 import ids
 from backend.crud import create_landmark_review, create_trip_completion
+from callbacks.utils.get_language import get_language_from_url
 from callbacks.widgets.review_widgets import landmark_review_pane_style, landmark_review_star_buttons
+from i18n import t
 
 
 def _next_review_state_or_close(review_state):
@@ -48,8 +50,10 @@ def register_review_callbacks(app):
         Output(ids.LANDMARK_REVIEW_STAR_ROW, "children"),
         Output(ids.LANDMARK_REVIEW_TEXT, "placeholder"),
         Input(ids.LANDMARK_REVIEW_STATE_STORE, "data"),
+        State("url", "href"),
     )
-    def render_landmark_review_pane(review_state):
+    def render_landmark_review_pane(review_state, href):
+        lang = get_language_from_url(href)
         review_state = review_state or {}
         display = "flex" if review_state.get("is_open") else "none"
         is_trip_completion_review = review_state.get("review_type") == "trip_completion"
@@ -58,19 +62,19 @@ def register_review_callbacks(app):
             eyebrow_style = {**eyebrow_style, "display": "none"}
         return (
             landmark_review_pane_style(display),
-            "" if is_trip_completion_review else "Leave a review",
+            "" if is_trip_completion_review else t("landmark_review.leave_review", lang=lang),
             eyebrow_style,
-            review_state.get("title", ""),
+            t("trip_status.trip_complete", lang=lang) if is_trip_completion_review else review_state.get("title", ""),
             (
-                "Ready for another adventure? Select a new trip!"
+                t("landmark_review.ready_for_adventure", lang=lang)
                 if is_trip_completion_review else
                 review_state.get("location", "")
             ),
-            landmark_review_star_buttons(review_state.get("rating")),
+            landmark_review_star_buttons(review_state.get("rating"), lang=lang),
             (
-                "Share your opinions about this trip"
+                t("landmark_review.trip_placeholder", lang=lang)
                 if is_trip_completion_review else
-                "Share what stood out about this landmark."
+                t("landmark_review.placeholder", lang=lang)
             ),
         )
 
@@ -84,11 +88,13 @@ def register_review_callbacks(app):
         State(ids.LANDMARK_REVIEW_STATE_STORE, "data"),
         State(ids.LANDMARK_REVIEW_TEXT, "value"),
         State(ids.ACTIVE_TRIP_STORE, "data"),
+        State("url", "href"),
         prevent_initial_call=True,
     )
-    def submit_landmark_review(n_clicks, review_state, review_text, active_trip):
+    def submit_landmark_review(n_clicks, review_state, review_text, active_trip, href):
         if not n_clicks:
             raise PreventUpdate
+        lang = get_language_from_url(href)
         review_state = review_state or {}
         is_trip_completion_review = review_state.get("review_type") == "trip_completion"
         landmark_id = review_state.get("landmark_id")
@@ -96,7 +102,7 @@ def register_review_callbacks(app):
         if not active_trip or not active_trip.get("trip_id") or (not is_trip_completion_review and not landmark_id):
             return (
                 {**review_state, "is_open": True},
-                "Could not find the active trip or landmark for this review.",
+                t("landmark_review.missing_target", lang=lang),
                 "danger",
                 True,
                 review_text,
@@ -104,7 +110,7 @@ def register_review_callbacks(app):
         if rating is None:
             return (
                 {**review_state, "is_open": True},
-                "Please choose a rating before submitting.",
+                t("landmark_review.choose_rating", lang=lang),
                 "warning",
                 True,
                 review_text,
@@ -129,7 +135,7 @@ def register_review_callbacks(app):
         except Exception as e:
             return (
                 {**review_state, "is_open": True},
-                f"Could not save review: {e}",
+                f"{t('landmark_review.save_failed', lang=lang)}: {e}",
                 "danger",
                 True,
                 review_text,

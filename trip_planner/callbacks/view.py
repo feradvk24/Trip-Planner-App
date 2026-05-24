@@ -5,6 +5,7 @@ from flask_login import current_user
 
 import ids
 from backend.crud import get_user_visited_landmark_ids
+from callbacks.utils.get_language import get_language_from_url
 from callbacks.widgets.callback_widgets import build_all_markers
 from styles import location_dot_icon
 from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
@@ -149,9 +150,10 @@ def register_view_callbacks(app, registry):
         Input(ids.HIDE_VISITED_LANDMARKS_FILTER, "value"),
         Input(ids.EXPLORE_MAP_CACHE, "data"),
         Input(ids.DESTINATIONS_LIST, "data"),
+        State("url", "href"),
         prevent_initial_call=True,
     )
-    def sync_explore_layers(mode, hide_visited, explore_cache, destination_ids):
+    def sync_explore_layers(mode, hide_visited, explore_cache, destination_ids, href):
         hidden_stats = {"display": "none"}
         if mode != "explore":
             return [], [], [], [], hidden_stats
@@ -168,7 +170,8 @@ def register_view_callbacks(app, registry):
             if hide_visited and current_user.is_authenticated else
             set()
         )
-        return build_all_markers(registry.landmarks, destination_ids or [], hidden_ids), [], [], [], hidden_stats
+        lang = get_language_from_url(href)
+        return build_all_markers(registry.landmarks, destination_ids or [], hidden_ids, lang=lang), [], [], [], hidden_stats
 
 
     @app.callback(

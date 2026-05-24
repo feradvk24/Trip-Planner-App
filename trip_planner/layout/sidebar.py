@@ -102,9 +102,9 @@ def create_sidebar(active_trip=None, lang="bg"):
 
     mode_toggle = dbc.ButtonGroup(
         [
-            dbc.Button("Explore", id=ids.MODE_BTN_EXPLORE, color="primary", outline=True, active=initial_mode == "explore", size="sm", style={"flex": "1"}),
-            dbc.Button("Trip", id=ids.MODE_BTN_TRIP, color="primary", outline=True, active=initial_mode == "trip", size="sm", style={"flex": "1"}),
-            dbc.Button("Browse", id=ids.MODE_BTN_BROWSE, color="primary", outline=True, active=False, size="sm", style={"flex": "1"}),
+            dbc.Button(t("mode.explore", lang=lang), id=ids.MODE_BTN_EXPLORE, color="primary", outline=True, active=initial_mode == "explore", size="sm", style={"flex": "1"}),
+            dbc.Button(t("mode.trip", lang=lang), id=ids.MODE_BTN_TRIP, color="primary", outline=True, active=initial_mode == "trip", size="sm", style={"flex": "1"}),
+            dbc.Button(t("mode.browse", lang=lang), id=ids.MODE_BTN_BROWSE, color="primary", outline=True, active=False, size="sm", style={"flex": "1"}),
         ],
         className="w-100",
     )
