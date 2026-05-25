@@ -22,18 +22,26 @@ def build_trip_content(registry, active_trip, lang="bg"):
     custom_end = active_trip.get("custom_end_location")
 
     landmarks = registry.get_landmarks(stop_ids)
-    result = fetch_route_steps(
-        landmarks,
-        start_point=location_tuple(custom_start),
-        end_point=location_tuple(custom_end),
-    )
+    route_legs = active_trip.get("route_legs") or []
+    route_segments = [
+        decode_route_polyline(leg.get("polyline"))
+        for leg in route_legs
+        if leg.get("polyline")
+    ]
+    if not route_segments:
+        result = fetch_route_steps(
+            landmarks,
+            start_point=location_tuple(custom_start),
+            end_point=location_tuple(custom_end),
+        )
+        route_segments = [decode_route_polyline(leg.polyline) for leg in result.legs]
+
     active_leg_idx = active_route_leg_index(active_trip)
     is_trip_complete = trip_complete(active_trip)
     next_action_idx = next_action_stop_index(active_trip)
     passed_coords = []
     current_coords = []
     remaining_coords = []
-    route_segments = [decode_route_polyline(leg.polyline) for leg in result.legs]
     full_trip_coords = [coord for segment in route_segments for coord in segment]
     for i, segment in enumerate(route_segments):
         if is_trip_complete or (active_leg_idx is not None and i < active_leg_idx):

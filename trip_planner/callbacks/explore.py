@@ -14,7 +14,6 @@ from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import (
     build_route_legs,
     decode_route_polyline,
-    location_tuple,
     resolve_endpoint,
 )
 from callbacks.widgets.callback_widgets import (
@@ -408,37 +407,31 @@ def register_explore_callbacks(app, registry):
         Input(ids.SAVE_TRIP_CONFIRM_BTN, "n_clicks"),
         State(ids.SAVE_TRIP_NAME_INPUT, "value"),
         State(ids.DESTINATIONS_LIST, "data"),
-        State(ids.VISIT_ORDER_STORE, "data"),
-        State(ids.START_POINT_DROPDOWN, "value"),
-        State(ids.END_POINT_DROPDOWN, "value"),
-        State(ids.GEOLOCATION, "position"),
+        State(ids.OPTIMIZED_TRIP_STORE, "data"),
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def confirm_save_trip(n_clicks, name, landmark_ids, visit_order, start_value, end_value, position, href):
+    def confirm_save_trip(n_clicks, name, landmark_ids, optimized_trip, href):
         lang = get_language_from_url(href)
         if not name or not name.strip():
             return True, t("save_trip_modal.enter_name", lang=lang), True
         trip_name = name.strip()
         if user_trip_name_exists(current_user.id, trip_name):
             return True, t("save_trip_modal.name_exists", lang=lang), True
-        saved_user_location = {"lat": position["lat"], "lon": position["lon"]} if position else None
-        custom_start_location = saved_user_location if start_value == "my_location" else None
-        custom_end_location = saved_user_location if end_value == "my_location" else None
-        stop_ids = [lid for lid in (visit_order or []) if lid != -1]
+        if not optimized_trip:
+            return True, t("warn_modal.message", lang=lang), True
+
+        custom_start_location = optimized_trip.get("user_location_start")
+        custom_end_location = optimized_trip.get("user_location_end")
+        saved_user_location = custom_start_location or custom_end_location
+        stop_ids = [lid for lid in (optimized_trip.get("visit_order") or []) if lid != -1]
         try:
-            route_result = fetch_route_steps(
-                registry.get_landmarks(stop_ids),
-                start_point=location_tuple(custom_start_location),
-                end_point=location_tuple(custom_end_location),
-            )
-            route_point_count = len(stop_ids) + int(bool(custom_start_location)) + int(bool(custom_end_location))
             save_trip(
                 username=current_user.id,
                 name=trip_name,
                 landmark_ids=landmark_ids or [],
                 visit_order=stop_ids,
-                route_legs=build_route_legs(route_point_count, route_result),
+                route_legs=optimized_trip.get("route_legs") or [],
                 custom_start_location=custom_start_location,
                 custom_end_location=custom_end_location,
                 saved_user_location=saved_user_location,
