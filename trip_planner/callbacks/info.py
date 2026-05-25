@@ -3,6 +3,7 @@ from dash.exceptions import PreventUpdate
 
 import ids
 from backend.crud import get_landmark_image, get_landmark_review_summary, get_landmark_reviews
+from backend.landmark_registry import LandmarkRegistry
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.trip_state import next_action_stop_index
 from callbacks.widgets.info_widgets import build_empty_info, build_landmark_info, build_trip_info
@@ -51,7 +52,9 @@ def _learn_more_action(landmark, lang="bg"):
     )
 
 
-def register_info_callbacks(app, registry):
+def register_info_callbacks(app):
+    registry = LandmarkRegistry.get_landmarks()
+
     @app.callback(
         Output(ids.ACTIVE_INFO_STORE, "data"),
         Input({"type": "marker", "index": ALL}, "n_clicks"),

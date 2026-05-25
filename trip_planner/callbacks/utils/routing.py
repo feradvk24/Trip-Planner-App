@@ -57,7 +57,7 @@ def get_route_legs(registry, active_trip):
     custom_end = active_trip.get("custom_end_location")
     try:
         route_result = fetch_route_steps(
-            registry.get_landmarks(stop_ids),
+            registry.landmarks_by_ids(stop_ids),
             start_point=location_tuple(custom_start),
             end_point=location_tuple(custom_end),
         )

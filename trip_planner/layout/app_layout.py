@@ -4,9 +4,9 @@ from dash import dcc, html
 from flask import session
 from flask_login import current_user
 
-import app_context
 import ids
 from backend.crud import get_active_user_trip, get_public_trip
+from backend.landmark_registry import LandmarkRegistry
 from callbacks.utils.trip_state import next_action_stop_index, optimized_trip_from_trip, sanitize_shared_trip
 from layout.info_sidebar import create_info_sidebar
 from layout.map import create_map
@@ -181,14 +181,15 @@ def create_main_content(markers, active_trip=None, focused_landmark=None, lang="
 
 
 def create_authenticated_layout(markers, include_location=True, focused_landmark_id=None, lang="bg"):
+    registry = LandmarkRegistry.get_landmarks()
     pending_browse_trip = resolve_pending_browse_trip(
         session.pop("pending_browse_trip", None),
-        registry=app_context.REGISTRY,
+        registry=registry,
     )
     focused_landmark = None
     if focused_landmark_id:
         try:
-            focused_landmark = app_context.REGISTRY.get_landmark(int(focused_landmark_id))
+            focused_landmark = registry.get_landmark(int(focused_landmark_id))
         except (TypeError, ValueError, AttributeError):
             focused_landmark = None
 
@@ -214,7 +215,7 @@ def create_authenticated_layout(markers, include_location=True, focused_landmark
     return html.Div(children)
 
 
-def create_app_layout(markers):
+def create_app_layout():
     return html.Div([
         dcc.Location(id="url"),
         dash.page_container,

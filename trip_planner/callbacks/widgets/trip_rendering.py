@@ -21,7 +21,7 @@ def build_trip_content(registry, active_trip, lang="bg"):
     custom_start = active_trip.get("custom_start_location")
     custom_end = active_trip.get("custom_end_location")
 
-    landmarks = registry.get_landmarks(stop_ids)
+    landmarks = registry.landmarks_by_ids(stop_ids)
     route_legs = active_trip.get("route_legs") or []
     route_segments = [
         decode_route_polyline(leg.get("polyline"))

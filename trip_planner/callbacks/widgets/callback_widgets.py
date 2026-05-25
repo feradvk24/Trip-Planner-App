@@ -118,5 +118,5 @@ def build_selected_object_items(registry, destination_ids, allow_remove=True, la
             className="p-3 selected-monument-item",
             id=f"selected-item-{landmark.id}",
         )
-        for landmark in registry.get_landmarks(destination_ids or [])
+        for landmark in registry.landmarks_by_ids(destination_ids or [])
     ]

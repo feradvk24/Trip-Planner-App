@@ -6,6 +6,7 @@ from flask_login import current_user
 
 import ids
 from backend.crud import get_user_visited_landmark_ids, save_trip, user_trip_name_exists
+from backend.landmark_registry import LandmarkRegistry
 from backend.routing_service import fetch_route_steps, optimize_visit_order
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import (
@@ -31,7 +32,9 @@ CLEAR_ALL_STYLE = {
 }
 
 
-def register_explore_callbacks(app, registry):
+def register_explore_callbacks(app):
+    registry = LandmarkRegistry.get_landmarks()
+
     def hidden_visited_landmark_ids(hide_visited):
         if not hide_visited or not current_user.is_authenticated:
             return set()
@@ -131,7 +134,7 @@ def register_explore_callbacks(app, registry):
             raise PreventUpdate
         if not destination_ids or len(destination_ids) < 2:
             return True, no_update
-        landmarks = registry.get_landmarks(destination_ids)
+        landmarks = registry.landmarks_by_ids(destination_ids)
         start_landmark = resolve_endpoint(registry, start_point_id, position)
         end_landmark = resolve_endpoint(registry, end_point_id, position)
         visit_order = optimize_visit_order(landmarks, start_point=start_landmark, end_point=end_landmark)
@@ -331,7 +334,7 @@ def register_explore_callbacks(app, registry):
     )
     def update_dropdown_options(destination_ids, position, start_point_id, end_point_id, href):
         lang = get_language_from_url(href)
-        landmarks = registry.get_landmarks(destination_ids or [])
+        landmarks = registry.landmarks_by_ids(destination_ids or [])
         auto_option = {"label": t("sidebar.auto", lang=lang), "value": "auto"}
         base_options = [auto_option]
         if position:

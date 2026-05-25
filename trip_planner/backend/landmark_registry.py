@@ -26,47 +26,39 @@ class Landmark:
 class LandmarkRegistry:
     _instance = None
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(LandmarkRegistry, cls).__new__(cls)
-            cls._instance._landmarks = {}
-        return cls._instance
+    def __init__(self, landmarks=None):
+        self._landmarks = {
+            landmark.id: landmark
+            for landmark in (landmarks or [])
+        }
 
     @classmethod
-    def from_database(cls):
-        registry = cls()
-        registry.load_from_database()
-        return registry
+    def from_records(cls, landmark_records):
+        return cls([
+            Landmark(
+                id=row["id"],
+                name=row["name"],
+                location=row["location"],
+                lat=row["lat"],
+                lon=row["lon"],
+                link=row["link"],
+                access_point=row["access_point"],
+            )
+            for row in landmark_records
+        ])
 
-    def load_from_database(self):
-        from backend.database import SessionLocal
-        from backend.models import Landmark as LandmarkModel
+    @classmethod
+    def get_landmarks(cls):
+        if cls._instance is None:
+            from backend.crud import get_landmarks
 
-        db = SessionLocal()
-        try:
-            db_landmarks = db.query(LandmarkModel).all()
-            landmarks = [
-                Landmark(
-                    id=row.id,
-                    name=row.name,
-                    location=row.location or "Location",
-                    lat=row.latitude,
-                    lon=row.longitude,
-                    link=row.link or "#",
-                    access_point=row.access_point,
-                )
-                for row in db_landmarks
-            ]
-        finally:
-            db.close()
-
-        self._landmarks = {landmark.id: landmark for landmark in landmarks}
-        return self
+            cls._instance = cls.from_records(get_landmarks())
+        return cls._instance
 
     def get_landmark(self, landmark_id):
         return self._landmarks.get(landmark_id)
 
-    def get_landmarks(self, ids):
+    def landmarks_by_ids(self, ids):
         return [self._landmarks[i] for i in ids if i in self._landmarks]
     
     @property

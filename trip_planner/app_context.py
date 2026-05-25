@@ -1,2 +1,0 @@
-REGISTRY = None
-MARKERS = []

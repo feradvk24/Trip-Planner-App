@@ -5,6 +5,7 @@ from flask_login import current_user
 
 import ids
 from backend.crud import get_user_visited_landmark_ids
+from backend.landmark_registry import LandmarkRegistry
 from callbacks.utils.explore_route_layers import build_explore_route_layers
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.widgets.callback_widgets import build_all_markers
@@ -45,7 +46,9 @@ def language_path(pathname, language):
     return f"/{language}"
 
 
-def register_view_callbacks(app, registry):
+def register_view_callbacks(app):
+    registry = LandmarkRegistry.get_landmarks()
+
     @app.callback(
         Output(ids.MODE_STORE, "data"),
         Output("url", "href", allow_duplicate=True),

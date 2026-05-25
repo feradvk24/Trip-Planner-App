@@ -3,7 +3,7 @@ from collections import Counter
 from datetime import datetime, timezone
 
 from backend.database import SessionLocal
-from backend.models import Landmark, LandmarkImage, Review, TripCompletion, User, UserTrip, UserLandmarkVisit
+from backend.models import Landmark as LandmarkModel, LandmarkImage, Review, TripCompletion, User, UserTrip, UserLandmarkVisit
 
 
 def _normalize_trip_name(name: str) -> str:
@@ -66,6 +66,27 @@ def find_completed_trips(trip_ids: list[int]) -> dict[int, dict]:
             if completion:
                 completed_trips[trip_id] = _completion_to_status(completion)
         return completed_trips
+    finally:
+        db.close()
+
+
+def get_landmarks() -> list[dict]:
+    """Return all landmarks in the shape used by LandmarkRegistry."""
+    db = SessionLocal()
+    try:
+        rows = db.query(LandmarkModel).all()
+        return [
+            {
+                "id": row.id,
+                "name": row.name,
+                "location": row.location or "Location",
+                "lat": row.latitude,
+                "lon": row.longitude,
+                "link": row.link or "#",
+                "access_point": row.access_point,
+            }
+            for row in rows
+        ]
     finally:
         db.close()
 
@@ -403,7 +424,7 @@ def create_landmark_review(username: str, trip_id: int, landmark_id: int, rating
         trip = db.query(UserTrip).filter(UserTrip.id == trip_id).first()
         if trip is None:
             raise ValueError(f"Trip {trip_id} not found.")
-        landmark = db.query(Landmark).filter(Landmark.id == landmark_id).first()
+        landmark = db.query(LandmarkModel).filter(LandmarkModel.id == landmark_id).first()
         if landmark is None:
             raise ValueError(f"Landmark {landmark_id} not found.")
         if rating < 1 or rating > 5:

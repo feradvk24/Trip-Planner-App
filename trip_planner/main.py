@@ -8,14 +8,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-import app_context
 from backend.auth import init_login_manager
 from backend.database import create_database_if_missing, init_db, shutdown_session
-from backend.landmark_registry import LandmarkRegistry
 from callbacks import register_callbacks
 from layout.app_layout import create_app_layout
-from layout.markers import create_markers
-from styles import pin_icon
 
 app = Dash(
     __name__,
@@ -57,13 +53,9 @@ def logout():
     return redirect("/login")
 
 
-registry = LandmarkRegistry.from_database()
-markers = create_markers(registry.landmarks, pin_icon)
-app_context.REGISTRY = registry
-app_context.MARKERS = markers
-app.layout = lambda: create_app_layout(markers)
+app.layout = create_app_layout
 
-register_callbacks(app, registry)
+register_callbacks(app)
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=8050)

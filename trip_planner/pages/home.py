@@ -1,6 +1,6 @@
 import dash
 
-import app_context
+from backend.landmark_registry import LandmarkRegistry
 from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
 from layout.app_layout import create_authenticated_layout
 from layout.markers import create_markers
@@ -14,7 +14,8 @@ def layout(lang="bg", focus_landmark=None, **kwargs):
     if lang not in SUPPORTED_LANGUAGES:
         lang = DEFAULT_LANGUAGE
 
-    markers = create_markers(app_context.REGISTRY.landmarks, pin_icon, lang=lang)
+    registry = LandmarkRegistry.get_landmarks()
+    markers = create_markers(registry.landmarks, pin_icon, lang=lang)
     return create_authenticated_layout(
         markers,
         include_location=False,

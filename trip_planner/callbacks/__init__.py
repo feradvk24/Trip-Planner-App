@@ -7,11 +7,11 @@ from callbacks.trip import register_trip_callbacks
 from callbacks.view import register_view_callbacks
 
 
-def register_callbacks(app, registry):
+def register_callbacks(app):
     register_auth_callbacks(app)
-    register_explore_callbacks(app, registry)
-    register_info_callbacks(app, registry)
-    register_view_callbacks(app, registry)
+    register_explore_callbacks(app)
+    register_info_callbacks(app)
+    register_view_callbacks(app)
     register_browse_callbacks(app)
-    register_trip_callbacks(app, registry)
+    register_trip_callbacks(app)
     register_review_callbacks(app)

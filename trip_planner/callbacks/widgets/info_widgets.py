@@ -110,7 +110,7 @@ def build_landmark_info(landmark, review_summary, reviews, lang="bg"):
 
 def build_trip_info(trip, registry, lang="bg"):
     destination_ids = [lid for lid in (trip.get("visit_order") or trip.get("landmark_ids") or []) if lid != -1]
-    destinations = registry.get_landmarks(destination_ids)
+    destinations = registry.landmarks_by_ids(destination_ids)
     route_legs = trip.get("route_legs") or []
     distance_m = sum(leg.get("distance_m", 0) for leg in route_legs)
     distance_text = f"{distance_m / 1000:.1f} km" if distance_m >= 1000 else f"{int(round(distance_m))} m"

@@ -5,6 +5,7 @@ from flask_login import current_user
 
 import ids
 from backend.crud import create_trip_completion, update_trip_progress
+from backend.landmark_registry import LandmarkRegistry
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import format_distance, get_route_legs
 from callbacks.utils.trip_state import (
@@ -29,7 +30,9 @@ def hidden_next_visit_button(lang="bg"):
     )
 
 
-def register_trip_callbacks(app, registry):
+def register_trip_callbacks(app):
+    registry = LandmarkRegistry.get_landmarks()
+
     @app.callback(
         Output(ids.TRIP_STATUS_PANEL, "children"),
         Input(ids.ACTIVE_TRIP_STORE, "data"),

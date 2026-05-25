@@ -38,7 +38,7 @@ def optimized_trip_from_trip(trip, registry=None):
             from backend.routing_service import fetch_route_steps
             from callbacks.utils.routing import build_route_legs
 
-            route_result = fetch_route_steps(registry.get_landmarks(visit_order))
+            route_result = fetch_route_steps(registry.landmarks_by_ids(visit_order))
             route_legs = build_route_legs(len(visit_order), route_result)
         except Exception:
             route_legs = []

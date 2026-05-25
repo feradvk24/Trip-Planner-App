@@ -3,9 +3,9 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 from flask_login import current_user
 
-import app_context
 import ids
 from backend.crud import get_user_landmark_visit_history, get_user_monthly_landmark_visit_counts, total_landmark_visits_for_user
+from backend.landmark_registry import LandmarkRegistry
 from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, t
 from layout.sidebar import create_user_menu
 
@@ -124,6 +124,7 @@ def layout(lang="bg", **kwargs):
         []
     )
     total_visits = total_landmark_visits_for_user(current_user.id) if current_user.is_authenticated else 0
+    registry = LandmarkRegistry.get_landmarks()
 
     return html.Div(
         [
@@ -183,7 +184,7 @@ def layout(lang="bg", **kwargs):
                                     html.H4(t("statistics.visit_history", lang=lang), className="mb-3"),
                                     dbc.ListGroup(
                                         id=ids.VISIT_HISTORY_LIST,
-                                        children=build_visit_history_items(app_context.REGISTRY, visits),
+                                        children=build_visit_history_items(registry, visits),
                                         flush=True,
                                         style={
                                             "flex": "1 1 auto",
