@@ -22,6 +22,15 @@ from layout.markers import create_marker
 from styles import checkbox_icon, pin_icon
 
 
+CLEAR_ALL_STYLE = {
+    "fontSize": "0.75rem",
+    "color": "#dc3545",
+    "cursor": "pointer",
+    "userSelect": "none",
+    "alignSelf": "center",
+}
+
+
 def register_explore_callbacks(app, registry):
     def hidden_visited_landmark_ids(hide_visited):
         if not hide_visited or not current_user.is_authenticated:
@@ -54,6 +63,28 @@ def register_explore_callbacks(app, registry):
             lang=lang,
         )
         return patched_markers
+
+    @app.callback(
+        Output(ids.START_POINT_DROPDOWN, "disabled"),
+        Output(ids.END_POINT_DROPDOWN, "disabled"),
+        Output(ids.HIDE_VISITED_LANDMARKS_FILTER, "options"),
+        Output(ids.CLEAR_ALL_BTN, "style"),
+        Input(ids.OPTIMIZED_TRIP_STORE, "data"),
+        State("url", "href"),
+    )
+    def sync_route_lock_state(optimized_trip, href):
+        route_is_locked = bool(optimized_trip)
+        lang = get_language_from_url(href)
+        hide_visited_options = [{
+            "label": t("sidebar.hide_visited_landmarks", lang=lang),
+            "value": "hide_visited",
+            "disabled": route_is_locked,
+        }]
+        clear_all_style = {
+            **CLEAR_ALL_STYLE,
+            "display": "none" if route_is_locked else "inline",
+        }
+        return route_is_locked, route_is_locked, hide_visited_options, clear_all_style
 
     @app.callback(
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
@@ -125,11 +156,7 @@ def register_explore_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "disabled"),
         Output(ids.SAVE_TRIP_BTN, "color"),
         Output(ids.SAVE_TRIP_BTN, "style"),
-        Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
-        Output(ids.START_POINT_DROPDOWN, "disabled"),
-        Output(ids.END_POINT_DROPDOWN, "disabled"),
         Input(ids.OPTIMIZED_TRIP_STORE, "data"),
-        State(ids.DESTINATIONS_LIST, "data"),
         State("url", "href"),
         prevent_initial_call="initial_duplicate",
         running=[
@@ -159,7 +186,7 @@ def register_explore_callbacks(app, registry):
             ),
         ],
     )
-    def render_route(trip_data, destination_ids, href):
+    def render_route(trip_data, href):
         if not trip_data:
             raise PreventUpdate
         lang = get_language_from_url(href)
@@ -171,9 +198,6 @@ def register_explore_callbacks(app, registry):
             False,
             "info",
             {"flex": "1"},
-            build_selected_object_items(registry, destination_ids, allow_remove=False, lang=lang),
-            True,
-            True,
         )
 
     @app.callback(
@@ -184,16 +208,12 @@ def register_explore_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "color", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "style", allow_duplicate=True),
         Output(ids.OPTIMIZED_TRIP_STORE, "data", allow_duplicate=True),
-        Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
-        Output(ids.START_POINT_DROPDOWN, "disabled", allow_duplicate=True),
-        Output(ids.END_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
-        State(ids.DESTINATIONS_LIST, "data"),
         State(ids.OPTIMIZED_TRIP_STORE, "data"),
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def modify_route(n_clicks, destination_ids, optimized_trip, href):
+    def modify_route(n_clicks, optimized_trip, href):
         lang = get_language_from_url(href)
         if not optimized_trip:
             raise PreventUpdate
@@ -205,9 +225,6 @@ def register_explore_callbacks(app, registry):
             "secondary",
             {"opacity": "0.45", "flex": "1"},
             None,
-            build_selected_object_items(registry, destination_ids, lang=lang),
-            False,
-            False,
         )
 
     @app.callback(
@@ -278,8 +295,6 @@ def register_explore_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "color", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "style", allow_duplicate=True),
         Output(ids.OPTIMIZED_TRIP_STORE, "data", allow_duplicate=True),
-        Output(ids.START_POINT_DROPDOWN, "disabled", allow_duplicate=True),
-        Output(ids.END_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Input(ids.CLEAR_ALL_BTN, "n_clicks"),
         State(ids.HIDE_VISITED_LANDMARKS_FILTER, "value"),
         State("url", "href"),
@@ -299,8 +314,6 @@ def register_explore_callbacks(app, registry):
             "secondary",
             {"opacity": "0.45", "flex": "1"},
             None,
-            False,
-            False,
         )
 
     @app.callback(
