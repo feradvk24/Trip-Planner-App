@@ -78,9 +78,6 @@ TRANSLATIONS = {
     "warn_modal.ok": "OK",
     "success_toast.header": "Success!",
     "success_toast.message": "Route Optimized",
-    "share_trip_toast.header": "Share Trip",
-    "share_trip_toast.message": "",
-
     "marker.learn_more": "Learn more",
     "marker.add_to_trip": "Add to trip",
     "marker.in_trip": "Added to trip",

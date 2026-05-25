@@ -143,9 +143,9 @@ def create_success_toast(lang="bg"):
 
 def create_share_trip_toast(lang="bg"):
     return dbc.Toast(
-        t("share_trip_toast.message", lang=lang),
+        "",
         id=ids.SHARE_TRIP_TOAST,
-        header=t("share_trip_toast.header", lang=lang),
+        header="",
         icon="info",
         is_open=False,
         dismissable=True,
