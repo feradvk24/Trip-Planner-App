@@ -2,18 +2,15 @@ from dash import ALL, Input, Output, State, ctx, html, no_update
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
-import matplotlib.cm as cm
-import matplotlib.colors as mcolors
-from types import SimpleNamespace
 from flask_login import current_user
 
 import ids
 from backend.crud import get_user_visited_landmark_ids, save_trip, user_trip_name_exists
 from backend.routing_service import fetch_route_steps, optimize_visit_order
 from callbacks.utils.get_language import get_language_from_url
+from callbacks.utils.explore_route_cache import build_explore_route_cache
 from callbacks.utils.routing import (
     build_route_legs,
-    decode_route_polyline,
     resolve_endpoint,
 )
 from callbacks.widgets.callback_widgets import (
@@ -21,9 +18,7 @@ from callbacks.widgets.callback_widgets import (
     button_label_text,
     optimize_route_button_children,
 )
-from callbacks.widgets.access_connectors import build_access_connector_polylines
 from i18n import t
-from styles import number_icon
 
 
 def register_explore_callbacks(app, registry):
@@ -111,7 +106,7 @@ def register_explore_callbacks(app, registry):
         Input(ids.OPTIMIZED_TRIP_STORE, "data"),
         State(ids.DESTINATIONS_LIST, "data"),
         State("url", "href"),
-        prevent_initial_call=True,
+        prevent_initial_call="initial_duplicate",
         running=[
             (Output(ids.OPTIMIZE_ROUTE_BTN, "disabled"), True, False),
             (
@@ -143,109 +138,7 @@ def register_explore_callbacks(app, registry):
         if not trip_data:
             raise PreventUpdate
         lang = get_language_from_url(href)
-        visit_order_ids = trip_data.get("visit_order") or []
-        route_legs = trip_data.get("route_legs") or []
-
-        route_segments = [decode_route_polyline(leg.get("polyline")) for leg in route_legs]
-        colormap = cm.get_cmap("viridis", len(route_segments))
-        colors = [mcolors.to_hex(colormap(i)) for i in range(len(route_segments))]
-        polylines = [
-            html.Div(dl.Polyline(positions=segment, color=color, weight=5))
-            for segment, color in zip(route_segments, colors)
-        ]
-
-        visit_order = []
-        for index, landmark_id in enumerate(visit_order_ids):
-            if landmark_id == -1:
-                location = (
-                    trip_data.get("user_location_start")
-                    if index == 0 else
-                    trip_data.get("user_location_end")
-                )
-                if location:
-                    visit_order.append(SimpleNamespace(
-                        id=-1,
-                        name=t("route.my_location", lang=lang),
-                        location="",
-                        lat=location["lat"],
-                        lon=location["lon"],
-                        link=None,
-                    ))
-                continue
-            landmark = registry.get_landmark(landmark_id)
-            if landmark:
-                visit_order.append(landmark)
-
-        access_connectors = build_access_connector_polylines(
-            (lm for lm in visit_order if lm.id != -1),
-            id_prefix="planned-access-connector",
-        )
-        route_lines = polylines + access_connectors
-
-        start_is_my_location = bool(visit_order_ids and visit_order_ids[0] == -1)
-        visit_num = {}
-        for i, lm in enumerate(visit_order):
-            if lm.id not in visit_num:
-                visit_num[lm.id] = i if start_is_my_location else i + 1
-
-        tour_markers = []
-        for i, lm in enumerate(visit_order):
-            if lm.id not in visit_num:
-                continue
-            marker_props = {}
-            if lm.id != -1:
-                marker_props["id"] = {"type": "route-marker", "index": i, "landmark_id": lm.id}
-            tour_markers.append(
-                dl.Marker(
-                    position=[lm.lat, lm.lon],
-                    children=[
-                        dl.Tooltip(lm.name),
-                        dl.Popup(html.Div([
-                            html.H5(lm.name),
-                            html.H6(lm.location),
-                            html.A(
-                                t("marker.learn_more", lang=lang),
-                                href=lm.link,
-                                target="_blank",
-                                style={"display": "block", "text-align": "center"},
-                            ) if lm.link else None,
-                        ])),
-                    ],
-                    icon=number_icon(visit_num[lm.id]),
-                    **marker_props,
-                )
-            )
-
-        distance_m = trip_data.get("total_distance_m")
-        duration_s =trip_data.get("total_duration_s")
-        distance_km = distance_m / 1000
-        hours, remainder = divmod(int(duration_s), 3600)
-        minutes = remainder // 60
-        duration_str = f"{hours}h {minutes}min" if hours else f"{minutes} min"
-        stats_content = [
-            html.Div([html.B(f"{t('route.distance', lang=lang)}: "), f"{distance_km:.1f} km"]),
-            html.Div([html.B(f"{t('route.travel_time', lang=lang)}: "), duration_str]),
-        ]
-        stats_style = {
-            "display": "block",
-            "position": "absolute",
-            "bottom": "1.5rem",
-            "left": "1rem",
-            "zIndex": 1000,
-            "background": "rgba(255,255,255,0.92)",
-            "borderRadius": "0.375rem",
-            "padding": "0.5rem 0.75rem",
-            "boxShadow": "0 1px 5px rgba(0,0,0,0.3)",
-            "fontSize": "0.85rem",
-            "lineHeight": "1.6",
-            "pointerEvents": "none",
-        }
-        explore_cache = {
-            "polylines": route_lines,
-            "tour_markers": tour_markers,
-            "stats_content": stats_content,
-            "stats_style": stats_style,
-        }
+        explore_cache = build_explore_route_cache(registry, trip_data, lang=lang)
         return (
             True,
             optimize_route_button_children(t("route.modify_route", lang=lang), is_modify=True),

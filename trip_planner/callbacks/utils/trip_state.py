@@ -4,15 +4,49 @@ from dash.exceptions import PreventUpdate
 def sanitize_shared_trip(trip):
     landmark_ids = [landmark_id for landmark_id in (trip.get("landmark_ids") or []) if landmark_id != -1]
     visit_order = [landmark_id for landmark_id in (trip.get("visit_order") or landmark_ids) if landmark_id != -1]
-    has_private_endpoint = bool(trip.get("custom_start_location") or trip.get("custom_end_location"))
+    route_legs = trip.get("route_legs") or []
+    if trip.get("custom_start_location"):
+        route_legs = route_legs[1:]
+    if trip.get("custom_end_location"):
+        route_legs = route_legs[:-1]
+    route_legs = [
+        {
+            **leg,
+            "from_index": index,
+            "to_index": index + 1,
+        }
+        for index, leg in enumerate(route_legs)
+    ]
     return {
         **trip,
         "landmark_ids": landmark_ids,
         "visit_order": visit_order,
-        "route_legs": [] if has_private_endpoint else trip.get("route_legs", []),
+        "route_legs": route_legs,
         "custom_start_location": None,
         "custom_end_location": None,
         "saved_user_location": None,
+    }
+
+
+def optimized_trip_from_trip(trip, registry=None):
+    visit_order = trip.get("visit_order") or trip.get("landmark_ids") or []
+    route_legs = trip.get("route_legs") or []
+    if registry and len(visit_order) >= 2 and not any(leg.get("polyline") for leg in route_legs):
+        try:
+            from backend.routing_service import fetch_route_steps
+            from callbacks.utils.routing import build_route_legs
+
+            route_result = fetch_route_steps(registry.get_landmarks(visit_order))
+            route_legs = build_route_legs(len(visit_order), route_result)
+        except Exception:
+            route_legs = []
+    return {
+        "visit_order": visit_order,
+        "route_legs": route_legs,
+        "user_location_start": trip.get("custom_start_location"),
+        "user_location_end": trip.get("custom_end_location"),
+        "total_distance_m": sum(leg.get("distance_m", 0) for leg in route_legs),
+        "total_duration_s": sum(leg.get("duration_s", 0) for leg in route_legs),
     }
 
 

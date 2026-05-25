@@ -5,6 +5,7 @@ from flask_login import current_user
 
 import ids
 from backend.crud import (
+    clear_active_user_trip,
     delete_trip,
     get_public_trips,
     get_user_trips,
@@ -13,7 +14,7 @@ from backend.crud import (
 )
 from callbacks.utils.trip_state import sanitize_shared_trip
 from callbacks.utils.get_language import get_language_from_url
-from callbacks.widgets.callback_widgets import build_load_trip_items, build_selected_object_items
+from callbacks.widgets.callback_widgets import build_load_trip_items
 from i18n import t
 
 
@@ -87,7 +88,6 @@ def register_browse_callbacks(app, registry):
         }
 
     @app.callback(
-        Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output("url", "href", allow_duplicate=True),
         Input(ids.SELECT_TRIP_BTN, "n_clicks"),
         State(ids.SELECTED_TRIP_STORE, "data"),
@@ -100,31 +100,14 @@ def register_browse_callbacks(app, registry):
         lang = get_language_from_url(href)
         shared_trip = trip.get("source") == "shared"
         if shared_trip:
-            destination_ids = trip.get("landmark_ids") or trip.get("visit_order") or []
-            destination_ids = [lid for lid in destination_ids if lid != -1]
-            visit_order = [lid for lid in (trip.get("visit_order") or destination_ids) if lid != -1]
+            clear_active_user_trip(current_user.id)
             session["pending_browse_trip"] = {
-                "active_trip": None,
-                "mode": "explore",
-                "destination_ids": destination_ids,
-                "visit_order": visit_order,
+                "shared_trip_id": trip["id"],
             }
-            return (
-                build_selected_object_items(registry, destination_ids, lang=lang),
-                f"/{lang}",
-            )
+            return f"/{lang}"
 
-        active_trip = set_active_user_trip(current_user.id, trip["id"])
-        session["pending_browse_trip"] = {
-            "active_trip": active_trip,
-            "mode": "trip",
-            "destination_ids": None,
-            "visit_order": None,
-        }
-        return (
-            no_update,
-            f"/{lang}",
-        )
+        set_active_user_trip(current_user.id, trip["id"])
+        return f"/{lang}"
 
     @app.callback(
         Output(ids.ACTIVE_TRIP_STORE, "data", allow_duplicate=True),

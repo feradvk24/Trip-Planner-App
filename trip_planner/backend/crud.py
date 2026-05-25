@@ -276,6 +276,22 @@ def set_active_user_trip(username: str, trip_id: int) -> dict:
         db.close()
 
 
+def clear_active_user_trip(username: str) -> None:
+    """Clear the user's active trip."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if user is None:
+            raise ValueError(f"User '{username}' not found in database.")
+        user.active_trip_id = None
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
 def get_public_trips(include_completion_status: bool = False) -> list[dict]:
     """Return public trips from all users, newest first."""
     db = SessionLocal()
@@ -291,6 +307,24 @@ def get_public_trips(include_completion_status: bool = False) -> list[dict]:
         if include_completion_status:
             return _with_completion_statuses(trip_data)
         return trip_data
+    finally:
+        db.close()
+
+
+def get_public_trip(trip_id: int) -> dict | None:
+    """Return one public trip by id."""
+    db = SessionLocal()
+    try:
+        row = (
+            db.query(UserTrip, User)
+            .join(User, UserTrip.user_id == User.id)
+            .filter(UserTrip.id == trip_id, UserTrip.is_public.is_(True))
+            .first()
+        )
+        if not row:
+            return None
+        trip, owner = row
+        return _trip_to_dict(trip, owner)
     finally:
         db.close()
 

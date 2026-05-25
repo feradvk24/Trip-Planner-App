@@ -126,7 +126,6 @@ def register_view_callbacks(app, registry):
         Input(ids.EXPLORE_MAP_CACHE, "data"),
         Input(ids.DESTINATIONS_LIST, "data"),
         State("url", "href"),
-        prevent_initial_call=True,
     )
     def sync_explore_layers(mode, hide_visited, explore_cache, destination_ids, href):
         hidden_stats = {"display": "none"}
