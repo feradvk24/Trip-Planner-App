@@ -4,6 +4,7 @@ from flask_login import login_user
 
 import ids
 from backend.auth import User, create_user, verify_user
+from i18n import DEFAULT_LANGUAGE
 
 
 def register_auth_callbacks(app):
@@ -23,7 +24,7 @@ def register_auth_callbacks(app):
             return no_update, "Please enter both username and password.", True
         if verify_user(username, password):
             login_user(User(username))
-            return "/", "", False
+            return f"/{DEFAULT_LANGUAGE}", "", False
         return no_update, "Invalid username or password.", True
 
     @app.callback(
@@ -66,7 +67,7 @@ def register_auth_callbacks(app):
             return no_update, "Password must be at least 6 characters.", True
         if create_user(username, password, first_name.strip(), last_name.strip()):
             login_user(User(username))
-            return "/", "", False
+            return f"/{DEFAULT_LANGUAGE}", "", False
         return no_update, "Username already exists.", True
 
     @app.callback(
