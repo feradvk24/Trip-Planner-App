@@ -10,6 +10,18 @@ def _normalize_trip_name(name: str) -> str:
     return (name or "").strip().casefold()
 
 
+def _visible_user_trips(db):
+    return db.query(UserTrip).filter(UserTrip.is_deleted.is_(False))
+
+
+def _visible_public_trips(db):
+    return (
+        db.query(UserTrip, User)
+        .join(User, UserTrip.user_id == User.id)
+        .filter(UserTrip.is_deleted.is_(False), UserTrip.is_public.is_(True))
+    )
+
+
 def _trip_to_dict(trip: UserTrip, owner: Optional[User] = None) -> dict:
     data = {
         "id": trip.id,
@@ -23,6 +35,7 @@ def _trip_to_dict(trip: UserTrip, owner: Optional[User] = None) -> dict:
         "current_point_index": trip.current_point_index,
         "visited_indices": trip.visited_indices or [],
         "is_public": trip.is_public,
+        "is_deleted": trip.is_deleted,
         "created_at": trip.created_at.strftime("%d %b %Y, %H:%M"),
     }
     if owner:
@@ -188,7 +201,7 @@ def user_trip_name_exists(username: str, name: str) -> bool:
         user = db.query(User).filter(User.username == username).first()
         if user is None:
             return False
-        trips = db.query(UserTrip.name).filter(UserTrip.user_id == user.id).all()
+        trips = _visible_user_trips(db).with_entities(UserTrip.name).filter(UserTrip.user_id == user.id).all()
         return any(_normalize_trip_name(trip_name) == normalized_name for (trip_name,) in trips)
     finally:
         db.close()
@@ -203,7 +216,7 @@ def save_trip(username: str, name: str, landmark_ids: list, visit_order: list,
         if user is None:
             raise ValueError(f"User '{username}' not found in database.")
         normalized_name = _normalize_trip_name(name)
-        existing_names = db.query(UserTrip.name).filter(UserTrip.user_id == user.id).all()
+        existing_names = _visible_user_trips(db).with_entities(UserTrip.name).filter(UserTrip.user_id == user.id).all()
         if any(_normalize_trip_name(trip_name) == normalized_name for (trip_name,) in existing_names):
             raise ValueError("You already have a saved trip with this name.")
         trip = UserTrip(
@@ -235,7 +248,7 @@ def get_user_trips(username: str, include_completion_status: bool = False) -> li
         if user is None:
             return []
         trips = (
-            db.query(UserTrip)
+            _visible_user_trips(db)
             .filter(UserTrip.user_id == user.id)
             .order_by(UserTrip.created_at.desc())
             .all()
@@ -256,8 +269,11 @@ def get_active_user_trip(username: str) -> dict | None:
         if user is None or user.active_trip_id is None:
             return None
         trip = (
-            db.query(UserTrip)
-            .filter(UserTrip.id == user.active_trip_id, UserTrip.user_id == user.id)
+            _visible_user_trips(db)
+            .filter(
+                UserTrip.id == user.active_trip_id,
+                UserTrip.user_id == user.id,
+            )
             .first()
         )
         if trip is None:
@@ -280,8 +296,11 @@ def set_active_user_trip(username: str, trip_id: int) -> dict:
         if user is None:
             raise ValueError(f"User '{username}' not found in database.")
         trip = (
-            db.query(UserTrip)
-            .filter(UserTrip.id == trip_id, UserTrip.user_id == user.id)
+            _visible_user_trips(db)
+            .filter(
+                UserTrip.id == trip_id,
+                UserTrip.user_id == user.id,
+            )
             .first()
         )
         if trip is None:
@@ -317,13 +336,7 @@ def get_public_trips(include_completion_status: bool = False) -> list[dict]:
     """Return public trips from all users, newest first."""
     db = SessionLocal()
     try:
-        trips = (
-            db.query(UserTrip, User)
-            .join(User, UserTrip.user_id == User.id)
-            .filter(UserTrip.is_public.is_(True))
-            .order_by(UserTrip.created_at.desc())
-            .all()
-        )
+        trips = _visible_public_trips(db).order_by(UserTrip.created_at.desc()).all()
         trip_data = [_trip_to_dict(trip, owner) for trip, owner in trips]
         if include_completion_status:
             return _with_completion_statuses(trip_data)
@@ -337,9 +350,10 @@ def get_public_trip(trip_id: int) -> dict | None:
     db = SessionLocal()
     try:
         row = (
-            db.query(UserTrip, User)
-            .join(User, UserTrip.user_id == User.id)
-            .filter(UserTrip.id == trip_id, UserTrip.is_public.is_(True))
+            _visible_public_trips(db)
+            .filter(
+                UserTrip.id == trip_id,
+            )
             .first()
         )
         if not row:
@@ -358,8 +372,11 @@ def set_trip_public_status(username: str, trip_id: int, is_public: bool) -> None
         if user is None:
             raise ValueError(f"User '{username}' not found in database.")
         trip = (
-            db.query(UserTrip)
-            .filter(UserTrip.id == trip_id, UserTrip.user_id == user.id)
+            _visible_user_trips(db)
+            .filter(
+                UserTrip.id == trip_id,
+                UserTrip.user_id == user.id,
+            )
             .first()
         )
         if trip is None:
@@ -494,7 +511,7 @@ def create_trip_completion(username: str, trip_id: int, rating: int | None = Non
 
 
 def delete_trip(username: str, trip_id: int) -> None:
-    """Delete one of a user's trips by ID."""
+    """Hide one of a user's trips without removing its history rows."""
     db = SessionLocal()
     try:
         user = db.query(User).filter(User.username == username).first()
@@ -509,7 +526,8 @@ def delete_trip(username: str, trip_id: int) -> None:
             raise ValueError(f"Trip {trip_id} not found.")
         if user.active_trip_id == trip.id:
             user.active_trip_id = None
-        db.delete(trip)
+        trip.is_deleted = True
+        trip.is_public = False
         db.commit()
     except Exception:
         db.rollback()

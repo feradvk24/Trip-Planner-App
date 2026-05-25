@@ -61,6 +61,7 @@ class UserTrip(Base):
     current_point_index = Column(Integer, default=0, nullable=False)
     visited_indices = Column(JSON, default=list, nullable=False)
     is_public = Column(Boolean, default=False, nullable=False)
+    is_deleted = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
 
