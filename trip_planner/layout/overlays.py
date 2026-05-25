@@ -74,6 +74,13 @@ def create_landmark_review_pane(lang="bg"):
                     html.Div(
                         [
                             dbc.Button(
+                                [html.I(className="bi bi-share me-2"), t("sidebar.share_trip", lang=lang)],
+                                id=ids.LANDMARK_REVIEW_SHARE_TRIP_BTN,
+                                color="info",
+                                outline=True,
+                                style={"display": "none"},
+                            ),
+                            dbc.Button(
                                 [html.I(className="bi bi-send me-2"), t("landmark_review.submit", lang=lang)],
                                 id=ids.LANDMARK_REVIEW_SUBMIT_BTN,
                                 color="primary",

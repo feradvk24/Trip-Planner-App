@@ -116,12 +116,13 @@ def register_browse_callbacks(app):
         Output(ids.SHARE_TRIP_TOAST, "icon"),
         Output(ids.SHARE_TRIP_TOAST, "is_open"),
         Input(ids.SHARE_TRIP_BTN, "n_clicks"),
+        Input(ids.LANDMARK_REVIEW_SHARE_TRIP_BTN, "n_clicks"),
         State(ids.ACTIVE_TRIP_STORE, "data"),
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def share_trip(n_clicks, active_trip, href):
-        if not n_clicks:
+    def share_trip(sidebar_clicks, completion_clicks, active_trip, href):
+        if not sidebar_clicks and not completion_clicks:
             raise PreventUpdate
         lang = get_language_from_url(href)
         if not active_trip or not active_trip.get("trip_id"):

@@ -80,6 +80,7 @@ LANDMARK_REVIEW_STAR_ROW = "landmark-review-star-row"
 LANDMARK_REVIEW_TEXT = "landmark-review-text"
 LANDMARK_REVIEW_SUBMIT_BTN = "landmark-review-submit-btn"
 LANDMARK_REVIEW_SKIP_BTN = "landmark-review-skip-btn"
+LANDMARK_REVIEW_SHARE_TRIP_BTN = "landmark-review-share-trip-btn"
 LANDMARK_REVIEW_ALERT = "landmark-review-alert"
 
 # Active trip (Trip mode)

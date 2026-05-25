@@ -49,6 +49,7 @@ def register_review_callbacks(app):
         Output(ids.LANDMARK_REVIEW_LOCATION, "children"),
         Output(ids.LANDMARK_REVIEW_STAR_ROW, "children"),
         Output(ids.LANDMARK_REVIEW_TEXT, "placeholder"),
+        Output(ids.LANDMARK_REVIEW_SHARE_TRIP_BTN, "style"),
         Input(ids.LANDMARK_REVIEW_STATE_STORE, "data"),
         State("url", "href"),
     )
@@ -76,6 +77,7 @@ def register_review_callbacks(app):
                 if is_trip_completion_review else
                 t("landmark_review.placeholder", lang=lang)
             ),
+            {"display": "inline-block"} if is_trip_completion_review else {"display": "none"},
         )
 
     @app.callback(
