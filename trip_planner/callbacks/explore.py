@@ -68,6 +68,7 @@ def register_explore_callbacks(app, registry):
         Output(ids.START_POINT_DROPDOWN, "disabled"),
         Output(ids.END_POINT_DROPDOWN, "disabled"),
         Output(ids.HIDE_VISITED_LANDMARKS_FILTER, "options"),
+        Output(ids.LANDMARK_SEARCH_DROPDOWN, "disabled"),
         Output(ids.CLEAR_ALL_BTN, "style"),
         Input(ids.OPTIMIZED_TRIP_STORE, "data"),
         State("url", "href"),
@@ -84,7 +85,7 @@ def register_explore_callbacks(app, registry):
             **CLEAR_ALL_STYLE,
             "display": "none" if route_is_locked else "inline",
         }
-        return route_is_locked, route_is_locked, hide_visited_options, clear_all_style
+        return route_is_locked, route_is_locked, hide_visited_options, route_is_locked, clear_all_style
 
     @app.callback(
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
