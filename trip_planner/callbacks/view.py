@@ -5,6 +5,7 @@ from flask_login import current_user
 
 import ids
 from backend.crud import get_user_visited_landmark_ids
+from callbacks.utils.explore_route_layers import build_explore_route_layers
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.widgets.callback_widgets import build_all_markers
 from styles import location_dot_icon
@@ -120,28 +121,29 @@ def register_view_callbacks(app, registry):
         Output(ids.ROUTE_STATS_PANEL, "style"),
         Input(ids.MODE_STORE, "data"),
         Input(ids.HIDE_VISITED_LANDMARKS_FILTER, "value"),
-        Input(ids.EXPLORE_MAP_CACHE, "data"),
+        Input(ids.OPTIMIZED_TRIP_STORE, "data"),
         Input(ids.DESTINATIONS_LIST, "data"),
         State("url", "href"),
     )
-    def sync_explore_layers(mode, hide_visited, explore_cache, destination_ids, href):
+    def sync_explore_layers(mode, hide_visited, optimized_trip, destination_ids, href):
         hidden_stats = {"display": "none"}
         if mode != "explore":
             return [], [], [], [], hidden_stats
-        if explore_cache:
+        lang = get_language_from_url(href)
+        if optimized_trip:
+            route_layers = build_explore_route_layers(registry, optimized_trip, lang=lang)
             return (
                 [],
-                explore_cache.get("tour_markers", []),
-                explore_cache.get("polylines", []),
-                explore_cache.get("stats_content", []),
-                explore_cache.get("stats_style", hidden_stats),
+                route_layers.get("tour_markers", []),
+                route_layers.get("polylines", []),
+                route_layers.get("stats_content", []),
+                route_layers.get("stats_style", hidden_stats),
             )
         hidden_ids = (
             get_user_visited_landmark_ids(current_user.id)
             if hide_visited and current_user.is_authenticated else
             set()
         )
-        lang = get_language_from_url(href)
         return build_all_markers(registry.landmarks, destination_ids or [], hidden_ids, lang=lang), [], [], [], hidden_stats
 
 

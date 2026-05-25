@@ -7,7 +7,6 @@ from flask_login import current_user
 import app_context
 import ids
 from backend.crud import get_active_user_trip, get_public_trip
-from callbacks.utils.explore_route_cache import build_explore_route_cache
 from callbacks.utils.trip_state import next_action_stop_index, optimized_trip_from_trip, sanitize_shared_trip
 from layout.info_sidebar import create_info_sidebar
 from layout.map import create_map
@@ -62,24 +61,18 @@ def resolve_pending_browse_trip(pending_browse_trip, registry=None):
     }
 
 
-def create_stores(active_trip=None, pending_browse_trip=None, focused_landmark_id=None, registry=None, lang="bg"):
+def create_stores(active_trip=None, pending_browse_trip=None, focused_landmark_id=None):
     if pending_browse_trip:
         initial_mode = pending_browse_trip.get("mode") or "explore"
         initial_destinations = pending_browse_trip.get("destination_ids") or []
         initial_active_trip = pending_browse_trip.get("active_trip")
         initial_optimized_trip = pending_browse_trip.get("optimized_trip")
-        initial_explore_cache = (
-            build_explore_route_cache(registry, initial_optimized_trip, lang=lang)
-            if registry and initial_optimized_trip else
-            None
-        )
         initial_info = initial_active_info(initial_active_trip)
     elif focused_landmark_id:
         initial_mode = "explore"
         initial_destinations = []
         initial_active_trip = None
         initial_optimized_trip = None
-        initial_explore_cache = None
         initial_info = {
             "type": "landmark",
             "content": focused_landmark_id,
@@ -89,7 +82,6 @@ def create_stores(active_trip=None, pending_browse_trip=None, focused_landmark_i
         initial_destinations = []
         initial_active_trip = active_trip
         initial_optimized_trip = None
-        initial_explore_cache = None
         initial_info = initial_active_info(initial_active_trip)
 
     return [
@@ -99,7 +91,6 @@ def create_stores(active_trip=None, pending_browse_trip=None, focused_landmark_i
         dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.SELECTED_TRIP_STORE, data=None),
         dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=initial_active_trip),
-        dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=initial_explore_cache),
         dcc.Store(id=ids.ACTIVE_INFO_STORE, data=initial_info),
         dcc.Store(id=ids.OPTIMIZED_TRIP_STORE, data=initial_optimized_trip),
     ]
@@ -212,7 +203,7 @@ def create_authenticated_layout(markers, include_location=True, focused_landmark
         create_main_content(markers, active_trip, focused_landmark, lang=lang),
         create_landmark_review_pane(lang=lang),
         create_user_menu(lang=lang),
-        *create_stores(active_trip, pending_browse_trip, focused_landmark.id if focused_landmark else None, registry=app_context.REGISTRY, lang=lang),
+        *create_stores(active_trip, pending_browse_trip, focused_landmark.id if focused_landmark else None),
         create_warn_modal(lang=lang),
         create_success_toast(lang=lang),
         create_share_trip_toast(lang=lang),

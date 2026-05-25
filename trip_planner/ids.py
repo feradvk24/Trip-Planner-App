@@ -85,7 +85,6 @@ LANDMARK_REVIEW_ALERT = "landmark-review-alert"
 
 # Active trip (Trip mode)
 ACTIVE_TRIP_STORE = "active-trip-store"
-EXPLORE_MAP_CACHE = "explore-map-cache"
 ACTIVE_INFO_STORE = "active-info-store"
 
 # Map layers

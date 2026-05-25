@@ -8,7 +8,6 @@ import ids
 from backend.crud import get_user_visited_landmark_ids, save_trip, user_trip_name_exists
 from backend.routing_service import fetch_route_steps, optimize_visit_order
 from callbacks.utils.get_language import get_language_from_url
-from callbacks.utils.explore_route_cache import build_explore_route_cache
 from callbacks.utils.routing import (
     build_route_legs,
     resolve_endpoint,
@@ -30,18 +29,18 @@ def register_explore_callbacks(app, registry):
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Input(ids.MODE_STORE, "data"),
         Input(ids.DESTINATIONS_LIST, "data"),
-        Input(ids.EXPLORE_MAP_CACHE, "data"),
+        Input(ids.OPTIMIZED_TRIP_STORE, "data"),
         State("url", "href"),
         prevent_initial_call="initial_duplicate",
     )
-    def hydrate_selected_objects(mode, destination_ids, explore_cache, href):
+    def hydrate_selected_objects(mode, destination_ids, optimized_trip, href):
         if mode != "explore":
             raise PreventUpdate
         lang = get_language_from_url(href)
         return build_selected_object_items(
             registry,
             destination_ids or [],
-            allow_remove=not bool(explore_cache),
+            allow_remove=not bool(optimized_trip),
             lang=lang,
         )
 
@@ -96,7 +95,6 @@ def register_explore_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "disabled"),
         Output(ids.SAVE_TRIP_BTN, "color"),
         Output(ids.SAVE_TRIP_BTN, "style"),
-        Output(ids.EXPLORE_MAP_CACHE, "data"),
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output(ids.START_POINT_DROPDOWN, "disabled"),
         Output(ids.END_POINT_DROPDOWN, "disabled"),
@@ -135,7 +133,6 @@ def register_explore_callbacks(app, registry):
         if not trip_data:
             raise PreventUpdate
         lang = get_language_from_url(href)
-        explore_cache = build_explore_route_cache(registry, trip_data, lang=lang)
         return (
             True,
             optimize_route_button_children(t("route.modify_route", lang=lang), is_modify=True),
@@ -144,7 +141,6 @@ def register_explore_callbacks(app, registry):
             False,
             "info",
             {"flex": "1"},
-            explore_cache,
             build_selected_object_items(registry, destination_ids, allow_remove=False, lang=lang),
             True,
             True,
@@ -157,7 +153,6 @@ def register_explore_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "disabled", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "color", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "style", allow_duplicate=True),
-        Output(ids.EXPLORE_MAP_CACHE, "data", allow_duplicate=True),
         Output(ids.OPTIMIZED_TRIP_STORE, "data", allow_duplicate=True),
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output(ids.START_POINT_DROPDOWN, "disabled", allow_duplicate=True),
@@ -179,7 +174,6 @@ def register_explore_callbacks(app, registry):
             True,
             "secondary",
             {"opacity": "0.45", "flex": "1"},
-            None,
             None,
             build_selected_object_items(registry, destination_ids, lang=lang),
             False,
@@ -240,7 +234,6 @@ def register_explore_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "disabled", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "color", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "style", allow_duplicate=True),
-        Output(ids.EXPLORE_MAP_CACHE, "data", allow_duplicate=True),
         Output(ids.OPTIMIZED_TRIP_STORE, "data", allow_duplicate=True),
         Output(ids.START_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Output(ids.END_POINT_DROPDOWN, "disabled", allow_duplicate=True),
@@ -250,7 +243,7 @@ def register_explore_callbacks(app, registry):
     )
     def clear_all(n_clicks, href):
         lang = get_language_from_url(href)
-        return [], [], optimize_route_button_children(t("sidebar.optimize_route", lang=lang)), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, None, None, False, False
+        return [], [], optimize_route_button_children(t("sidebar.optimize_route", lang=lang)), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, None, False, False
 
     @app.callback(
         Output(ids.START_POINT_DROPDOWN, "options"),

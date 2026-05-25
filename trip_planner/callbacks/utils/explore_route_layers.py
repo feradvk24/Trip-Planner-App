@@ -11,7 +11,7 @@ from i18n import t
 from styles import number_icon
 
 
-def build_explore_route_cache(registry, trip_data, lang="bg"):
+def build_explore_route_layers(registry, trip_data, lang="bg"):
     visit_order_ids = trip_data.get("visit_order") or []
     route_legs = trip_data.get("route_legs") or []
 
