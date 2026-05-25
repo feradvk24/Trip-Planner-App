@@ -37,25 +37,28 @@ def build_empty_info(lang="bg"):
 
 def build_review_item(review, lang="bg"):
     review_text = review.get("review_text")
-    return html.Div(
-        [
+    children = [
+        html.Div(
+            [
+                html.Span(_stars(review.get("rating"), lang=lang), style={"color": "#f2b01e", "fontSize": "0.9rem"}),
+                html.Small(review.get("created_at"), className="text-muted"),
+            ],
+            style={"display": "flex", "justifyContent": "space-between", "gap": "0.75rem"},
+        ),
+        html.Div(
+            review.get("user_name") or review.get("username") or t("generic.user", lang=lang),
+            style={"fontWeight": "600", "fontSize": "0.9rem", "marginTop": "0.25rem"},
+        ),
+    ]
+    if review_text:
+        children.append(
             html.Div(
-                [
-                    html.Span(_stars(review.get("rating"), lang=lang), style={"color": "#f2b01e", "fontSize": "0.9rem"}),
-                    html.Small(review.get("created_at"), className="text-muted"),
-                ],
-                style={"display": "flex", "justifyContent": "space-between", "gap": "0.75rem"},
-            ),
-            html.Div(
-                review.get("user_name") or review.get("username") or t("generic.user", lang=lang),
-                style={"fontWeight": "600", "fontSize": "0.9rem", "marginTop": "0.25rem"},
-            ),
-            html.Div(
-                review_text if review_text else t("reviews.no_written_remarks", lang=lang),
-                className="text-muted" if not review_text else "",
+                review_text,
                 style={"fontSize": "0.9rem", "marginTop": "0.25rem", "lineHeight": "1.35"},
-            ),
-        ],
+            )
+        )
+    return html.Div(
+        children,
         style={
             "border": "1px solid #e9ecef",
             "borderRadius": "0.35rem",
@@ -166,10 +169,9 @@ def build_trip_info(trip, registry, lang="bg"):
                     html.H6(t("info_sidebar.trip_review", lang=lang), className="mb-2"),
                     html.Div(_stars(completion_rating, lang=lang), style={"color": "#f2b01e", "fontSize": "1.1rem"}),
                     html.Div(
-                        completion_review_text if completion_review_text else t("reviews.no_written_remarks", lang=lang),
-                        className="text-muted" if not completion_review_text else "",
+                        completion_review_text,
                         style={"fontSize": "0.9rem", "marginTop": "0.35rem", "lineHeight": "1.35"},
-                    ),
+                    ) if completion_review_text else None,
                 ],
                 style={
                     "borderBottom": "1px solid #e9ecef",
