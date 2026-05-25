@@ -122,7 +122,7 @@ def register_view_callbacks(app, registry):
         Input(ids.MODE_STORE, "data"),
         Input(ids.HIDE_VISITED_LANDMARKS_FILTER, "value"),
         Input(ids.OPTIMIZED_TRIP_STORE, "data"),
-        Input(ids.DESTINATIONS_LIST, "data"),
+        State(ids.DESTINATIONS_LIST, "data"),
         State("url", "href"),
     )
     def sync_explore_layers(mode, hide_visited, optimized_trip, destination_ids, href):

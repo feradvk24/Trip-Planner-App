@@ -1,4 +1,4 @@
-from dash import ALL, Input, Output, State, ctx, html, no_update
+from dash import ALL, Input, Output, Patch, State, ctx, html, no_update
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
@@ -13,10 +13,13 @@ from callbacks.utils.routing import (
     resolve_endpoint,
 )
 from callbacks.widgets.callback_widgets import (
+    build_all_markers,
     build_selected_object_items,
     optimize_route_button_children,
 )
 from i18n import t
+from layout.markers import create_marker
+from styles import checkbox_icon, pin_icon
 
 
 def register_explore_callbacks(app, registry):
@@ -24,6 +27,33 @@ def register_explore_callbacks(app, registry):
         if not hide_visited or not current_user.is_authenticated:
             return set()
         return get_user_visited_landmark_ids(current_user.id)
+
+    def marker_index_for_landmark(landmark_id, hidden_ids):
+        visible_index = 0
+        for landmark in registry.landmarks:
+            if landmark.id in hidden_ids:
+                continue
+            if landmark.id == landmark_id:
+                return visible_index
+            visible_index += 1
+        return None
+
+    def patch_marker_selection(landmark_id, selected_ids, hide_visited, lang):
+        hidden_ids = hidden_visited_landmark_ids(hide_visited)
+        marker_index = marker_index_for_landmark(landmark_id, hidden_ids)
+        landmark = registry.get_landmark(landmark_id)
+        if marker_index is None or not landmark:
+            return no_update
+
+        patched_markers = Patch()
+        patched_markers[marker_index] = create_marker(
+            landmark,
+            pin_icon,
+            selected_ids,
+            checkbox_icon,
+            lang=lang,
+        )
+        return patched_markers
 
     @app.callback(
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
@@ -183,14 +213,16 @@ def register_explore_callbacks(app, registry):
     @app.callback(
         Output(ids.SELECTED_OBJECTS_GROUP, "children"),
         Output(ids.DESTINATIONS_LIST, "data"),
+        Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),
         Input({"type": "marker", "index": ALL}, "n_dblclicks"),
         Input({"type": "add-marker-btn", "index": ALL}, "n_clicks"),
         Input({"type": "search-add-marker-btn", "index": ALL}, "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
+        State(ids.HIDE_VISITED_LANDMARKS_FILTER, "value"),
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def add_marker_to_trip(dblclicks_list, add_clicks_list, search_add_clicks_list, selected, href):
+    def add_marker_to_trip(dblclicks_list, add_clicks_list, search_add_clicks_list, selected, hide_visited, href):
         if not ctx.triggered_id or not (any(dblclicks_list) or any(add_clicks_list) or any(search_add_clicks_list)):
             raise PreventUpdate
         if selected is None:
@@ -205,17 +237,23 @@ def register_explore_callbacks(app, registry):
         updated_selection = [*selected, landmark_id]
         lang = get_language_from_url(href)
 
-        return build_selected_object_items(registry, updated_selection, lang=lang), updated_selection
+        return (
+            build_selected_object_items(registry, updated_selection, lang=lang),
+            updated_selection,
+            patch_marker_selection(landmark_id, updated_selection, hide_visited, lang),
+        )
 
     @app.callback(
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
+        Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),
         Input({"type": "remove-selected-item", "index": ALL}, "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
+        State(ids.HIDE_VISITED_LANDMARKS_FILTER, "value"),
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def remove_marker_from_trip(remove_clicks_list, selected, href):
+    def remove_marker_from_trip(remove_clicks_list, selected, hide_visited, href):
         if not ctx.triggered_id or not any(remove_clicks_list):
             raise PreventUpdate
         selected = selected or []
@@ -223,11 +261,16 @@ def register_explore_callbacks(app, registry):
         updated_selection = [selected_id for selected_id in selected if selected_id != landmark_id]
         lang = get_language_from_url(href)
 
-        return build_selected_object_items(registry, updated_selection, lang=lang), updated_selection
+        return (
+            build_selected_object_items(registry, updated_selection, lang=lang),
+            updated_selection,
+            patch_marker_selection(landmark_id, updated_selection, hide_visited, lang),
+        )
 
     @app.callback(
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
+        Output(ids.ALL_MARKERS_LAYER, "children", allow_duplicate=True),
         Output(ids.OPTIMIZE_ROUTE_BTN, "children", allow_duplicate=True),
         Output(ids.OPTIMIZE_ROUTE_BTN, "color", allow_duplicate=True),
         Output(ids.OPTIMIZE_ROUTE_BTN, "outline", allow_duplicate=True),
@@ -238,12 +281,27 @@ def register_explore_callbacks(app, registry):
         Output(ids.START_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Output(ids.END_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Input(ids.CLEAR_ALL_BTN, "n_clicks"),
+        State(ids.HIDE_VISITED_LANDMARKS_FILTER, "value"),
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def clear_all(n_clicks, href):
+    def clear_all(n_clicks, hide_visited, href):
         lang = get_language_from_url(href)
-        return [], [], optimize_route_button_children(t("sidebar.optimize_route", lang=lang)), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, None, False, False
+        hidden_ids = hidden_visited_landmark_ids(hide_visited)
+        return (
+            [],
+            [],
+            build_all_markers(registry.landmarks, [], hidden_ids, lang=lang),
+            optimize_route_button_children(t("sidebar.optimize_route", lang=lang)),
+            "success",
+            False,
+            True,
+            "secondary",
+            {"opacity": "0.45", "flex": "1"},
+            None,
+            False,
+            False,
+        )
 
     @app.callback(
         Output(ids.START_POINT_DROPDOWN, "options"),
