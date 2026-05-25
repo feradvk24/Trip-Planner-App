@@ -427,8 +427,8 @@ def create_landmark_review(username: str, trip_id: int, landmark_id: int, rating
         db.close()
 
 
-def create_trip_completion(username: str, trip_id: int, rating: int, review_text: str = None) -> TripCompletion:
-    """Create a completion record for a finished trip."""
+def create_trip_completion(username: str, trip_id: int, rating: int | None = None, review_text: str = None) -> TripCompletion:
+    """Create or update a completion record for a finished trip."""
     db = SessionLocal()
     try:
         user = db.query(User).filter(User.username == username).first()
@@ -437,16 +437,31 @@ def create_trip_completion(username: str, trip_id: int, rating: int, review_text
         trip = db.query(UserTrip).filter(UserTrip.id == trip_id).first()
         if trip is None:
             raise ValueError(f"Trip {trip_id} not found.")
-        if rating < 1 or rating > 5:
+        if rating is not None and (rating < 1 or rating > 5):
             raise ValueError("Rating must be between 1 and 5.")
 
-        completion = TripCompletion(
-            user_id=user.id,
-            trip_id=trip.id,
-            rating=rating,
-            review_text=(review_text or "").strip() or None,
+        completion = (
+            db.query(TripCompletion)
+            .filter(
+                TripCompletion.user_id == user.id,
+                TripCompletion.trip_id == trip.id,
+            )
+            .order_by(TripCompletion.completed_at.desc())
+            .first()
         )
-        db.add(completion)
+        if completion is None:
+            completion = TripCompletion(
+                user_id=user.id,
+                trip_id=trip.id,
+                rating=rating,
+                review_text=(review_text or "").strip() or None,
+            )
+            db.add(completion)
+        else:
+            if rating is not None:
+                completion.rating = rating
+            if review_text is not None:
+                completion.review_text = review_text.strip() or None
         db.commit()
         db.refresh(completion)
         return completion

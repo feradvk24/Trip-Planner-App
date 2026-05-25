@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 from flask_login import current_user
 
 import ids
-from backend.crud import update_trip_progress
+from backend.crud import create_trip_completion, update_trip_progress
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import format_distance, get_route_legs
 from callbacks.utils.trip_state import (
@@ -56,7 +56,7 @@ def register_trip_callbacks(app, registry):
         next_action_idx = next_action_stop_index(active_trip)
         current_point = trip_point_summary(registry, stop_ids, current_idx, active_trip)
         custom_start = active_trip.get("custom_start_location")
-        show_current_point = not (custom_start and not active_trip.get("visited_indices"))
+        show_current_point = bool(active_trip.get("visited_indices"))
         if show_current_point:
             visited = set(active_trip.get("visited_indices") or [])
             next_idx = next((i for i in range(current_idx + 1, len(stop_ids)) if i not in visited), None)
@@ -93,7 +93,7 @@ def register_trip_callbacks(app, registry):
             remaining_distance = sum(
                 leg.get("distance_m", 0)
                 for leg in progress_legs
-                if active_leg_idx is not None and leg.get("from_index", 0) >= active_leg_idx
+                if active_leg_idx is None or leg.get("from_index", 0) >= active_leg_idx
             )
         total_distance = passed_distance + remaining_distance
         progress_pct = round((passed_distance / total_distance) * 100) if total_distance else 0
@@ -195,11 +195,13 @@ def register_trip_callbacks(app, registry):
             clicked_index = ctx.triggered_id["index"]
 
         updated_trip = visit_stop(active_trip, clicked_index, update_trip_progress)
-        completion_review_state = (
-            trip_completion_review_pane_state(updated_trip)
-            if trip_complete(updated_trip)
-            else None
-        )
+        trip_was_completed = trip_complete(updated_trip)
+        completion_review_state = trip_completion_review_pane_state(updated_trip) if trip_was_completed else None
+        if trip_was_completed and not trip_complete(active_trip):
+            create_trip_completion(
+                username=current_user.id,
+                trip_id=updated_trip["trip_id"],
+            )
 
         try:
             review_state = review_pane_state(registry, active_trip, clicked_index)

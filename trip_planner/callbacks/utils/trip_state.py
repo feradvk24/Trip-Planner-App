@@ -80,6 +80,8 @@ def active_route_leg_index(active_trip):
     next_idx = next_action_stop_index(active_trip)
     if next_idx is None:
         return None
+    if next_idx == 0 and not active_trip.get("custom_start_location"):
+        return None
     start_offset = 1 if active_trip.get("custom_start_location") else 0
     return max(0, start_offset + next_idx - 1)
 
