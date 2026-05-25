@@ -3,7 +3,7 @@ import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 
 from backend.routing_service import fetch_route_steps
-from callbacks.utils.routing import location_tuple
+from callbacks.utils.routing import decode_route_polyline, location_tuple
 from callbacks.utils.trip_state import (
     active_route_leg_index,
     next_action_stop_index,
@@ -33,7 +33,7 @@ def build_trip_content(registry, active_trip, lang="bg"):
     passed_coords = []
     current_coords = []
     remaining_coords = []
-    route_segments = [leg.segments for leg in result.legs]
+    route_segments = [decode_route_polyline(leg.polyline) for leg in result.legs]
     full_trip_coords = [coord for segment in route_segments for coord in segment]
     for i, segment in enumerate(route_segments):
         if is_trip_complete or (active_leg_idx is not None and i < active_leg_idx):

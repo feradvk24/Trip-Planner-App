@@ -1,3 +1,5 @@
+import polyline
+
 from backend.routing_service import fetch_route_steps
 from backend.landmark_registry import Landmark
 
@@ -44,13 +46,19 @@ def build_route_legs(route_point_count, route_result):
         {
             "from_index": i,
             "to_index": i + 1,
-            "segments": leg.segments,
+            "polyline": leg.polyline,
             "distance_m": leg.distance_m,
             "duration_s": leg.duration_s,
         }
         for i, leg in enumerate(route_result.legs)
         if i + 1 < route_point_count
     ])
+
+
+def decode_route_polyline(encoded_polyline):
+    if not encoded_polyline:
+        return []
+    return polyline.decode(encoded_polyline)
 
 
 def format_distance(distance_m):

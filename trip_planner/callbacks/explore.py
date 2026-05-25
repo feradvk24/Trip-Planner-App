@@ -13,6 +13,7 @@ from backend.routing_service import fetch_route_steps, optimize_visit_order
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import (
     build_route_legs,
+    decode_route_polyline,
     location_tuple,
     resolve_endpoint,
 )
@@ -146,7 +147,7 @@ def register_explore_callbacks(app, registry):
         visit_order_ids = trip_data.get("visit_order") or []
         route_legs = trip_data.get("route_legs") or []
 
-        route_segments = [leg.get("segments", []) for leg in route_legs]
+        route_segments = [decode_route_polyline(leg.get("polyline")) for leg in route_legs]
         colormap = cm.get_cmap("viridis", len(route_segments))
         colors = [mcolors.to_hex(colormap(i)) for i in range(len(route_segments))]
         polylines = [

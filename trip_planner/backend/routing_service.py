@@ -2,12 +2,14 @@ import requests
 from functools import lru_cache
 from typing import List, NamedTuple, Optional, Tuple
 
+import polyline
+
 from backend.landmark_registry import Landmark
 from backend.tsp_formulas import solve_tsp
 
 
 class RouteLeg(NamedTuple):
-    segments: List[Tuple[float, float]]
+    polyline: str
     distance_m: float
     duration_s: float
 
@@ -27,7 +29,7 @@ def fetch_route_from_coordinates(coord_pairs: tuple) -> RouteResult:
     coords = ";".join(f"{lon},{lat}" for lat, lon in coord_pairs)
     url = (
         f"https://router.project-osrm.org/route/v1/driving/"
-        f"{coords}?overview=false&geometries=geojson&steps=true"
+        f"{coords}?overview=false&geometries=polyline&steps=true"
     )
 
     res = requests.get(url, timeout=15)
@@ -44,9 +46,22 @@ def fetch_route_from_coordinates(coord_pairs: tuple) -> RouteResult:
     for leg in route["legs"]:
         leg_coords = []
         for step in leg["steps"]:
-            leg_coords.extend((c[1], c[0]) for c in step["geometry"]["coordinates"])
+            geometry = step.get("geometry")
+            if isinstance(geometry, str):
+                step_coords = polyline.decode(geometry)
+            else:
+                step_coords = [
+                    (c[1], c[0])
+                    for c in (geometry or {}).get("coordinates", [])
+                ]
+
+            if leg_coords and step_coords and leg_coords[-1] == step_coords[0]:
+                leg_coords.extend(step_coords[1:])
+            else:
+                leg_coords.extend(step_coords)
+
         route_legs.append(RouteLeg(
-            segments=leg_coords,
+            polyline=polyline.encode(leg_coords) if leg_coords else "",
             distance_m=leg.get("distance", 0),
             duration_s=leg.get("duration", 0),
         ))

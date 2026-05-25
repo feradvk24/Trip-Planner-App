@@ -21,6 +21,7 @@ dependencies = [
     "requests",
     "dotenv",
     "flask-login",
+    "polyline",
 ]
 
 [project.urls]
