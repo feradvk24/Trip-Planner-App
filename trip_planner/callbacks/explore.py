@@ -15,7 +15,6 @@ from callbacks.utils.routing import (
 )
 from callbacks.widgets.callback_widgets import (
     build_selected_object_items,
-    button_label_text,
     optimize_route_button_children,
 )
 from i18n import t
@@ -61,14 +60,13 @@ def register_explore_callbacks(app, registry):
         State(ids.DESTINATIONS_LIST, "data"),
         State(ids.START_POINT_DROPDOWN, "value"),
         State(ids.END_POINT_DROPDOWN, "value"),
-        State(ids.OPTIMIZE_ROUTE_BTN, "children"),
+        State(ids.OPTIMIZED_TRIP_STORE, "data"),
         State(ids.GEOLOCATION, "position"),
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def compute_route(n_clicks, destination_ids, start_point_id, end_point_id, btn_label, position, href):
-        lang = get_language_from_url(href)
-        if button_label_text(btn_label) == t("route.modify_route", lang=lang):
+    def compute_route(n_clicks, destination_ids, start_point_id, end_point_id, optimized_trip, position, href):
+        if optimized_trip:
             raise PreventUpdate
         if not destination_ids or len(destination_ids) < 2:
             return True, no_update
@@ -166,13 +164,13 @@ def register_explore_callbacks(app, registry):
         Output(ids.END_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
-        State(ids.OPTIMIZE_ROUTE_BTN, "children"),
+        State(ids.OPTIMIZED_TRIP_STORE, "data"),
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def modify_route(n_clicks, destination_ids, btn_label, href):
+    def modify_route(n_clicks, destination_ids, optimized_trip, href):
         lang = get_language_from_url(href)
-        if button_label_text(btn_label) != t("route.modify_route", lang=lang):
+        if not optimized_trip:
             raise PreventUpdate
         return (
             optimize_route_button_children(t("sidebar.optimize_route", lang=lang)),

@@ -6,14 +6,6 @@ from layout.markers import create_markers
 from styles import checkbox_icon, pin_icon
 
 
-def button_label_text(children):
-    if isinstance(children, str):
-        return children
-    if isinstance(children, list):
-        return "".join(child for child in children if isinstance(child, str)).strip()
-    return ""
-
-
 def optimize_route_button_children(label, is_modify=False):
     icon_class = "bi bi-pencil-square me-2" if is_modify else "bi bi-signpost-split me-2"
     return [html.I(className=icon_class), label]
