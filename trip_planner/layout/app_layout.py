@@ -66,7 +66,6 @@ def create_stores(active_trip=None, pending_browse_trip=None, focused_landmark_i
     if pending_browse_trip:
         initial_mode = pending_browse_trip.get("mode") or "explore"
         initial_destinations = pending_browse_trip.get("destination_ids") or []
-        initial_visit_order = pending_browse_trip.get("visit_order") or []
         initial_active_trip = pending_browse_trip.get("active_trip")
         initial_optimized_trip = pending_browse_trip.get("optimized_trip")
         initial_explore_cache = (
@@ -78,7 +77,6 @@ def create_stores(active_trip=None, pending_browse_trip=None, focused_landmark_i
     elif focused_landmark_id:
         initial_mode = "explore"
         initial_destinations = []
-        initial_visit_order = []
         initial_active_trip = None
         initial_optimized_trip = None
         initial_explore_cache = None
@@ -89,7 +87,6 @@ def create_stores(active_trip=None, pending_browse_trip=None, focused_landmark_i
     else:
         initial_mode = "trip" if active_trip else "explore"
         initial_destinations = []
-        initial_visit_order = []
         initial_active_trip = active_trip
         initial_optimized_trip = None
         initial_explore_cache = None
@@ -97,9 +94,7 @@ def create_stores(active_trip=None, pending_browse_trip=None, focused_landmark_i
 
     return [
         dcc.Store(id=ids.DESTINATIONS_LIST, data=initial_destinations),
-        dcc.Store(id=ids.VISIT_ORDER_STORE, data=initial_visit_order),
         dcc.Store(id=ids.MODE_STORE, data=initial_mode),
-        dcc.Store(id=ids.BROWSE_OVERLAY_STORE, data=False),
         dcc.Store(id=ids.BROWSE_SAVED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.SELECTED_TRIP_STORE, data=None),

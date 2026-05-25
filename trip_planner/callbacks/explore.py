@@ -55,7 +55,6 @@ def register_explore_callbacks(app, registry):
         return False
 
     @app.callback(
-        Output(ids.VISIT_ORDER_STORE, "data"),
         Output(ids.WARN_MODAL, "is_open", allow_duplicate=True),
         Output(ids.OPTIMIZED_TRIP_STORE, "data"),
         Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
@@ -72,7 +71,7 @@ def register_explore_callbacks(app, registry):
         if button_label_text(btn_label) == t("route.modify_route", lang=lang):
             raise PreventUpdate
         if not destination_ids or len(destination_ids) < 2:
-            return no_update, True, no_update
+            return True, no_update
         landmarks = registry.get_landmarks(destination_ids)
         start_landmark = resolve_endpoint(registry, start_point_id, position)
         end_landmark = resolve_endpoint(registry, end_point_id, position)
@@ -88,7 +87,7 @@ def register_explore_callbacks(app, registry):
             "total_duration_s": result.duration_s,
         }
 
-        return [l.id for l in visit_order], False, optimized_trip_data
+        return False, optimized_trip_data
     
 
     @app.callback(
@@ -237,7 +236,6 @@ def register_explore_callbacks(app, registry):
     @app.callback(
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output(ids.DESTINATIONS_LIST, "data", allow_duplicate=True),
-        Output(ids.VISIT_ORDER_STORE, "data", allow_duplicate=True),
         Output(ids.OPTIMIZE_ROUTE_BTN, "children", allow_duplicate=True),
         Output(ids.OPTIMIZE_ROUTE_BTN, "color", allow_duplicate=True),
         Output(ids.OPTIMIZE_ROUTE_BTN, "outline", allow_duplicate=True),
@@ -254,7 +252,7 @@ def register_explore_callbacks(app, registry):
     )
     def clear_all(n_clicks, href):
         lang = get_language_from_url(href)
-        return [], [], [], optimize_route_button_children(t("sidebar.optimize_route", lang=lang)), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, None, None, False, False
+        return [], [], optimize_route_button_children(t("sidebar.optimize_route", lang=lang)), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, None, None, False, False
 
     @app.callback(
         Output(ids.START_POINT_DROPDOWN, "options"),

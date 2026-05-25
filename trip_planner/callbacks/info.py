@@ -110,11 +110,10 @@ def register_info_callbacks(app, registry):
         Output(ids.INFO_SIDEBAR_BODY, "style"),
         Input(ids.ACTIVE_INFO_STORE, "data", allow_optional=True),
         Input(ids.SELECTED_TRIP_STORE, "data"),
-        Input(ids.BROWSE_OVERLAY_STORE, "data", allow_optional=True),
         Input(ids.MODE_STORE, "data", allow_optional=True),
         Input("url", "pathname"),
     )
-    def render_info_sidebar(active_info, selected_trip, browse_open, mode, pathname):
+    def render_info_sidebar(active_info, selected_trip, mode, pathname):
         lang = get_language_from_url(pathname)
         base_style = {
             "flex": "1 1 auto",
@@ -122,7 +121,7 @@ def register_info_callbacks(app, registry):
             "overflowY": "auto",
         }
         hide_landmark_image = mode not in ("explore", "trip")
-        browse_open = browse_open or (pathname or "").rstrip("/").endswith("/browse")
+        browse_open = (pathname or "").rstrip("/").endswith("/browse")
 
         if browse_open:
             if selected_trip:

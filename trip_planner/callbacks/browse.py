@@ -21,7 +21,7 @@ from i18n import t
 def is_browse_path(pathname):
     return (pathname or "").rstrip("/").endswith("/browse")
 
-def register_browse_callbacks(app, registry):
+def register_browse_callbacks(app):
     @app.callback(
         Output(ids.LOAD_TRIP_LIST, "children"),
         Output(ids.USER_SHARED_TRIPS_LIST, "children"),

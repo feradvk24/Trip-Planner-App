@@ -47,7 +47,6 @@ def language_path(pathname, language):
 def register_view_callbacks(app, registry):
     @app.callback(
         Output(ids.MODE_STORE, "data"),
-        Output(ids.BROWSE_OVERLAY_STORE, "data"),
         Output("url", "href", allow_duplicate=True),
         Input(ids.MODE_BTN_EXPLORE, "n_clicks"),
         Input(ids.MODE_BTN_TRIP, "n_clicks"),
@@ -59,34 +58,32 @@ def register_view_callbacks(app, registry):
         if not any([explore_clicks, trip_clicks, browse_clicks]):
             raise PreventUpdate
         if ctx.triggered_id == ids.MODE_BTN_TRIP:
-            return "trip", False, no_update
+            return "trip", no_update
         if ctx.triggered_id == ids.MODE_BTN_BROWSE:
             target_path = localized_page_path(pathname, "/browse")
             if target_path == pathname:
-                return no_update, False, no_update
-            return no_update, False, target_path
-        return "explore", False, no_update
+                return no_update, no_update
+            return no_update, target_path
+        return "explore", no_update
     
     @app.callback(
         Output(ids.EXPLORE_PANEL, "style"),
         Output(ids.TRIP_PANEL, "style"),
-        Output(ids.BROWSE_PANEL, "style"),
         Output(ids.LANDMARK_SEARCH_SHELL, "style"),
         Output(ids.MODE_BTN_EXPLORE, "active"),
         Output(ids.MODE_BTN_TRIP, "active"),
         Output(ids.MODE_BTN_BROWSE, "active"),
         Input(ids.MODE_STORE, "data"),
-        Input(ids.BROWSE_OVERLAY_STORE, "data"),
         prevent_initial_call="initial_duplicate",
     )
-    def update_mode_panels(mode, browse_open):
+    def update_mode_panels(mode):
         show = {"display": "flex", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0}
         hide = {"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0}
         search_show = {"display": "block"}
         search_hide = {"display": "none"}
         if mode == "trip":
-            return hide, show, hide, search_hide, False, not browse_open, bool(browse_open)
-        return show, hide, hide, search_show, not browse_open, False, bool(browse_open)
+            return hide, show, search_hide, False, True, False
+        return show, hide, search_show, True, False, False
 
     @app.callback(
         Output(ids.USER_LOCATION_LAYER, "children"),

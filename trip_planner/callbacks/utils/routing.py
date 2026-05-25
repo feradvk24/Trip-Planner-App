@@ -18,27 +18,6 @@ def location_tuple(location):
     return location["lat"], location["lon"]
 
 
-def resolve_visit_order_landmarks(registry, visit_order_ids, position=None):
-    visit_order_lms = []
-    for landmark_id in visit_order_ids or []:
-        if landmark_id == -1:
-            if position:
-                visit_order_lms.append(
-                    Landmark(
-                        id=-1,
-                        name="My location",
-                        location="",
-                        lat=position["lat"],
-                        lon=position["lon"],
-                    )
-                )
-            continue
-        landmark = registry.get_landmark(landmark_id)
-        if landmark:
-            visit_order_lms.append(landmark)
-    return visit_order_lms
-
-
 def build_route_legs(route_point_count, route_result):
     # Indexes refer to the composed route:
     # [custom_start?] + visit_order landmarks + [custom_end?].

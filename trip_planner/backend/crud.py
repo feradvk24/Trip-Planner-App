@@ -482,50 +482,6 @@ def delete_trip(username: str, trip_id: int) -> None:
         db.close()
 
 
-def record_user_landmark_visit(username: str, trip_id: int, landmark_id: int) -> UserLandmarkVisit:
-    """Record a landmark visit for one of the user's trips."""
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter(User.username == username).first()
-        if user is None:
-            raise ValueError(f"User '{username}' not found in database.")
-
-        trip = (
-            db.query(UserTrip)
-            .filter(UserTrip.id == trip_id, UserTrip.user_id == user.id)
-            .first()
-        )
-        if trip is None:
-            raise ValueError(f"Trip {trip_id} not found.")
-
-        existing_visit = (
-            db.query(UserLandmarkVisit)
-            .filter(
-                UserLandmarkVisit.user_id == user.id,
-                UserLandmarkVisit.landmark_id == landmark_id,
-                UserLandmarkVisit.trip_id == trip.id,
-            )
-            .first()
-        )
-        if existing_visit:
-            return existing_visit
-
-        visit = UserLandmarkVisit(
-            user_id=user.id,
-            landmark_id=landmark_id,
-            trip_id=trip.id,
-        )
-        db.add(visit)
-        db.commit()
-        db.refresh(visit)
-        return visit
-    except Exception:
-        db.rollback()
-        raise
-    finally:
-        db.close()
-
-
 def get_user_visited_landmark_ids(username: str) -> set[int]:
     """Return distinct landmark IDs visited by the user across all trips."""
     db = SessionLocal()
@@ -611,27 +567,6 @@ def get_user_monthly_landmark_visit_counts(username: str, months: int = 6) -> li
             }
             for bucket in (_add_months(first_month, offset) for offset in range(months))
         ]
-    finally:
-        db.close()
-
-
-def check_for_user_visit(username: str, landmark_id: int) -> bool:
-    """Return whether the user has visited a landmark on any trip."""
-    db = SessionLocal()
-    try:
-        user = db.query(User).filter(User.username == username).first()
-        if user is None:
-            return False
-
-        visit = (
-            db.query(UserLandmarkVisit.id)
-            .filter(
-                UserLandmarkVisit.user_id == user.id,
-                UserLandmarkVisit.landmark_id == landmark_id,
-            )
-            .first()
-        )
-        return visit is not None
     finally:
         db.close()
 

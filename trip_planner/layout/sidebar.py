@@ -156,12 +156,6 @@ def create_sidebar(active_trip=None, lang="bg"):
         share_trip_btn,
     ], id=ids.TRIP_PANEL, style={"display": "flex" if initial_mode == "trip" else "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0})
 
-    browse_panel = html.Div(
-        [],
-        id=ids.BROWSE_PANEL,
-        style={"display": "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0},
-    )
-
     return html.Div([
         html.Div([
             html.Div([
@@ -174,7 +168,6 @@ def create_sidebar(active_trip=None, lang="bg"):
         landmark_search,
         explore_panel,
         trip_panel,
-        browse_panel,
     ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
 
 

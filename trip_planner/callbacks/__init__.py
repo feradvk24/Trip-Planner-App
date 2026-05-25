@@ -12,6 +12,6 @@ def register_callbacks(app, registry):
     register_explore_callbacks(app, registry)
     register_info_callbacks(app, registry)
     register_view_callbacks(app, registry)
-    register_browse_callbacks(app, registry)
+    register_browse_callbacks(app)
     register_trip_callbacks(app, registry)
     register_review_callbacks(app)
