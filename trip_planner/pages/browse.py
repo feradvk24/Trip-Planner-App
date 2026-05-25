@@ -56,75 +56,6 @@ def layout(lang="bg", **kwargs):
                         [
                             dbc.Tab(
                                 html.Div(
-                                    [
-                                        html.Div(
-                                            id=ids.FEATURED_LANDMARK_NAME,
-                                        ),
-                                        html.Div(
-                                            html.Img(
-                                                id=ids.FEATURED_LANDMARK_IMAGE,
-                                                src=None,
-                                                alt=t("browse.featured_landmark", lang=lang),
-                                                style={
-                                                    "width": "100%",
-                                                    "height": "18rem",
-                                                    "objectFit": "cover",
-                                                    "border": "1px solid #dee2e6",
-                                                    "borderRadius": "0.35rem",
-                                                    "backgroundColor": "#e9ecef",
-                                                    "display": "block",
-                                                },
-                                            ),
-                                            style={
-                                                "maxWidth": "52rem",
-                                                "backgroundColor": "#ffffff",
-                                            },
-                                        ),
-                                        html.Div(
-                                            t("browse.featured_landmark_details", lang=lang),
-                                            id=ids.FEATURED_LANDMARK_DESCRIPTION,
-                                            className="mt-3",
-                                            style={
-                                                "maxWidth": "52rem",
-                                                "fontSize": "1rem",
-                                                "lineHeight": "1.5",
-                                            },
-                                        ),
-                                        dbc.Row(
-                                            [
-                                                dbc.Col(
-                                                    html.A(
-                                                        t("browse.view_in_map", lang=lang),
-                                                        id=ids.FEATURED_LANDMARK_VIEW_MAP,
-                                                        href="#",
-                                                        className="btn btn-primary",
-                                                    ),
-                                                    width="auto",
-                                                ),
-                                                dbc.Col(
-                                                    html.A(
-                                                        t("browse.learn_more", lang=lang),
-                                                        id=ids.FEATURED_LANDMARK_LINK,
-                                                        href="#",
-                                                        target="_blank",
-                                                        rel="noopener noreferrer",
-                                                        className="btn btn-outline-primary",
-                                                    ),
-                                                    width="auto",
-                                                ),
-                                            ],
-                                            className="mt-3",
-                                        )
-                                    ],
-                                    id=ids.FEATURED_LANDMARK_TAB,
-                                    className="p-3",
-                                    style={"height": "calc(100vh - 13rem)", "overflowY": "auto"},
-                                ),
-                                label=t("browse.featured", lang=lang),
-                                tab_id="featured-landmark",
-                            ),
-                            dbc.Tab(
-                                html.Div(
                                     dbc.ListGroup(
                                         id=ids.LOAD_TRIP_LIST,
                                         children=build_load_trip_items(saved_trips),
@@ -149,7 +80,7 @@ def layout(lang="bg", **kwargs):
                             ),
                         ],
                         id=ids.BROWSE_TABS,
-                        active_tab="featured-landmark",
+                        active_tab="my-saved-trips",
                     ),
                 ],
                 id=ids.PAGE_CONTENT,

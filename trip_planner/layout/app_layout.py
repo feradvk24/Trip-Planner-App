@@ -59,20 +59,18 @@ def create_stores(active_trip=None, pending_browse_trip=None, focused_landmark_i
         initial_active_trip = active_trip
         initial_info = initial_active_info(initial_active_trip)
 
-    store_type = "memory" if focused_landmark_id else "session"
-
     return [
-        dcc.Store(id=ids.DESTINATIONS_LIST, data=initial_destinations, storage_type=store_type),
-        dcc.Store(id=ids.VISIT_ORDER_STORE, data=initial_visit_order, storage_type=store_type),
-        dcc.Store(id=ids.MODE_STORE, data=initial_mode, storage_type=store_type),
+        dcc.Store(id=ids.DESTINATIONS_LIST, data=initial_destinations),
+        dcc.Store(id=ids.VISIT_ORDER_STORE, data=initial_visit_order),
+        dcc.Store(id=ids.MODE_STORE, data=initial_mode),
         dcc.Store(id=ids.BROWSE_OVERLAY_STORE, data=False),
         dcc.Store(id=ids.BROWSE_SAVED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.SELECTED_TRIP_STORE, data=None),
-        dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=initial_active_trip, storage_type=store_type),
-        dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None, storage_type=store_type),
-        dcc.Store(id=ids.ACTIVE_INFO_STORE, data=initial_info, storage_type=store_type),
-        dcc.Store(id=ids.OPTIMIZED_TRIP_STORE, data=None, storage_type=store_type),
+        dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=initial_active_trip),
+        dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None),
+        dcc.Store(id=ids.ACTIVE_INFO_STORE, data=initial_info),
+        dcc.Store(id=ids.OPTIMIZED_TRIP_STORE, data=None),
     ]
 
 

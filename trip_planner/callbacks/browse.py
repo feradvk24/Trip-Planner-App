@@ -1,4 +1,4 @@
-from dash import ALL, Input, Output, State, ctx, html, no_update
+from dash import ALL, Input, Output, State, ctx, no_update
 from dash.exceptions import PreventUpdate
 from flask import session
 from flask_login import current_user
@@ -6,7 +6,6 @@ from flask_login import current_user
 import ids
 from backend.crud import (
     delete_trip,
-    get_current_featured_landmark,
     get_public_trips,
     get_user_trips,
     set_active_user_trip,
@@ -23,58 +22,6 @@ def is_browse_path(pathname):
 
 def register_browse_callbacks(app, registry):
     @app.callback(
-        Output(ids.FEATURED_LANDMARK_IMAGE, "src"),
-        Output(ids.FEATURED_LANDMARK_IMAGE, "alt"),
-        Output(ids.FEATURED_LANDMARK_DESCRIPTION, "children"),
-        Output(ids.FEATURED_LANDMARK_LINK, "href"),
-        Output(ids.FEATURED_LANDMARK_LINK, "children"),
-        Output(ids.FEATURED_LANDMARK_LINK, "style"),
-        Output(ids.FEATURED_LANDMARK_NAME, "children"),
-        Output(ids.FEATURED_LANDMARK_VIEW_MAP, "href"),
-        Output(ids.FEATURED_LANDMARK_VIEW_MAP, "style"),
-        Input(ids.BROWSE_TABS, "active_tab", allow_optional=True),
-        State("url", "pathname"),
-    )
-    def render_featured_landmark(active_tab, pathname):
-        lang = get_language_from_url(pathname)
-        hidden_link_style = {"display": "none"}
-        visible_link_style = {"display": "inline-block"}
-        if not is_browse_path(pathname) or active_tab != "featured-landmark":
-            raise PreventUpdate
-
-        featured = get_current_featured_landmark()
-        if not featured:
-            return (
-                None,
-                t("browse.featured_landmark", lang=lang),
-                t("browse.featured_request", lang=lang),
-                "#",
-                t("browse.learn_more", lang=lang),
-                hidden_link_style,
-                html.H3(t("browse.nothing_to_display", lang=lang), className="mb-3"),
-                "#",
-                hidden_link_style,
-            )
-
-        title = featured.get("title") or featured.get("name") or t("browse.featured_landmark", lang=lang)
-        description = featured.get("description") or t("browse.no_featured_description", lang=lang)
-        link_url = featured.get("primary_link_url")
-        return (
-            featured.get("src_link"),
-            featured.get("image_alt") or title,
-            description,
-            link_url or "#",
-            featured.get("primary_link_label") or t("browse.learn_more", lang=lang),
-            visible_link_style if link_url else hidden_link_style,
-            [
-                html.H3(featured.get("name") or t("browse.featured_post", lang=lang), className="mb-3"),
-                html.H4(featured.get("location") or "", className="mb-2 text-muted"),
-            ],
-            f"/{lang}?mode=explore&focus_landmark={featured.get('landmark_id')}" if featured.get("landmark_id") else "#",
-            visible_link_style if featured.get("landmark_id") else hidden_link_style,
-        )
-
-    @app.callback(
         Output(ids.LOAD_TRIP_LIST, "children"),
         Output(ids.USER_SHARED_TRIPS_LIST, "children"),
         Output(ids.BROWSE_SAVED_TRIPS_STORE, "data"),
@@ -89,7 +36,7 @@ def register_browse_callbacks(app, registry):
     def refresh_browse_saved_trips(active_tab, delete_clicks_list, pathname, selected_trip):
         lang = get_language_from_url(pathname)
         on_browse_page = is_browse_path(pathname)
-        active_tab = active_tab or "featured-landmark"
+        active_tab = active_tab or "my-saved-trips"
         selected_trip_data = no_update
         if not on_browse_page:
             raise PreventUpdate
@@ -104,9 +51,6 @@ def register_browse_callbacks(app, registry):
 
         if ctx.triggered_id == ids.BROWSE_TABS:
             selected_trip_data = None
-
-        if active_tab == "featured-landmark":
-            return no_update, no_update, no_update, no_update, selected_trip_data
 
         if active_tab == "my-saved-trips":
             trips = get_user_trips(current_user.id, include_completion_status=True)

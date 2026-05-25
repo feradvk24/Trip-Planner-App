@@ -46,25 +46,6 @@ class LandmarkImage(Base):
     fetched_at = Column(DateTime, nullable=True)
 
 
-class FeaturedLandmark(Base):
-    __tablename__ = "featured_landmarks"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    landmark_id = Column(Integer, ForeignKey("landmarks.id"), nullable=False, index=True)
-
-    title = Column(String(200), nullable=True)
-    description = Column(String(1500), nullable=True)
-
-    image_alt = Column(String(300), nullable=True)
-
-    primary_link_url = Column(String(1000), nullable=True)
-    primary_link_label = Column(String(100), nullable=True)
-
-    starts_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
-    ends_at = Column(DateTime, nullable=True, index=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-
-
 class UserTrip(Base):
     __tablename__ = "user_trips"
 

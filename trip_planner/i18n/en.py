@@ -87,17 +87,8 @@ TRANSLATIONS = {
 
     "browse.title": "Browse Trips",
     "browse.subtitle": "Choose a saved or shared trip to preview its stops.",
-    "browse.featured": "Featured",
-    "browse.view_in_map": "View in map",
-    "browse.learn_more": "Learn more",
-    "browse.featured_landmark": "Featured landmark",
-    "browse.featured_landmark_details": "Featured landmark details will appear here.",
     "browse.my_saved_trips": "My Saved Trips",
     "browse.user_shared_trips": "User Shared Trips",
-    "browse.featured_request": "Request a featured landmark to display curated content here.",
-    "browse.nothing_to_display": "Nothing to display. Request a feature!",
-    "browse.no_featured_description": "No description has been added for this featured landmark yet.",
-    "browse.featured_post": "Featured Post",
 
     "trip_list.empty": "No trips to show...",
     "trip_list.shared_by": "Shared by",
