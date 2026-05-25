@@ -40,16 +40,17 @@ def resolve_visit_order_landmarks(registry, visit_order_ids, position=None):
 def build_route_legs(route_point_count, route_result):
     # Indexes refer to the composed route:
     # [custom_start?] + visit_order landmarks + [custom_end?].
-    return [
+    return tuple([
         {
             "from_index": i,
             "to_index": i + 1,
-            "distance_m": leg.get("distance_m", 0),
-            "duration_s": leg.get("duration_s", 0),
+            "segments": leg.segments,
+            "distance_m": leg.distance_m,
+            "duration_s": leg.duration_s,
         }
         for i, leg in enumerate(route_result.legs)
         if i + 1 < route_point_count
-    ]
+    ])
 
 
 def format_distance(distance_m):

@@ -33,8 +33,9 @@ def build_trip_content(registry, active_trip, lang="bg"):
     passed_coords = []
     current_coords = []
     remaining_coords = []
-    full_trip_coords = [coord for segment in result.segments for coord in segment]
-    for i, segment in enumerate(result.segments):
+    route_segments = [leg.segments for leg in result.legs]
+    full_trip_coords = [coord for segment in route_segments for coord in segment]
+    for i, segment in enumerate(route_segments):
         if is_trip_complete or (active_leg_idx is not None and i < active_leg_idx):
             passed_coords.extend(segment)
         elif active_leg_idx is not None and i == active_leg_idx:

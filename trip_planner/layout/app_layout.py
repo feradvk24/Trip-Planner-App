@@ -72,6 +72,7 @@ def create_stores(active_trip=None, pending_browse_trip=None, focused_landmark_i
         dcc.Store(id=ids.ACTIVE_TRIP_STORE, data=initial_active_trip, storage_type=store_type),
         dcc.Store(id=ids.EXPLORE_MAP_CACHE, data=None, storage_type=store_type),
         dcc.Store(id=ids.ACTIVE_INFO_STORE, data=initial_info, storage_type=store_type),
+        dcc.Store(id=ids.OPTIMIZED_TRIP_STORE, data=None, storage_type=store_type),
     ]
 
 

@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
+from types import SimpleNamespace
 from flask_login import current_user
 
 import ids
@@ -14,7 +15,6 @@ from callbacks.utils.routing import (
     build_route_legs,
     location_tuple,
     resolve_endpoint,
-    resolve_visit_order_landmarks,
 )
 from callbacks.widgets.callback_widgets import (
     build_selected_object_items,
@@ -62,6 +62,7 @@ def register_explore_callbacks(app, registry):
     @app.callback(
         Output(ids.VISIT_ORDER_STORE, "data"),
         Output(ids.WARN_MODAL, "is_open", allow_duplicate=True),
+        Output(ids.OPTIMIZED_TRIP_STORE, "data"),
         Input(ids.OPTIMIZE_ROUTE_BTN, "n_clicks"),
         State(ids.DESTINATIONS_LIST, "data"),
         State(ids.START_POINT_DROPDOWN, "value"),
@@ -76,12 +77,24 @@ def register_explore_callbacks(app, registry):
         if button_label_text(btn_label) == t("route.modify_route", lang=lang):
             raise PreventUpdate
         if not destination_ids or len(destination_ids) < 2:
-            return no_update, True
+            return no_update, True, no_update
         landmarks = registry.get_landmarks(destination_ids)
         start_landmark = resolve_endpoint(registry, start_point_id, position)
         end_landmark = resolve_endpoint(registry, end_point_id, position)
         visit_order = optimize_visit_order(landmarks, start_point=start_landmark, end_point=end_landmark)
-        return visit_order, False
+        result = fetch_route_steps(visit_order)
+
+        optimized_trip_data = {
+            "visit_order": tuple(lm.id for lm in visit_order),
+            "route_legs": build_route_legs(len(visit_order), result),
+            "user_location_start": {"lat": position["lat"], "lon": position["lon"]} if start_point_id == "my_location" and position else None,
+            "user_location_end": {"lat": position["lat"], "lon": position["lon"]} if end_point_id == "my_location" and position else None,
+            "total_distance_m": result.distance_m,
+            "total_duration_s": result.duration_s,
+        }
+
+        return [l.id for l in visit_order], False, optimized_trip_data
+    
 
     @app.callback(
         Output(ids.SUCCESS_TOAST, "is_open"),
@@ -95,8 +108,7 @@ def register_explore_callbacks(app, registry):
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output(ids.START_POINT_DROPDOWN, "disabled"),
         Output(ids.END_POINT_DROPDOWN, "disabled"),
-        Input(ids.VISIT_ORDER_STORE, "data"),
-        State(ids.GEOLOCATION, "position"),
+        Input(ids.OPTIMIZED_TRIP_STORE, "data"),
         State(ids.DESTINATIONS_LIST, "data"),
         State("url", "href"),
         prevent_initial_call=True,
@@ -127,26 +139,50 @@ def register_explore_callbacks(app, registry):
             ),
         ],
     )
-    def render_route(visit_order_ids, position, destination_ids, href):
-        if not visit_order_ids:
+    def render_route(trip_data, destination_ids, href):
+        if not trip_data:
             raise PreventUpdate
         lang = get_language_from_url(href)
-        visit_order = resolve_visit_order_landmarks(registry, visit_order_ids, position=position)
+        visit_order_ids = trip_data.get("visit_order") or []
+        route_legs = trip_data.get("route_legs") or []
 
-        result = fetch_route_steps(visit_order)
-        colormap = cm.get_cmap("viridis", len(result.segments))
-        colors = [mcolors.to_hex(colormap(i)) for i in range(len(result.segments))]
+        route_segments = [leg.get("segments", []) for leg in route_legs]
+        colormap = cm.get_cmap("viridis", len(route_segments))
+        colors = [mcolors.to_hex(colormap(i)) for i in range(len(route_segments))]
         polylines = [
             html.Div(dl.Polyline(positions=segment, color=color, weight=5))
-            for segment, color in zip(result.segments, colors)
+            for segment, color in zip(route_segments, colors)
         ]
+
+        visit_order = []
+        for index, landmark_id in enumerate(visit_order_ids):
+            if landmark_id == -1:
+                location = (
+                    trip_data.get("user_location_start")
+                    if index == 0 else
+                    trip_data.get("user_location_end")
+                )
+                if location:
+                    visit_order.append(SimpleNamespace(
+                        id=-1,
+                        name=t("route.my_location", lang=lang),
+                        location="",
+                        lat=location["lat"],
+                        lon=location["lon"],
+                        link=None,
+                    ))
+                continue
+            landmark = registry.get_landmark(landmark_id)
+            if landmark:
+                visit_order.append(landmark)
+
         access_connectors = build_access_connector_polylines(
             (lm for lm in visit_order if lm.id != -1),
             id_prefix="planned-access-connector",
         )
         route_lines = polylines + access_connectors
 
-        start_is_my_location = visit_order_ids[0] == -1
+        start_is_my_location = bool(visit_order_ids and visit_order_ids[0] == -1)
         visit_num = {}
         for i, lm in enumerate(visit_order):
             if lm.id not in visit_num:
@@ -172,7 +208,7 @@ def register_explore_callbacks(app, registry):
                                 href=lm.link,
                                 target="_blank",
                                 style={"display": "block", "text-align": "center"},
-                            ),
+                            ) if lm.link else None,
                         ])),
                     ],
                     icon=number_icon(visit_num[lm.id]),
@@ -180,8 +216,10 @@ def register_explore_callbacks(app, registry):
                 )
             )
 
-        distance_km = result.distance_m / 1000
-        hours, remainder = divmod(int(result.duration_s), 3600)
+        distance_m = trip_data.get("total_distance_m")
+        duration_s =trip_data.get("total_duration_s")
+        distance_km = distance_m / 1000
+        hours, remainder = divmod(int(duration_s), 3600)
         minutes = remainder // 60
         duration_str = f"{hours}h {minutes}min" if hours else f"{minutes} min"
         stats_content = [
@@ -230,6 +268,7 @@ def register_explore_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "color", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "style", allow_duplicate=True),
         Output(ids.EXPLORE_MAP_CACHE, "data", allow_duplicate=True),
+        Output(ids.OPTIMIZED_TRIP_STORE, "data", allow_duplicate=True),
         Output(ids.SELECTED_OBJECTS_GROUP, "children", allow_duplicate=True),
         Output(ids.START_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Output(ids.END_POINT_DROPDOWN, "disabled", allow_duplicate=True),
@@ -250,6 +289,7 @@ def register_explore_callbacks(app, registry):
             True,
             "secondary",
             {"opacity": "0.45", "flex": "1"},
+            None,
             None,
             build_selected_object_items(registry, destination_ids, lang=lang),
             False,
@@ -312,6 +352,7 @@ def register_explore_callbacks(app, registry):
         Output(ids.SAVE_TRIP_BTN, "color", allow_duplicate=True),
         Output(ids.SAVE_TRIP_BTN, "style", allow_duplicate=True),
         Output(ids.EXPLORE_MAP_CACHE, "data", allow_duplicate=True),
+        Output(ids.OPTIMIZED_TRIP_STORE, "data", allow_duplicate=True),
         Output(ids.START_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Output(ids.END_POINT_DROPDOWN, "disabled", allow_duplicate=True),
         Input(ids.CLEAR_ALL_BTN, "n_clicks"),
@@ -320,7 +361,7 @@ def register_explore_callbacks(app, registry):
     )
     def clear_all(n_clicks, href):
         lang = get_language_from_url(href)
-        return [], [], [], optimize_route_button_children(t("sidebar.optimize_route", lang=lang)), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, None, False, False
+        return [], [], [], optimize_route_button_children(t("sidebar.optimize_route", lang=lang)), "success", False, True, "secondary", {"opacity": "0.45", "flex": "1"}, None, None, False, False
 
     @app.callback(
         Output(ids.START_POINT_DROPDOWN, "options"),

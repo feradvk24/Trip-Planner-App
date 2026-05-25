@@ -6,19 +6,20 @@ from backend.landmark_registry import Landmark
 from backend.tsp_formulas import solve_tsp
 
 
-class RouteResult(NamedTuple):
-    segments: List[List[Tuple[float, float]]]
+class RouteLeg(NamedTuple):
+    segments: List[Tuple[float, float]]
     distance_m: float
     duration_s: float
-    legs: List[dict]
 
 
-def _normalize_coord_pairs(coord_pairs) -> tuple:
-    return tuple((float(lat), float(lon)) for lat, lon in coord_pairs)
+class RouteResult(NamedTuple):
+    distance_m: float
+    duration_s: float
+    legs: List[RouteLeg]
 
 
 @lru_cache(maxsize=128)
-def _fetch_route_cached(coord_pairs: tuple) -> RouteResult:
+def fetch_route_from_coordinates(coord_pairs: tuple) -> RouteResult:
     """
     Cached OSRM call. coord_pairs is a tuple of (lat, lon) tuples so it is
     hashable and safe to use as an lru_cache key.
@@ -38,33 +39,23 @@ def _fetch_route_cached(coord_pairs: tuple) -> RouteResult:
         raise Exception("No route found")
 
     route = data["routes"][0]
-    road_segments = []
     route_legs = []
 
     for leg in route["legs"]:
         leg_coords = []
         for step in leg["steps"]:
             leg_coords.extend((c[1], c[0]) for c in step["geometry"]["coordinates"])
-        if leg_coords:
-            road_segments.append(leg_coords)
-        route_legs.append({
-            "distance_m": leg.get("distance", 0),
-            "duration_s": leg.get("duration", 0),
-        })
+        route_legs.append(RouteLeg(
+            segments=leg_coords,
+            distance_m=leg.get("distance", 0),
+            duration_s=leg.get("duration", 0),
+        ))
 
     return RouteResult(
-        segments=road_segments,
         distance_m=route.get("distance", 0),
         duration_s=route.get("duration", 0),
         legs=route_legs,
     )
-
-
-def fetch_route_steps_from_coordinates(coord_pairs) -> RouteResult:
-    coord_pairs = _normalize_coord_pairs(coord_pairs)
-    if len(coord_pairs) < 2:
-        return RouteResult(segments=[], distance_m=0, duration_s=0, legs=[])
-    return _fetch_route_cached(coord_pairs)
 
 
 def fetch_route_steps(
@@ -80,25 +71,19 @@ def fetch_route_steps(
         coord_pairs.append(end_point)
 
     if len(coord_pairs) < 2:
-        return RouteResult(segments=[], distance_m=0, duration_s=0, legs=[])
-    return fetch_route_steps_from_coordinates(coord_pairs)
+        return RouteResult(distance_m=0, duration_s=0, legs=[])
+    
+    coord_pairs = tuple((float(lat), float(lon)) for lat, lon in coord_pairs)
+    if len(coord_pairs) < 2:
+        return RouteResult(distance_m=0, duration_s=0, legs=[])
+    return fetch_route_from_coordinates(coord_pairs)
 
 
 def optimize_visit_order(
     points: List[Landmark],
     start_point: Optional[Landmark] = None,
     end_point: Optional[Landmark] = None,
-) -> List[int]:
-    return [landmark.id for landmark in solve_tsp(points, start_point, end_point)]
+) -> List[Landmark]:
+    ordered_landmarks = solve_tsp(points, start_point, end_point)
+    return ordered_landmarks
 
-
-def generate_route(
-    points: List[Landmark],
-    start_point: Optional[Landmark] = None,
-    end_point: Optional[Landmark] = None,
-) -> RouteResult:
-    if len(points) < 2:
-        return RouteResult(segments=[], distance_m=0, duration_s=0, legs=[])
-
-    route = solve_tsp(points, start_point, end_point)
-    return fetch_route_steps(route)
