@@ -112,6 +112,8 @@ TRANSLATIONS = {
     "trip_status.distance_to_next": "Разстояние до следващата",
     "trip_status.passed": "Изминато",
     "trip_status.remaining": "Оставащо",
+    "trip_status.final_stop": "Крайна спирка",
+    "trip_status.unknown_destination": "Неизвестна дестинация",
     "trip_markers.start_location": "Начална локация",
     "trip_markers.end_point": "Крайна точка",
     "trip_markers.visited_check": "Посетено",

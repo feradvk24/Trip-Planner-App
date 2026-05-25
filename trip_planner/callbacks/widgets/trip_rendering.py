@@ -138,7 +138,7 @@ def build_trip_content(registry, active_trip, lang="bg"):
                             t("trip_markers.mark_end_visited", lang=lang),
                             className="text-muted",
                             style={"fontSize": "0.95rem"},
-                        ),
+                        ) if end_index not in visited else None,
                         popup_extra,
                     ])),
                 ],

@@ -1,5 +1,7 @@
 from dash.exceptions import PreventUpdate
 
+from i18n import t
+
 
 def sanitize_shared_trip(trip):
     landmark_ids = [landmark_id for landmark_id in (trip.get("landmark_ids") or []) if landmark_id != -1]
@@ -86,19 +88,19 @@ def active_route_leg_index(active_trip):
     return max(0, start_offset + next_idx - 1)
 
 
-def trip_point_summary(registry, visit_order_ids, index, active_trip=None):
+def trip_point_summary(registry, visit_order_ids, index, active_trip=None, lang="bg"):
     if index is None or index < 0:
         return None
     if index == len(visit_order_ids) and active_trip and active_trip.get("custom_end_location"):
-        return {"name": "My location", "location": "Final stop"}
+        return {"name": t("route.my_location", lang=lang), "location": t("trip_status.final_stop", lang=lang)}
     if index >= len(visit_order_ids):
         return None
     landmark_id = visit_order_ids[index]
     if landmark_id == -1:
-        return {"name": "My location", "location": ""}
+        return {"name": t("route.my_location", lang=lang), "location": ""}
     landmark = registry.get_landmark(landmark_id)
     if not landmark:
-        return {"name": "Unknown destination", "location": ""}
+        return {"name": t("trip_status.unknown_destination", lang=lang), "location": ""}
     return {"name": landmark.name, "location": landmark.location}
 
 

@@ -122,6 +122,8 @@ TRANSLATIONS = {
     "trip_status.distance_to_next": "Distance to next",
     "trip_status.passed": "Passed",
     "trip_status.remaining": "Remaining",
+    "trip_status.final_stop": "Final stop",
+    "trip_status.unknown_destination": "Unknown destination",
 
     "trip_markers.start_location": "Start location",
     "trip_markers.end_point": "End point",

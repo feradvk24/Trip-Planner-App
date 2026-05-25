@@ -54,7 +54,7 @@ def register_trip_callbacks(app, registry):
         current_idx = clamp_stop_index(active_trip)
         is_trip_complete = trip_complete(active_trip)
         next_action_idx = next_action_stop_index(active_trip)
-        current_point = trip_point_summary(registry, stop_ids, current_idx, active_trip)
+        current_point = trip_point_summary(registry, stop_ids, current_idx, active_trip, lang=lang)
         custom_start = active_trip.get("custom_start_location")
         show_current_point = bool(active_trip.get("visited_indices"))
         if show_current_point:
@@ -64,14 +64,14 @@ def register_trip_callbacks(app, registry):
                 next_idx = next_action_idx
         else:
             next_idx = next_action_idx
-        next_point = trip_point_summary(registry, stop_ids, next_idx, active_trip) if next_idx is not None else None
+        next_point = trip_point_summary(registry, stop_ids, next_idx, active_trip, lang=lang) if next_idx is not None else None
         route_legs = get_route_legs(registry, active_trip)
 
         distance_to_next = None
         active_leg_idx = active_route_leg_index(active_trip)
         if active_leg_idx is not None:
-            for leg in route_legs:
-                if leg.get("from_index") == active_leg_idx:
+            for fallback_index, leg in enumerate(route_legs):
+                if leg.get("from_index") == active_leg_idx or fallback_index == active_leg_idx:
                     distance_to_next = leg.get("distance_m", 0)
                     break
 
