@@ -197,8 +197,8 @@ def create_user_menu(fix_to_right=False, lang="bg"):
                     dbc.RadioItems(
                         id=ids.LANGUAGE_RADIO,
                         options=[
-                            {"label": t("sidebar.bulgarian", lang=lang), "value": "bg"},
-                            {"label": t("sidebar.english", lang=lang), "value": "en"},
+                            {"label": "Български", "value": "bg"},
+                            {"label": "English", "value": "en"},
                         ],
                         value=lang,
                         inline=False,

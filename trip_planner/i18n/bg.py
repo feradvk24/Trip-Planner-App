@@ -17,8 +17,6 @@ TRANSLATIONS = {
     "sidebar.signed_in_as": "Влязъл като",
     "sidebar.statistics": "Статистика",
     "sidebar.language": "Език",
-    "sidebar.bulgarian": "Български",
-    "sidebar.english": "Английски",
     "sidebar.logout": "Изход",
 
     "mode.explore": "Карта",

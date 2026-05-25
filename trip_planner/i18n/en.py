@@ -21,8 +21,6 @@ TRANSLATIONS = {
     "sidebar.signed_in_as": "Signed in as",
     "sidebar.statistics": "Statistics",
     "sidebar.language": "Language",
-    "sidebar.bulgarian": "Bulgarian",
-    "sidebar.english": "English",
     "sidebar.logout": "Logout",
     "mode.explore": "Map",
     "mode.trip": "Trip",
