@@ -52,13 +52,11 @@ def register_view_callbacks(app, registry):
         Input(ids.MODE_BTN_EXPLORE, "n_clicks"),
         Input(ids.MODE_BTN_TRIP, "n_clicks"),
         Input(ids.MODE_BTN_BROWSE, "n_clicks"),
-        Input(ids.LOAD_TRIP_BTN, "n_clicks"),
-        Input(ids.BROWSE_CLOSE_BTN, "n_clicks"),
         State("url", "pathname"),
         prevent_initial_call=True,
     )
-    def switch_mode(explore_clicks, trip_clicks, browse_clicks, load_trip_clicks, browse_close_clicks, pathname):
-        if not any([explore_clicks, trip_clicks, browse_clicks, load_trip_clicks, browse_close_clicks]):
+    def switch_mode(explore_clicks, trip_clicks, browse_clicks, pathname):
+        if not any([explore_clicks, trip_clicks, browse_clicks]):
             raise PreventUpdate
         if ctx.triggered_id == ids.MODE_BTN_TRIP:
             return "trip", False, no_update
@@ -67,10 +65,6 @@ def register_view_callbacks(app, registry):
             if target_path == pathname:
                 return no_update, False, no_update
             return no_update, False, target_path
-        if ctx.triggered_id == ids.LOAD_TRIP_BTN:
-            return no_update, True, no_update
-        if ctx.triggered_id == ids.BROWSE_CLOSE_BTN:
-            return no_update, False, no_update
         return "explore", False, no_update
     
     @app.callback(
@@ -93,25 +87,6 @@ def register_view_callbacks(app, registry):
         if mode == "trip":
             return hide, show, hide, search_hide, False, not browse_open, bool(browse_open)
         return show, hide, hide, search_show, not browse_open, False, bool(browse_open)
-
-    @app.callback(
-        Output(ids.BROWSE_OVERLAY, "style"),
-        Input(ids.BROWSE_OVERLAY_STORE, "data"),
-    )
-    def update_browse_overlay(browse_open):
-        base_style = {
-            "position": "absolute",
-            "inset": 0,
-            "zIndex": 1000,
-            "alignItems": "center",
-            "justifyContent": "center",
-            "backgroundColor": "rgba(248, 249, 250, 0.38)",
-            "backdropFilter": "blur(1px)",
-            "pointerEvents": "auto",
-        }
-        if browse_open:
-            return {**base_style, "display": "flex"}
-        return {**base_style, "display": "none"}
 
     @app.callback(
         Output(ids.USER_LOCATION_LAYER, "children"),

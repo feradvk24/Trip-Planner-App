@@ -9,7 +9,7 @@ from backend.crud import get_active_user_trip
 from callbacks.utils.trip_state import next_action_stop_index
 from layout.info_sidebar import create_info_sidebar
 from layout.map import create_map
-from layout.overlays import create_browse_overlay, create_landmark_review_pane
+from layout.overlays import create_landmark_review_pane
 from layout.sidebar import create_sidebar, create_user_menu
 from styles import CONTENT_STYLE
 from i18n import t
@@ -146,7 +146,6 @@ def create_main_content(markers, active_trip=None, focused_landmark=None, lang="
                             html.Div(
                                 [
                                     create_map(initial_markers, initial_viewport),
-                                    create_browse_overlay(lang=lang),
                                 ],
                                 className="flex-grow-1",
                                 style={"minHeight": 0, "position": "relative"},

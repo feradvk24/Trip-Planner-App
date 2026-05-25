@@ -87,12 +87,6 @@ def create_sidebar(active_trip=None, lang="bg"):
         disabled=True,
         style={"opacity": "0.45", "flex": "1"},
     )
-    load_trip_btn = dbc.Button(
-        [html.I(className="bi bi-folder2-open me-2"), t("sidebar.load_trip", lang=lang)],
-        color="info",
-        className="mt-1 w-100",
-        id=ids.LOAD_TRIP_BTN,
-    )
     share_trip_btn = dbc.Button(
         [html.I(className="bi bi-share me-2"), t("sidebar.share_trip", lang=lang)],
         color="info",
@@ -142,7 +136,6 @@ def create_sidebar(active_trip=None, lang="bg"):
     ], id=ids.EXPLORE_PANEL, style={"display": "flex" if initial_mode == "explore" else "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0})
 
     trip_panel = html.Div([
-        load_trip_btn,
         html.Div(
             id=ids.TRIP_STATUS_PANEL,
             children=[

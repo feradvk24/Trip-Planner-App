@@ -32,10 +32,10 @@ def register_browse_callbacks(app, registry):
         Output(ids.FEATURED_LANDMARK_NAME, "children"),
         Output(ids.FEATURED_LANDMARK_VIEW_MAP, "href"),
         Output(ids.FEATURED_LANDMARK_VIEW_MAP, "style"),
-        Input("url", "pathname"),
-        Input(ids.BROWSE_TABS, "active_tab"),
+        Input(ids.BROWSE_TABS, "active_tab", allow_optional=True),
+        State("url", "pathname"),
     )
-    def render_featured_landmark(pathname, active_tab):
+    def render_featured_landmark(active_tab, pathname):
         lang = get_language_from_url(pathname)
         hidden_link_style = {"display": "none"}
         visible_link_style = {"display": "inline-block"}
@@ -80,18 +80,20 @@ def register_browse_callbacks(app, registry):
         Output(ids.BROWSE_SAVED_TRIPS_STORE, "data"),
         Output(ids.BROWSE_SHARED_TRIPS_STORE, "data"),
         Output(ids.SELECTED_TRIP_STORE, "data", allow_duplicate=True),
-        Input("url", "pathname"),
-        Input(ids.BROWSE_OVERLAY_STORE, "data", allow_optional=True),
-        Input(ids.BROWSE_TABS, "active_tab"),
+        Input(ids.BROWSE_TABS, "active_tab", allow_optional=True),
         Input({"type": "delete-trip-item", "index": ALL}, "n_clicks"),
+        State("url", "pathname"),
         State(ids.SELECTED_TRIP_STORE, "data"),
         prevent_initial_call=True,
     )
-    def refresh_browse_saved_trips(pathname, browse_open, active_tab, delete_clicks_list, selected_trip):
+    def refresh_browse_saved_trips(active_tab, delete_clicks_list, pathname, selected_trip):
         lang = get_language_from_url(pathname)
         on_browse_page = is_browse_path(pathname)
         active_tab = active_tab or "featured-landmark"
         selected_trip_data = no_update
+        if not on_browse_page:
+            raise PreventUpdate
+
         if isinstance(ctx.triggered_id, dict) and ctx.triggered_id.get("type") == "delete-trip-item":
             trip_id = ctx.triggered_id["index"]
             delete_trip(current_user.id, trip_id)
@@ -100,9 +102,7 @@ def register_browse_callbacks(app, registry):
             trips = get_user_trips(current_user.id, include_completion_status=True)
             return build_load_trip_items(trips, lang=lang), no_update, trips, no_update, selected_trip_data
 
-        if not browse_open and not on_browse_page:
-            raise PreventUpdate
-        if ctx.triggered_id in ("url", ids.BROWSE_OVERLAY_STORE, ids.BROWSE_TABS):
+        if ctx.triggered_id == ids.BROWSE_TABS:
             selected_trip_data = None
 
         if active_tab == "featured-landmark":
