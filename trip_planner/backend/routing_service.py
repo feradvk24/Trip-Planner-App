@@ -2,7 +2,6 @@ import requests
 from functools import lru_cache
 from typing import List, NamedTuple, Optional, Tuple
 
-from backend.api_client import post_json_to_endpoint
 from backend.landmark_registry import Landmark
 from backend.tsp_formulas import solve_tsp
 
@@ -12,24 +11,6 @@ class RouteResult(NamedTuple):
     distance_m: float
     duration_s: float
     legs: List[dict]
-
-
-def route_result_to_dict(result: RouteResult) -> dict:
-    return {
-        "segments": result.segments,
-        "distance_m": result.distance_m,
-        "duration_s": result.duration_s,
-        "legs": result.legs,
-    }
-
-
-def route_result_from_dict(data: dict) -> RouteResult:
-    return RouteResult(
-        segments=data.get("segments", []),
-        distance_m=data.get("distance_m", 0),
-        duration_s=data.get("duration_s", 0),
-        legs=data.get("legs", []),
-    )
 
 
 def _normalize_coord_pairs(coord_pairs) -> tuple:
@@ -86,24 +67,6 @@ def fetch_route_steps_from_coordinates(coord_pairs) -> RouteResult:
     return _fetch_route_cached(coord_pairs)
 
 
-def _post_route_to_flask_endpoint(coord_pairs: tuple) -> RouteResult:
-    payload = {
-        "coordinates": [
-            {"lat": lat, "lon": lon}
-            for lat, lon in coord_pairs
-        ]
-    }
-    data = post_json_to_endpoint(
-        "/api/osrm-trip-routing",
-        payload,
-        "ROUTE_API_URL",
-        "Route API returned an error",
-    )
-    if data is None:
-        return fetch_route_steps_from_coordinates(coord_pairs)
-    return route_result_from_dict(data)
-
-
 def fetch_route_steps(
     waypoints: List[Landmark],
     start_point: Optional[Tuple[float, float]] = None,
@@ -118,32 +81,7 @@ def fetch_route_steps(
 
     if len(coord_pairs) < 2:
         return RouteResult(segments=[], distance_m=0, duration_s=0, legs=[])
-    return _post_route_to_flask_endpoint(_normalize_coord_pairs(coord_pairs))
-
-
-def _endpoint_payload(point: Optional[Landmark]) -> Optional[dict]:
-    if point is None:
-        return None
-    if point.id == -1:
-        return {
-            "type": "coordinate",
-            "lat": point.lat,
-            "lon": point.lon,
-            "name": point.name,
-        }
-    return {"type": "landmark", "id": point.id}
-
-
-def _post_optimize_to_flask_endpoint(payload: dict) -> list[int]:
-    data = post_json_to_endpoint(
-        "/api/optimize-visit-order",
-        payload,
-        "OPTIMIZE_VISIT_ORDER_API_URL",
-        "Trip API returned an error",
-    )
-    if data is None:
-        return []
-    return data.get("visit_order", [])
+    return fetch_route_steps_from_coordinates(coord_pairs)
 
 
 def optimize_visit_order(
@@ -151,14 +89,6 @@ def optimize_visit_order(
     start_point: Optional[Landmark] = None,
     end_point: Optional[Landmark] = None,
 ) -> List[int]:
-    payload = {
-        "landmark_ids": [point.id for point in points],
-        "start_point": _endpoint_payload(start_point),
-        "end_point": _endpoint_payload(end_point),
-    }
-    visit_order = _post_optimize_to_flask_endpoint(payload)
-    if visit_order:
-        return visit_order
     return [landmark.id for landmark in solve_tsp(points, start_point, end_point)]
 
 
