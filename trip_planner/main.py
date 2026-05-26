@@ -36,7 +36,7 @@ server.teardown_appcontext(shutdown_session)
 @server.before_request
 def require_login():
     # Allow static assets, the login page itself, and Dash's internal routes
-    allowed_paths = {"/login", "/verify-email", "/_dash-layout", "/_dash-dependencies", "/_reload-hash"}
+    allowed_paths = {"/login", "/register", "/verify-email", "/_dash-layout", "/_dash-dependencies", "/_reload-hash"}
     if (
         request.path.startswith("/assets/")
         or request.path.startswith("/verify-email/")
