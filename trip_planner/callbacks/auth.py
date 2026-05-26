@@ -1,3 +1,5 @@
+from urllib.parse import parse_qs
+
 from dash import Input, Output, State, no_update
 from dash.exceptions import PreventUpdate
 from flask_login import login_user
@@ -8,6 +10,25 @@ from i18n import DEFAULT_LANGUAGE
 
 
 def register_auth_callbacks(app):
+    @app.callback(
+        Output(ids.LOGIN_VERIFICATION_TOAST, "children"),
+        Output(ids.LOGIN_VERIFICATION_TOAST, "header"),
+        Output(ids.LOGIN_VERIFICATION_TOAST, "icon"),
+        Output(ids.LOGIN_VERIFICATION_TOAST, "is_open"),
+        Input("url", "search"),
+    )
+    def show_verification_toast(search):
+        if not search:
+            raise PreventUpdate
+
+        verified = parse_qs(search.lstrip("?")).get("verified", [None])[0]
+        if verified == "1":
+            return "Your email has been verified successfully.", "Email verified", "success", True
+        if verified == "0":
+            return "Failed to verify your email. The link may be invalid or expired.", "Verification failed", "danger", True
+
+        raise PreventUpdate
+
     @app.callback(
         Output("url", "href", allow_duplicate=True),
         Output(ids.LOGIN_ALERT, "children"),
@@ -22,6 +43,10 @@ def register_auth_callbacks(app):
             raise PreventUpdate
         if not username or not password:
             return no_update, "Please enter both username and password.", True
+        if len(username.strip()) < 6:
+            return no_update, "Username must be at least 6 characters.", True
+        if len(password) < 6:
+            return no_update, "Password must be at least 6 characters.", True
         auth_status = authenticate_user(username, password)
         if auth_status == AuthStatus.OK:
             login_user(User(username))
@@ -41,7 +66,7 @@ def register_auth_callbacks(app):
             raise PreventUpdate
         if current_style and current_style.get("display") == "none":
             return {"display": "block"}
-        return {"display": "none"}
+        return no_update
 
     @app.callback(
         Output("url", "href", allow_duplicate=True),
@@ -63,6 +88,8 @@ def register_auth_callbacks(app):
             raise PreventUpdate
         if not username or not password:
             return no_update, "Please enter both username and password.", True
+        if len(username.strip()) < 6:
+            return no_update, "Username must be at least 6 characters.", True
         if not email or not email.strip():
             return no_update, "Please enter your email.", True
         if not first_name or not first_name.strip():
@@ -71,7 +98,7 @@ def register_auth_callbacks(app):
             return no_update, "Please enter your last name.", True
         if len(password) < 6:
             return no_update, "Password must be at least 6 characters.", True
-        if create_user(username, email.strip(), password, first_name.strip(), last_name.strip()):
+        if create_user(username.strip(), email.strip(), password, first_name.strip(), last_name.strip()):
             return no_update, "Registration successful. Please verify your email before logging in.", True
         return no_update, "Username or email already exists.", True
 

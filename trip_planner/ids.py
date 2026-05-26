@@ -43,6 +43,7 @@ REGISTER_FIELDS = "register-fields"
 LOGOUT_BUTTON = "logout-button"
 USER_MENU = "user-menu"
 LOGIN_ALERT = "login-alert"
+LOGIN_VERIFICATION_TOAST = "login-verification-toast"
 PAGE_CONTENT = "page-content"
 
 # Geolocation
