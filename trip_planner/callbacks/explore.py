@@ -6,8 +6,8 @@ from flask_login import current_user
 
 import ids
 from backend.crud import get_user_visited_landmark_ids, save_trip, user_trip_name_exists
-from backend.landmark_registry import LandmarkRegistry
-from backend.routing_service import fetch_route_steps, optimize_visit_order
+from services.landmark_registry import LandmarkRegistry
+from services.trip_optimization import fetch_route_steps, optimize_visit_order
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import (
     build_route_legs,

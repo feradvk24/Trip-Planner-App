@@ -4,8 +4,8 @@ from typing import List, NamedTuple, Optional, Tuple
 
 import polyline
 
-from backend.landmark_registry import Landmark
-from backend.tsp_formulas import solve_tsp
+from services.landmark_registry import Landmark
+from services.trip_optimization.tsp_formulas import solve_tsp
 
 
 class RouteLeg(NamedTuple):
@@ -87,7 +87,7 @@ def fetch_route_steps(
 
     if len(coord_pairs) < 2:
         return RouteResult(distance_m=0, duration_s=0, legs=[])
-    
+
     coord_pairs = tuple((float(lat), float(lon)) for lat, lon in coord_pairs)
     if len(coord_pairs) < 2:
         return RouteResult(distance_m=0, duration_s=0, legs=[])
@@ -101,4 +101,3 @@ def optimize_visit_order(
 ) -> List[Landmark]:
     ordered_landmarks = solve_tsp(points, start_point, end_point)
     return ordered_landmarks
-

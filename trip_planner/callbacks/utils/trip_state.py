@@ -35,7 +35,7 @@ def optimized_trip_from_trip(trip, registry=None):
     route_legs = trip.get("route_legs") or []
     if registry and len(visit_order) >= 2 and not any(leg.get("polyline") for leg in route_legs):
         try:
-            from backend.routing_service import fetch_route_steps
+            from services.trip_optimization import fetch_route_steps
             from callbacks.utils.routing import build_route_legs
 
             route_result = fetch_route_steps(registry.landmarks_by_ids(visit_order))

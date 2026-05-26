@@ -3,7 +3,7 @@ from dash.exceptions import PreventUpdate
 
 import ids
 from backend.crud import get_landmark_image, get_landmark_review_summary, get_landmark_reviews
-from backend.landmark_registry import LandmarkRegistry
+from services.landmark_registry import LandmarkRegistry
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.trip_state import next_action_stop_index
 from callbacks.widgets.info_widgets import build_empty_info, build_landmark_info, build_trip_info

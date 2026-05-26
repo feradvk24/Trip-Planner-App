@@ -1,6 +1,6 @@
 import dash
 
-from backend.landmark_registry import LandmarkRegistry
+from services.landmark_registry import LandmarkRegistry
 from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
 from layout.app_layout import create_authenticated_layout
 from layout.markers import create_markers

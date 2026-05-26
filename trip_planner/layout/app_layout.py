@@ -6,7 +6,7 @@ from flask_login import current_user
 
 import ids
 from backend.crud import get_active_user_trip, get_public_trip
-from backend.landmark_registry import LandmarkRegistry
+from services.landmark_registry import LandmarkRegistry
 from callbacks.utils.trip_state import next_action_stop_index, optimized_trip_from_trip, sanitize_shared_trip
 from layout.info_sidebar import create_info_sidebar
 from layout.map import create_map

@@ -5,7 +5,7 @@ from flask_login import current_user
 
 import ids
 from backend.crud import get_user_landmark_visit_history, get_user_monthly_landmark_visit_counts, total_landmark_visits_for_user
-from backend.landmark_registry import LandmarkRegistry
+from services.landmark_registry import LandmarkRegistry
 from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, t
 from layout.sidebar import create_user_menu
 

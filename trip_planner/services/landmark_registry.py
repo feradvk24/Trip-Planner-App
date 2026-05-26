@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
+
 @dataclass
 class Landmark:
     id: int
@@ -8,7 +9,7 @@ class Landmark:
     location: str
     lat: float
     lon: float
-    link: str = "#" 
+    link: str = "#"
     access_point: Optional[dict] = None
 
     def routing_coordinates(self):
@@ -22,6 +23,7 @@ class Landmark:
 
     def __repr__(self):
         return f"Landmark(id={self.id}, name='{self.name}', location='{self.location}', lat={self.lat}, lon={self.lon})"
+
 
 class LandmarkRegistry:
     _instance = None
@@ -60,7 +62,7 @@ class LandmarkRegistry:
 
     def landmarks_by_ids(self, ids):
         return [self._landmarks[i] for i in ids if i in self._landmarks]
-    
+
     @property
     def landmarks(self):
         return list(self._landmarks.values())

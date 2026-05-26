@@ -1,7 +1,7 @@
 import polyline
 
-from backend.routing_service import fetch_route_steps
-from backend.landmark_registry import Landmark
+from services.landmark_registry import Landmark
+from services.trip_optimization import fetch_route_steps
 
 
 def resolve_endpoint(registry, point_id, position):

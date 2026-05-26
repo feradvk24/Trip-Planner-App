@@ -5,7 +5,7 @@ from flask_login import current_user
 
 import ids
 from backend.crud import create_trip_completion, update_trip_progress
-from backend.landmark_registry import LandmarkRegistry
+from services.landmark_registry import LandmarkRegistry
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import format_distance, get_route_legs
 from callbacks.utils.trip_state import (
