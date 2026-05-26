@@ -10,6 +10,7 @@ load_dotenv()
 
 from backend.auth import init_login_manager
 from backend.database import create_database_if_missing, init_db, shutdown_session
+from backend.routes import register_auth_routes
 from callbacks import register_callbacks
 from layout.app_layout import create_app_layout
 
@@ -35,9 +36,10 @@ server.teardown_appcontext(shutdown_session)
 @server.before_request
 def require_login():
     # Allow static assets, the login page itself, and Dash's internal routes
-    allowed_paths = {"/login", "/_dash-layout", "/_dash-dependencies", "/_reload-hash"}
+    allowed_paths = {"/login", "/verify-email", "/_dash-layout", "/_dash-dependencies", "/_reload-hash"}
     if (
         request.path.startswith("/assets/")
+        or request.path.startswith("/verify-email/")
         or request.path.startswith("/_dash-component-suites/")
         or request.path.startswith("/_dash-update-component")
         or request.path in allowed_paths
@@ -52,6 +54,8 @@ def logout():
     logout_user()
     return redirect("/login")
 
+
+register_auth_routes(server)
 
 app.layout = create_app_layout
 

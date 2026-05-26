@@ -1,6 +1,9 @@
 import hashlib
 import os
 import secrets
+import smtplib
+from datetime import datetime, timedelta, timezone
+from email.message import EmailMessage
 from enum import Enum
 
 from flask_login import LoginManager, UserMixin
@@ -34,6 +37,7 @@ def create_user(username: str, email: str, password: str, first_name: str, last_
             return False
         salt = secrets.token_hex(16)
         hashed = _hash_password(password, salt)
+        raw_verification_token, verification_token_hash, verification_token_expires_at = generate_verification_token()
         user = UserModel(
             username=username,
             email=email,
@@ -41,9 +45,12 @@ def create_user(username: str, email: str, password: str, first_name: str, last_
             last_name=last_name,
             salt=salt,
             password=hashed,
+            verification_token_hash=verification_token_hash,
+            verification_token_expires_at=verification_token_expires_at,
         )
         db.add(user)
         db.commit()
+        send_verification_email(email, raw_verification_token)
         return True
     except Exception:
         db.rollback()
@@ -96,3 +103,47 @@ def init_login_manager(server):
             db.close()
 
     return login_manager
+
+
+def generate_verification_token():
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+
+    return raw_token, token_hash, expires_at
+
+
+def send_verification_email(email: str, raw_token: str) -> None:
+    smtp_host = os.environ.get("SMTP_HOST")
+    smtp_port = int(os.environ.get("SMTP_PORT", "465"))
+    smtp_username = os.environ.get("SMTP_USERNAME")
+    smtp_password = os.environ.get("SMTP_PASSWORD")
+    sender = os.environ.get("SMTP_FROM_EMAIL") or smtp_username
+    app_base_url = os.environ.get("APP_BASE_URL", "http://localhost:8050").rstrip("/")
+    use_ssl = os.environ.get("SMTP_USE_SSL", "true").lower() in {"1", "true", "yes"}
+    use_tls = os.environ.get("SMTP_USE_TLS", "false").lower() in {"1", "true", "yes"}
+
+    if not smtp_host or not sender:
+        raise RuntimeError("SMTP_HOST and SMTP_FROM_EMAIL or SMTP_USERNAME are required to send verification emails.")
+
+    verification_url = f"{app_base_url}/verify-email/{raw_token}"
+    message = EmailMessage()
+    message["Subject"] = "Verify your Explore Bulgaria email"
+    message["From"] = sender
+    message["To"] = email
+    message.set_content(
+        "Welcome to Explore Bulgaria.\n\n"
+        "Use this link to verify your email address:\n"
+        f"{verification_url}\n\n"
+        "This verification link expires in 24 hours.\n\n"
+    )
+
+    smtp_class = smtplib.SMTP_SSL if use_ssl else smtplib.SMTP
+    with smtp_class(smtp_host, smtp_port) as smtp:
+        smtp.ehlo()
+        if use_tls:
+            smtp.starttls()
+            smtp.ehlo()
+        if smtp_username and smtp_password:
+            smtp.login(smtp_username, smtp_password)
+        smtp.send_message(message)
