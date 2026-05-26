@@ -1,8 +1,15 @@
 import hashlib
 import os
 import secrets
+from enum import Enum
 
 from flask_login import LoginManager, UserMixin
+
+
+class AuthStatus(Enum):
+    INVALID = "invalid"
+    UNVERIFIED = "unverified"
+    OK = "ok"
 
 
 class User(UserMixin):
@@ -47,17 +54,25 @@ def create_user(username: str, email: str, password: str, first_name: str, last_
 
 def verify_user(username: str, password: str) -> bool:
     """Check credentials against the DB. Returns True if valid."""
-    from backend.database import SessionLocal
-    from backend.models import User as UserModel
-    db = SessionLocal()
-    try:
-        user = db.query(UserModel).filter(UserModel.username == username).first()
-        if not user:
-            return False
-        hashed = _hash_password(password, user.salt)
-        return secrets.compare_digest(hashed, user.password)
-    finally:
-        db.close()
+    return authenticate_user(username, password) in {AuthStatus.OK, AuthStatus.UNVERIFIED}
+
+
+def authenticate_user(username: str, password: str) -> AuthStatus:
+    """Check credentials and email verification status."""
+    from backend.crud import get_user_auth_record
+
+    user = get_user_auth_record(username)
+    if not user:
+        return AuthStatus.INVALID
+
+    hashed = _hash_password(password, user["salt"])
+    if not secrets.compare_digest(hashed, user["password"]):
+        return AuthStatus.INVALID
+
+    if not user["is_verified"]:
+        return AuthStatus.UNVERIFIED
+
+    return AuthStatus.OK
 
 
 def init_login_manager(server):

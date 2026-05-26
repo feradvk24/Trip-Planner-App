@@ -3,7 +3,7 @@ from dash.exceptions import PreventUpdate
 from flask_login import login_user
 
 import ids
-from backend.auth import User, create_user, verify_user
+from backend.auth import AuthStatus, User, authenticate_user, create_user
 from i18n import DEFAULT_LANGUAGE
 
 
@@ -22,9 +22,12 @@ def register_auth_callbacks(app):
             raise PreventUpdate
         if not username or not password:
             return no_update, "Please enter both username and password.", True
-        if verify_user(username, password):
+        auth_status = authenticate_user(username, password)
+        if auth_status == AuthStatus.OK:
             login_user(User(username))
             return f"/{DEFAULT_LANGUAGE}", "", False
+        if auth_status == AuthStatus.UNVERIFIED:
+            return no_update, "Please verify your email before logging in.", True
         return no_update, "Invalid username or password.", True
 
     @app.callback(
@@ -69,8 +72,7 @@ def register_auth_callbacks(app):
         if len(password) < 6:
             return no_update, "Password must be at least 6 characters.", True
         if create_user(username, email.strip(), password, first_name.strip(), last_name.strip()):
-            login_user(User(username))
-            return f"/{DEFAULT_LANGUAGE}", "", False
+            return no_update, "Registration successful. Please verify your email before logging in.", True
         return no_update, "Username or email already exists.", True
 
     @app.callback(

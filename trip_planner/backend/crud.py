@@ -93,6 +93,23 @@ def get_user_email(username: str) -> str | None:
         db.close()
 
 
+def get_user_auth_record(username: str) -> dict | None:
+    """Return the fields needed to authenticate a user."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
+            return None
+        return {
+            "username": user.username,
+            "salt": user.salt,
+            "password": user.password,
+            "is_verified": user.is_verified,
+        }
+    finally:
+        db.close()
+
+
 def get_landmarks() -> list[dict]:
     """Return all landmarks in the shape used by LandmarkRegistry."""
     db = SessionLocal()

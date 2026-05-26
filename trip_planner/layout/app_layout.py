@@ -181,6 +181,9 @@ def create_main_content(markers, active_trip=None, focused_landmark=None, lang="
 
 
 def create_authenticated_layout(markers, include_location=True, focused_landmark_id=None, lang="bg"):
+    if not current_user.is_authenticated:
+        return dcc.Location(id="auth-redirect", href="/login")
+
     registry = LandmarkRegistry.get_landmarks()
     pending_browse_trip = resolve_pending_browse_trip(
         session.pop("pending_browse_trip", None),
