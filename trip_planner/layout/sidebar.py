@@ -3,6 +3,7 @@ from dash import dcc, html
 from flask_login import current_user
 
 import ids
+from backend.crud import get_user_email
 from styles import SIDEBAR_STYLE
 from i18n import t
 
@@ -173,6 +174,7 @@ def create_sidebar(active_trip=None, lang="bg"):
 
 def create_user_menu(fix_to_right=False, lang="bg"):
     username = current_user.id if current_user.is_authenticated else "User"
+    email = get_user_email(username)
     right_offset = "0.75rem" if fix_to_right else "21rem"
     return dbc.DropdownMenu(
         id=ids.USER_MENU,
@@ -182,6 +184,7 @@ def create_user_menu(fix_to_right=False, lang="bg"):
                 [
                     html.Div(t("sidebar.signed_in_as", lang=lang), className="text-muted", style={"fontSize": "0.75rem"}),
                     html.Div(username, style={"fontWeight": "600"}),
+                    html.Div(email, className="text-muted", style={"fontSize": "0.8rem"}) if email else None,
                 ],
                 header=True,
             ),

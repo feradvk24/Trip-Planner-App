@@ -66,7 +66,12 @@ def _migrate_landmarks():
 def _migrate_users():
     """Add columns introduced after initial user schema creation (idempotent)."""
     migrations = [
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_hash VARCHAR(255)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTAMP",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS active_trip_id INTEGER",
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email_unique ON users (email) WHERE email IS NOT NULL",
         """
         DO $$
         BEGIN

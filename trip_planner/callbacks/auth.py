@@ -47,28 +47,31 @@ def register_auth_callbacks(app):
         Input(ids.REGISTER_BUTTON, "n_clicks"),
         State(ids.LOGIN_USERNAME, "value"),
         State(ids.LOGIN_PASSWORD, "value"),
+        State(ids.REGISTER_EMAIL, "value"),
         State(ids.REGISTER_FIRST_NAME, "value"),
         State(ids.REGISTER_LAST_NAME, "value"),
         State(ids.REGISTER_FIELDS, "style"),
         prevent_initial_call=True,
     )
-    def handle_register(n_clicks, username, password, first_name, last_name, fields_style):
+    def handle_register(n_clicks, username, password, email, first_name, last_name, fields_style):
         if not n_clicks:
             raise PreventUpdate
         if fields_style and fields_style.get("display") == "none":
             raise PreventUpdate
         if not username or not password:
             return no_update, "Please enter both username and password.", True
+        if not email or not email.strip():
+            return no_update, "Please enter your email.", True
         if not first_name or not first_name.strip():
             return no_update, "Please enter your first name.", True
         if not last_name or not last_name.strip():
             return no_update, "Please enter your last name.", True
         if len(password) < 6:
             return no_update, "Password must be at least 6 characters.", True
-        if create_user(username, password, first_name.strip(), last_name.strip()):
+        if create_user(username, email.strip(), password, first_name.strip(), last_name.strip()):
             login_user(User(username))
             return f"/{DEFAULT_LANGUAGE}", "", False
-        return no_update, "Username already exists.", True
+        return no_update, "Username or email already exists.", True
 
     @app.callback(
         Output("url", "href", allow_duplicate=True),

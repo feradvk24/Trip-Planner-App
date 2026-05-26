@@ -14,18 +14,27 @@ def _hash_password(password: str, salt: str) -> str:
     return hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 100_000).hex()
 
 
-def create_user(username: str, password: str, first_name: str, last_name: str) -> bool:
-    """Register a new user in the DB. Returns True on success, False if username taken."""
+def create_user(username: str, email: str, password: str, first_name: str, last_name: str) -> bool:
+    """Register a new user in the DB. Returns True on success, False if username/email taken."""
     from backend.database import SessionLocal
     from backend.models import User as UserModel
     db = SessionLocal()
     try:
+        email = email.strip().lower()
         if db.query(UserModel).filter(UserModel.username == username).first():
+            return False
+        if db.query(UserModel).filter(UserModel.email == email).first():
             return False
         salt = secrets.token_hex(16)
         hashed = _hash_password(password, salt)
-        user = UserModel(username=username, first_name=first_name, last_name=last_name,
-                         salt=salt, password=hashed)
+        user = UserModel(
+            username=username,
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            salt=salt,
+            password=hashed,
+        )
         db.add(user)
         db.commit()
         return True

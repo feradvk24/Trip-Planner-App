@@ -83,6 +83,16 @@ def find_completed_trips(trip_ids: list[int]) -> dict[int, dict]:
         db.close()
 
 
+def get_user_email(username: str) -> str | None:
+    """Return the email address for a user."""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username == username).first()
+        return user.email if user else None
+    finally:
+        db.close()
+
+
 def get_landmarks() -> list[dict]:
     """Return all landmarks in the shape used by LandmarkRegistry."""
     db = SessionLocal()

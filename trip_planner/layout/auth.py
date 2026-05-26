@@ -16,6 +16,8 @@ def create_login_layout():
                     dbc.Label("Password"),
                     dbc.Input(id=ids.LOGIN_PASSWORD, type="password", placeholder="Enter password", className="mb-3"),
                     html.Div(id=ids.REGISTER_FIELDS, style={"display": "none"}, children=[
+                        dbc.Label("Email"),
+                        dbc.Input(id=ids.REGISTER_EMAIL, type="email", placeholder="Enter email", className="mb-3"),
                         dbc.Label("First name"),
                         dbc.Input(id=ids.REGISTER_FIRST_NAME, placeholder="Enter first name", className="mb-3"),
                         dbc.Label("Last name"),
