@@ -68,6 +68,7 @@ def _migrate_users():
     migrations = [
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'regular'",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_hash VARCHAR(255)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTAMP",

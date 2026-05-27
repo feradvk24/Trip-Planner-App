@@ -55,10 +55,13 @@ def register_auth_callbacks(app):
         if auth_status == AuthStatus.OK:
             user_record = get_user_auth_record(username)
             role = user_record["role"] if user_record else "regular"
-            login_user(User(username, role))
+            is_active = user_record["is_active"] if user_record else True
+            login_user(User(username, role, is_active))
             if role in {"admin", "moderator"}:
                 return "/admin_panel", "", False
             return f"/{DEFAULT_LANGUAGE}", "", False
+        if auth_status == AuthStatus.INACTIVE:
+            return no_update, "This user is inactive.", True
         if auth_status == AuthStatus.UNVERIFIED:
             return no_update, "Please verify your email before logging in.", True
         return no_update, "Invalid username or password.", True

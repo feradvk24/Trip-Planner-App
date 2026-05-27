@@ -118,9 +118,17 @@ def create_reviews_tab():
 def _build_user_role_details(user: dict | None, empty_message="Search for a user to display their role."):
     if not user:
         return dbc.ListGroupItem(empty_message, className="text-muted")
+    status = "Active" if user["is_active"] else "Inactive"
+    status_color = "success" if user["is_active"] else "secondary"
     return dbc.ListGroupItem(
         [
-            html.Div(user["username"], className="fw-semibold"),
+            html.Div(
+                [
+                    html.Div(user["username"], className="fw-semibold"),
+                    html.Span(status, className=f"badge text-bg-{status_color}"),
+                ],
+                className="d-flex align-items-center justify-content-between gap-3",
+            ),
             html.Div(user["user_name"], className="text-muted small"),
             html.Div(f"Current role: {user['role']}", className="mt-2"),
         ]
@@ -167,6 +175,24 @@ def create_user_roles_tab():
                                 "Regular",
                                 id=ids.ADMIN_SET_REGULAR_BUTTON,
                                 color="secondary",
+                                outline=True,
+                            ),
+                        ],
+                        className="d-flex gap-2",
+                    ),
+                    dbc.Label("Account status", className="mt-3"),
+                    html.Div(
+                        [
+                            dbc.Button(
+                                "Activate",
+                                id=ids.ADMIN_ACTIVATE_USER_BUTTON,
+                                color="success",
+                                outline=True,
+                            ),
+                            dbc.Button(
+                                "Deactivate",
+                                id=ids.ADMIN_DEACTIVATE_USER_BUTTON,
+                                color="danger",
                                 outline=True,
                             ),
                         ],

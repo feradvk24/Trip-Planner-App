@@ -9,6 +9,7 @@ from admin.crud import (
     get_recent_reviews,
     get_reviews_by_username,
     get_user_role,
+    set_user_active_status,
     set_user_role,
 )
 from admin.layout import _build_review_list, _build_user_role_details
@@ -136,3 +137,39 @@ def register_admin_callbacks(app):
         if user is None:
             return no_update, no_update, no_update, False
         return _build_user_role_details(user), f"{user['username']} is now {target_role}.", "success", True
+
+    @app.callback(
+        Output(ids.ADMIN_ROLE_USER_DETAILS, "children", allow_duplicate=True),
+        Output(ids.ADMIN_ROLE_ALERT, "children", allow_duplicate=True),
+        Output(ids.ADMIN_ROLE_ALERT, "color", allow_duplicate=True),
+        Output(ids.ADMIN_ROLE_ALERT, "is_open", allow_duplicate=True),
+        Input(ids.ADMIN_ACTIVATE_USER_BUTTON, "n_clicks"),
+        Input(ids.ADMIN_DEACTIVATE_USER_BUTTON, "n_clicks"),
+        State(ids.ADMIN_ROLE_USERNAME_INPUT, "value"),
+        prevent_initial_call=True,
+    )
+    def set_user_active_status_from_button(activate_clicks, deactivate_clicks, username):
+        if not activate_clicks and not deactivate_clicks:
+            raise PreventUpdate
+        if not current_user.is_authenticated or getattr(current_user, "role", "regular") != "admin":
+            return no_update, no_update, no_update, False
+
+        username = (username or "").strip()
+        if not username:
+            return no_update, no_update, no_update, False
+
+        target_is_active = ctx.triggered_id == ids.ADMIN_ACTIVATE_USER_BUTTON
+        existing_user = get_user_role(username)
+        if existing_user is None:
+            return no_update, no_update, no_update, False
+        if existing_user["role"] == "admin":
+            return no_update, no_update, no_update, False
+        if existing_user["is_active"] == target_is_active:
+            return no_update, no_update, no_update, False
+
+        user = set_user_active_status(username, target_is_active)
+        if user is None:
+            return no_update, no_update, no_update, False
+
+        status = "activated" if target_is_active else "deactivated"
+        return _build_user_role_details(user), f"{user['username']} has been {status}.", "success", True

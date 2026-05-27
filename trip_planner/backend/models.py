@@ -16,6 +16,7 @@ class User(Base):
     salt = Column(String(64), nullable=False)
     password = Column(String(128), nullable=False)
     role = Column(String(20), default="regular", nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
 
     verification_token_hash = Column(String(255), nullable=True)

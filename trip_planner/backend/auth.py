@@ -11,14 +11,20 @@ from flask_login import LoginManager, UserMixin
 
 class AuthStatus(Enum):
     INVALID = "invalid"
+    INACTIVE = "inactive"
     UNVERIFIED = "unverified"
     OK = "ok"
 
 
 class User(UserMixin):
-    def __init__(self, username, role="regular"):
+    def __init__(self, username, role="regular", is_active=True):
         self.id = username
         self.role = role
+        self._is_active = is_active
+
+    @property
+    def is_active(self):
+        return self._is_active
 
 
 def _hash_password(password: str, salt: str) -> str:
@@ -77,6 +83,9 @@ def authenticate_user(username: str, password: str) -> AuthStatus:
     if not secrets.compare_digest(hashed, user["password"]):
         return AuthStatus.INVALID
 
+    if not user["is_active"]:
+        return AuthStatus.INACTIVE
+
     if not user["is_verified"]:
         return AuthStatus.UNVERIFIED
 
@@ -98,8 +107,8 @@ def init_login_manager(server):
         db = SessionLocal()
         try:
             user = db.query(UserModel).filter(UserModel.username == username).first()
-            if user:
-                return User(user.username, user.role)
+            if user and user.is_active:
+                return User(user.username, user.role, user.is_active)
             return None
         finally:
             db.close()
