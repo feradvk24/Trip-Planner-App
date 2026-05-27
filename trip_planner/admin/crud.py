@@ -70,3 +70,51 @@ def delete_review(review_id: int) -> bool:
         raise
     finally:
         db.close()
+
+
+def get_user_role(username: str) -> dict | None:
+    """Return basic user role details by username."""
+    username = (username or "").strip()
+    if not username:
+        return None
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username.ilike(username)).first()
+        if user is None:
+            return None
+        return {
+            "id": user.id,
+            "username": user.username,
+            "user_name": f"{user.first_name} {user.last_name}",
+            "role": user.role,
+        }
+    finally:
+        db.close()
+
+
+def set_user_role(username: str, role: str) -> dict | None:
+    """Set a user's role and return the updated role details."""
+    username = (username or "").strip()
+    if not username or role not in {"regular", "moderator"}:
+        return None
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.username.ilike(username)).first()
+        if user is None:
+            return None
+        user.role = role
+        db.commit()
+        db.refresh(user)
+        return {
+            "id": user.id,
+            "username": user.username,
+            "user_name": f"{user.first_name} {user.last_name}",
+            "role": user.role,
+        }
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()

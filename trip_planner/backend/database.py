@@ -72,20 +72,8 @@ def _migrate_users():
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_hash VARCHAR(255)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTAMP",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS active_trip_id INTEGER",
-        """
-        DO $$
-        BEGIN
-            IF NOT EXISTS (
-                SELECT 1
-                FROM pg_constraint
-                WHERE conname = 'users_role_check'
-            ) THEN
-                ALTER TABLE users
-                ADD CONSTRAINT users_role_check
-                CHECK (role IN ('regular', 'admin'));
-            END IF;
-        END $$;
-        """,
+        "ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check",
+        "ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('regular', 'moderator', 'admin'))",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email_unique ON users (email) WHERE email IS NOT NULL",
         """
         DO $$

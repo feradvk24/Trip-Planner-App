@@ -115,19 +115,95 @@ def create_reviews_tab():
     )
 
 
-def create_admin_layout():
+def _build_user_role_details(user: dict | None, empty_message="Search for a user to display their role."):
+    if not user:
+        return dbc.ListGroupItem(empty_message, className="text-muted")
+    return dbc.ListGroupItem(
+        [
+            html.Div(user["username"], className="fw-semibold"),
+            html.Div(user["user_name"], className="text-muted small"),
+            html.Div(f"Current role: {user['role']}", className="mt-2"),
+        ]
+    )
+
+
+def create_user_roles_tab():
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.H4("Edit user role", className="mb-3"),
+                    dbc.Alert(id=ids.ADMIN_ROLE_ALERT, is_open=False, color="info"),
+                    dbc.InputGroup(
+                        [
+                            dbc.Input(
+                                id=ids.ADMIN_ROLE_USERNAME_INPUT,
+                                placeholder="Username",
+                                type="text",
+                            ),
+                            dbc.Button(
+                                "Search",
+                                id=ids.ADMIN_ROLE_SEARCH_BUTTON,
+                                color="primary",
+                            ),
+                        ],
+                        className="mb-3",
+                    ),
+                    dbc.ListGroup(
+                        id=ids.ADMIN_ROLE_USER_DETAILS,
+                        children=_build_user_role_details(None),
+                        flush=True,
+                        className="mb-3",
+                    ),
+                    dbc.Label("Set role"),
+                    html.Div(
+                        [
+                            dbc.Button(
+                                "Moderator",
+                                id=ids.ADMIN_SET_MODERATOR_BUTTON,
+                                color="warning",
+                            ),
+                            dbc.Button(
+                                "Regular",
+                                id=ids.ADMIN_SET_REGULAR_BUTTON,
+                                color="secondary",
+                                outline=True,
+                            ),
+                        ],
+                        className="d-flex gap-2",
+                    ),
+                ],
+                className="border rounded p-3",
+                style={"maxWidth": "36rem"},
+            ),
+        ]
+    )
+
+
+def create_admin_layout(role="regular"):
+    tabs = [
+        dbc.Tab(
+            create_reviews_tab(),
+            label="Reviews",
+            tab_id="reviews",
+            className="pt-3",
+        ),
+    ]
+    if role == "admin":
+        tabs.append(
+            dbc.Tab(
+                create_user_roles_tab(),
+                label="Users",
+                tab_id="users",
+                className="pt-3",
+            )
+        )
+
     return html.Div(
         [
             html.H2("Admin Panel", className="mb-4"),
             dbc.Tabs(
-                [
-                    dbc.Tab(
-                        create_reviews_tab(),
-                        label="Reviews",
-                        tab_id="reviews",
-                        className="pt-3",
-                    ),
-                ],
+                tabs,
                 id=ids.ADMIN_TABS,
                 active_tab="reviews",
             ),

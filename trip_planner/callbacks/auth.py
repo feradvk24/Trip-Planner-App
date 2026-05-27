@@ -56,7 +56,7 @@ def register_auth_callbacks(app):
             user_record = get_user_auth_record(username)
             role = user_record["role"] if user_record else "regular"
             login_user(User(username, role))
-            if role == "admin":
+            if role in {"admin", "moderator"}:
                 return "/admin_panel", "", False
             return f"/{DEFAULT_LANGUAGE}", "", False
         if auth_status == AuthStatus.UNVERIFIED:

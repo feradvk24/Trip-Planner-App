@@ -12,6 +12,7 @@ dash.register_page(__name__, path="/admin_panel", name="Admin Panel", order=0)
 def layout(**kwargs):
     if not current_user.is_authenticated:
         return dcc.Location(id="admin-login-redirect", href="/login")
-    if getattr(current_user, "role", "regular") != "admin":
+    role = getattr(current_user, "role", "regular")
+    if role not in {"admin", "moderator"}:
         return dcc.Location(id="admin-home-redirect", href=f"/{DEFAULT_LANGUAGE}")
-    return create_admin_layout()
+    return create_admin_layout(role=role)
