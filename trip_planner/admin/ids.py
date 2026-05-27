@@ -1,0 +1,8 @@
+ADMIN_TABS = "admin-tabs"
+ADMIN_RECENT_REVIEWS_LIST = "admin-recent-reviews-list"
+ADMIN_REVIEW_USER_SEARCH_INPUT = "admin-review-user-search-input"
+ADMIN_REVIEW_USER_SEARCH_BUTTON = "admin-review-user-search-button"
+ADMIN_USER_REVIEWS_LIST = "admin-user-reviews-list"
+ADMIN_DELETE_REVIEW_ID_INPUT = "admin-delete-review-id-input"
+ADMIN_DELETE_REVIEW_BUTTON = "admin-delete-review-button"
+ADMIN_DELETE_REVIEW_ALERT = "admin-delete-review-alert"

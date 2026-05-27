@@ -1,7 +1,8 @@
 import dash
-from dash import dcc, html
+from dash import dcc
 from flask_login import current_user
 
+from admin.layout import create_admin_layout
 from i18n import DEFAULT_LANGUAGE
 
 
@@ -13,4 +14,4 @@ def layout(**kwargs):
         return dcc.Location(id="admin-login-redirect", href="/login")
     if getattr(current_user, "role", "regular") != "admin":
         return dcc.Location(id="admin-home-redirect", href=f"/{DEFAULT_LANGUAGE}")
-    return html.Div()
+    return create_admin_layout()
