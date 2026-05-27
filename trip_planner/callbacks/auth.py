@@ -2,6 +2,7 @@ from urllib.parse import parse_qs
 
 from dash import Input, Output, State, no_update
 from dash.exceptions import PreventUpdate
+from flask import session
 from flask_login import login_user
 
 import ids
@@ -58,6 +59,7 @@ def register_auth_callbacks(app):
             is_active = user_record["is_active"] if user_record else True
             login_user(User(username, role, is_active))
             if role in {"admin", "moderator"}:
+                session["admin_entry_allowed"] = True
                 return "/admin_panel", "", False
             return f"/{DEFAULT_LANGUAGE}", "", False
         if auth_status == AuthStatus.INACTIVE:
