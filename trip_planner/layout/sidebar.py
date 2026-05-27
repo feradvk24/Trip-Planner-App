@@ -69,7 +69,7 @@ def create_trip_endpoints(lang="bg"):
     )
 
 
-def create_sidebar(active_trip=None, lang="bg"):
+def create_sidebar(active_trip=None, lang="bg", guest=False):
     initial_mode = "trip" if active_trip else "explore"
     landmark_search = create_landmark_search(initial_mode, lang)
     route_endpoints = create_trip_endpoints(lang)
@@ -157,14 +157,38 @@ def create_sidebar(active_trip=None, lang="bg"):
         share_trip_btn,
     ], id=ids.TRIP_PANEL, style={"display": "flex" if initial_mode == "trip" else "none", "flexDirection": "column", "gap": "0.5rem", "flex": "1 1 auto", "minHeight": 0})
 
-    return html.Div([
+    header = html.Div([
         html.Div([
-            html.Div([
-                html.Img(src="/assets/icon.svg", style={"height": "24px", "marginRight": "0.5rem"}),
-                html.Span(t("app.name", lang=lang), style={"fontSize": "1.25rem", "fontWeight": "600"}),
-            ], className="d-flex align-items-center justify-content-center"),
-            html.Hr(style={"margin": 0}),
-        ], style={"display": "flex", "flexDirection": "column", "gap": "0.25rem"}),
+            html.Img(src="/assets/icon.svg", style={"height": "24px", "marginRight": "0.5rem"}),
+            html.Span(t("app.name", lang=lang), style={"fontSize": "1.25rem", "fontWeight": "600"}),
+        ], className="d-flex align-items-center justify-content-center"),
+        html.Hr(style={"margin": 0}),
+    ], style={"display": "flex", "flexDirection": "column", "gap": "0.25rem"})
+
+    if guest:
+        return html.Div([
+            header,
+            html.Div(
+                t("sidebar.login_to_plan_trips", lang=lang),
+                style={
+                    "flex": "1 1 auto",
+                    "display": "flex",
+                    "alignItems": "center",
+                    "justifyContent": "center",
+                    "textAlign": "center",
+                    "color": "#6c757d",
+                    "fontSize": "1rem",
+                    "fontWeight": "600",
+                },
+            ),
+            html.Div(
+                [mode_toggle, landmark_search, explore_panel, trip_panel],
+                style={"display": "none"},
+            ),
+        ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
+
+    return html.Div([
+        header,
         mode_toggle,
         landmark_search,
         explore_panel,
@@ -172,9 +196,9 @@ def create_sidebar(active_trip=None, lang="bg"):
     ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
 
 
-def create_user_menu(fix_to_right=False, lang="bg"):
-    username = current_user.id if current_user.is_authenticated else "User"
-    email = get_user_email(username)
+def create_user_menu(fix_to_right=False, lang="bg", guest=False):
+    username = "Guest" if guest else current_user.id if current_user.is_authenticated else "User"
+    email = None if guest else get_user_email(username)
     right_offset = "0.75rem" if fix_to_right else "21rem"
     return dbc.DropdownMenu(
         id=ids.USER_MENU,
@@ -192,7 +216,7 @@ def create_user_menu(fix_to_right=False, lang="bg"):
             dbc.DropdownMenuItem(
                 t("sidebar.statistics", lang=lang),
                 href=f"/{lang}/statistics",
-            ),
+            ) if not guest else None,
             dbc.DropdownMenuItem(divider=True),
             html.Div(
                 [
@@ -210,7 +234,7 @@ def create_user_menu(fix_to_right=False, lang="bg"):
                     ),
                 ],
                 style={"margin-left": "0.5rem"},
-            ),
+            ) if not guest else None,
             dbc.DropdownMenuItem(t("sidebar.logout", lang=lang), id=ids.LOGOUT_BUTTON, style={"color": "#dc3545"}),
         ],
         direction="down",

@@ -18,6 +18,7 @@ TRANSLATIONS = {
     "sidebar.selected_monuments": "Selected monuments:",
     "sidebar.clear_all": "Clear all",
     "sidebar.visit": "Visit",
+    "sidebar.login_to_plan_trips": "Log in to plan trips",
     "sidebar.signed_in_as": "Signed in as",
     "sidebar.statistics": "Statistics",
     "sidebar.language": "Language",
@@ -43,6 +44,7 @@ TRANSLATIONS = {
     "info_sidebar.select_trip": "Select Trip",
     "info_sidebar.selected_trip": "Selected trip",
     "info_sidebar.no_trip_selected": "No trip selected",
+    "info_sidebar.login_to_see_reviews": "Log in to see user reviews for this landmark",
 
     "browse_overlay.title": "Browse Trips",
     "browse_overlay.my_saved_trips": "My Saved Trips",

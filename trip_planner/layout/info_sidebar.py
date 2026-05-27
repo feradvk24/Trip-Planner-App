@@ -4,7 +4,28 @@ import ids
 from styles import INFO_SIDEBAR_STYLE
 from i18n import t
 
-def create_info_sidebar(lang="bg"):
+def create_info_sidebar(lang="bg", guest=False):
+    if guest:
+        return html.Aside(
+            [
+                html.Div(id=ids.INFO_SIDEBAR_TITLE),
+                html.Div(id=ids.INFO_SIDEBAR_SUBTITLE),
+                html.Div(id=ids.INFO_SIDEBAR_ACTIONS),
+                html.A(
+                    [
+                        html.Img(id=ids.INFO_SIDEBAR_IMAGE, hidden=True),
+                        html.Div(id=ids.INFO_SIDEBAR_IMAGE_META),
+                    ],
+                    id=ids.INFO_SIDEBAR_IMAGE_LINK,
+                    hidden=True,
+                ),
+                html.Div(id=ids.INFO_SIDEBAR_BODY),
+            ],
+            id=ids.INFO_SIDEBAR,
+            style={**INFO_SIDEBAR_STYLE, "fontSize": 0},
+        )
+
+    default_body_text = t("info_sidebar.details", lang=lang)
     return html.Aside(
         [
             html.Div(
@@ -78,7 +99,7 @@ def create_info_sidebar(lang="bg"):
                         style={"marginBottom": "0.5rem"},
                     ),
                     html.Div(
-                        t("info_sidebar.details", lang=lang),
+                        default_body_text,
                         style={"color": "#6c757d", "fontSize": "0.95rem"},
                     ),
                 ],

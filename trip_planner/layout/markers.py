@@ -4,7 +4,7 @@ import dash_leaflet as dl
 from i18n import t
 
 
-def create_marker(landmark, pin_icon, selected_ids=None, selected_icon=None, lang="bg"):
+def create_marker(landmark, pin_icon, selected_ids=None, selected_icon=None, lang="bg", allow_add_to_trip=True):
     selected_ids = set(selected_ids or [])
     selected_icon = selected_icon or pin_icon
     is_selected = landmark.id in selected_ids
@@ -28,7 +28,7 @@ def create_marker(landmark, pin_icon, selected_ids=None, selected_icon=None, lan
                     size="sm",
                     className="mt-2 w-100",
                     disabled=is_selected,
-                ),
+                ) if allow_add_to_trip else None,
             ])),
         ],
         id={"type": "marker", "index": landmark.id},
@@ -36,8 +36,8 @@ def create_marker(landmark, pin_icon, selected_ids=None, selected_icon=None, lan
     )
 
 
-def create_markers(landmarks, pin_icon, selected_ids=None, selected_icon=None, lang="bg"):
+def create_markers(landmarks, pin_icon, selected_ids=None, selected_icon=None, lang="bg", allow_add_to_trip=True):
     return [
-        create_marker(landmark, pin_icon, selected_ids, selected_icon, lang)
+        create_marker(landmark, pin_icon, selected_ids, selected_icon, lang, allow_add_to_trip)
         for landmark in landmarks
     ]

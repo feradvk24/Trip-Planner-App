@@ -11,13 +11,20 @@ def optimize_route_button_children(label, is_modify=False):
     return [html.I(className=icon_class), label]
 
 
-def build_all_markers(landmarks, destination_ids, hidden_ids=None, lang="bg"):
+def build_all_markers(landmarks, destination_ids, hidden_ids=None, lang="bg", allow_add_to_trip=True):
     hidden_ids = set(hidden_ids or [])
     visible_landmarks = [
         landmark for landmark in landmarks
         if landmark.id not in hidden_ids
     ]
-    return create_markers(visible_landmarks, pin_icon, destination_ids, checkbox_icon, lang=lang)
+    return create_markers(
+        visible_landmarks,
+        pin_icon,
+        destination_ids,
+        checkbox_icon,
+        lang=lang,
+        allow_add_to_trip=allow_add_to_trip,
+    )
 
 
 def build_load_trip_items(trips, allow_delete=True, show_owner=False, lang="bg"):

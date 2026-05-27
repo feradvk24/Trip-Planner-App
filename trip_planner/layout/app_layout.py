@@ -180,8 +180,8 @@ def create_main_content(markers, active_trip=None, focused_landmark=None, lang="
     )
 
 
-def create_authenticated_layout(markers, include_location=True, focused_landmark_id=None, lang="bg"):
-    if not current_user.is_authenticated:
+def create_authenticated_layout(markers, include_location=True, focused_landmark_id=None, lang="bg", guest=False):
+    if not guest and not current_user.is_authenticated:
         return dcc.Location(id="auth-redirect", href="/login")
 
     registry = LandmarkRegistry.get_landmarks()
@@ -196,17 +196,17 @@ def create_authenticated_layout(markers, include_location=True, focused_landmark
         except (TypeError, ValueError, AttributeError):
             focused_landmark = None
 
-    if focused_landmark:
+    if focused_landmark or guest:
         active_trip = None
     else:
         active_trip = get_active_user_trip(current_user.id)
     children = [
         dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0, update_now=True, timeout=10000),
-        create_sidebar(active_trip, lang=lang),
-        create_info_sidebar(lang=lang),
+        create_sidebar(active_trip, lang=lang, guest=guest),
+        create_info_sidebar(lang=lang, guest=guest),
         create_main_content(markers, active_trip, focused_landmark, lang=lang),
         create_landmark_review_pane(lang=lang),
-        create_user_menu(lang=lang),
+        create_user_menu(lang=lang, guest=guest),
         *create_stores(active_trip, pending_browse_trip, focused_landmark.id if focused_landmark else None),
         create_warn_modal(lang=lang),
         create_success_toast(lang=lang),

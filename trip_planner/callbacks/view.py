@@ -46,6 +46,10 @@ def language_path(pathname, language):
     return f"/{language}"
 
 
+def is_guest_path(pathname_or_href):
+    return (pathname_or_href or "").rstrip("/").endswith("/guest")
+
+
 def register_view_callbacks(app):
     registry = LandmarkRegistry.get_landmarks()
 
@@ -147,7 +151,13 @@ def register_view_callbacks(app):
             if hide_visited and current_user.is_authenticated else
             set()
         )
-        return build_all_markers(registry.landmarks, destination_ids or [], hidden_ids, lang=lang), [], [], [], hidden_stats
+        return build_all_markers(
+            registry.landmarks,
+            destination_ids or [],
+            hidden_ids,
+            lang=lang,
+            allow_add_to_trip=not is_guest_path(href),
+        ), [], [], [], hidden_stats
 
 
     @app.callback(

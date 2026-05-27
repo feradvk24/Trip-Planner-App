@@ -16,6 +16,7 @@ def create_login_layout():
                     dbc.Label("Password"),
                     dbc.Input(id=ids.LOGIN_PASSWORD, type="password", placeholder="Enter password", className="mb-3"),
                     dbc.Button("Login", id=ids.LOGIN_BUTTON, color="primary", className="w-100 mb-2"),
+                    dbc.Button("Login as guest", href="/guest", color="info", outline=True, className="w-100 mb-2"),
                     dbc.Button("Create account", href="/register", color="secondary", outline=True, className="w-100"),
                 ]), className="shadow"),
                 xs=12,

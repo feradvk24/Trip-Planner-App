@@ -52,6 +52,10 @@ def _learn_more_action(landmark, lang="bg"):
     )
 
 
+def _is_guest_path(pathname):
+    return (pathname or "").rstrip("/").endswith("/guest")
+
+
 def register_info_callbacks(app):
     registry = LandmarkRegistry.get_landmarks()
 
@@ -125,6 +129,13 @@ def register_info_callbacks(app):
         }
         hide_landmark_image = mode not in ("explore", "trip")
         browse_open = (pathname or "").rstrip("/").endswith("/browse")
+        guest_open = _is_guest_path(pathname)
+
+        if guest_open:
+            return "", "", [], True, None, "", True, None, "", [], [], {
+                **base_style,
+                "display": "none",
+            }
 
         if browse_open:
             if selected_trip:
