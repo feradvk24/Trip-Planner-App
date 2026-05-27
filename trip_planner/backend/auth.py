@@ -16,8 +16,9 @@ class AuthStatus(Enum):
 
 
 class User(UserMixin):
-    def __init__(self, username):
+    def __init__(self, username, role="regular"):
         self.id = username
+        self.role = role
 
 
 def _hash_password(password: str, salt: str) -> str:
@@ -96,8 +97,9 @@ def init_login_manager(server):
         from backend.models import User as UserModel
         db = SessionLocal()
         try:
-            if db.query(UserModel).filter(UserModel.username == username).first():
-                return User(username)
+            user = db.query(UserModel).filter(UserModel.username == username).first()
+            if user:
+                return User(user.username, user.role)
             return None
         finally:
             db.close()

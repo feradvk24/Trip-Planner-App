@@ -67,10 +67,25 @@ def _migrate_users():
     """Add columns introduced after initial user schema creation (idempotent)."""
     migrations = [
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) NOT NULL DEFAULT 'regular'",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_hash VARCHAR(255)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_token_expires_at TIMESTAMP",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS active_trip_id INTEGER",
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_constraint
+                WHERE conname = 'users_role_check'
+            ) THEN
+                ALTER TABLE users
+                ADD CONSTRAINT users_role_check
+                CHECK (role IN ('regular', 'admin'));
+            END IF;
+        END $$;
+        """,
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_email_unique ON users (email) WHERE email IS NOT NULL",
         """
         DO $$

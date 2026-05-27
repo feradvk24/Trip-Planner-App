@@ -33,6 +33,7 @@ def get_user_auth_record(username: str) -> dict | None:
             "username": user.username,
             "salt": user.salt,
             "password": user.password,
+            "role": user.role,
             "is_verified": user.is_verified,
         }
     finally:

@@ -6,6 +6,7 @@ from flask_login import login_user
 
 import ids
 from backend.auth import AuthStatus, User, authenticate_user, create_user
+from backend.crud import get_user_auth_record
 from i18n import DEFAULT_LANGUAGE
 
 
@@ -52,7 +53,11 @@ def register_auth_callbacks(app):
             return no_update, "Password must be at least 6 characters.", True
         auth_status = authenticate_user(username, password)
         if auth_status == AuthStatus.OK:
-            login_user(User(username))
+            user_record = get_user_auth_record(username)
+            role = user_record["role"] if user_record else "regular"
+            login_user(User(username, role))
+            if role == "admin":
+                return "/admin_panel", "", False
             return f"/{DEFAULT_LANGUAGE}", "", False
         if auth_status == AuthStatus.UNVERIFIED:
             return no_update, "Please verify your email before logging in.", True
