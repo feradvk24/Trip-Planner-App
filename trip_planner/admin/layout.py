@@ -206,6 +206,108 @@ def create_user_roles_tab():
     )
 
 
+def _create_landmark_fields(prefix: str):
+    return [
+        dbc.Label("Name"),
+        dbc.Input(id=getattr(ids, f"ADMIN_{prefix}_LANDMARK_NAME_INPUT"), type="text", className="mb-3"),
+        dbc.Label("Location"),
+        dbc.Input(id=getattr(ids, f"ADMIN_{prefix}_LANDMARK_LOCATION_INPUT"), type="text", className="mb-3"),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        dbc.Label("Latitude"),
+                        dbc.Input(id=getattr(ids, f"ADMIN_{prefix}_LANDMARK_LATITUDE_INPUT"), type="number"),
+                    ],
+                    style={"flex": "1 1 12rem"},
+                ),
+                html.Div(
+                    [
+                        dbc.Label("Longitude"),
+                        dbc.Input(id=getattr(ids, f"ADMIN_{prefix}_LANDMARK_LONGITUDE_INPUT"), type="number"),
+                    ],
+                    style={"flex": "1 1 12rem"},
+                ),
+            ],
+            className="d-flex gap-3 mb-3",
+        ),
+        dbc.Label("Link"),
+        dbc.Input(id=getattr(ids, f"ADMIN_{prefix}_LANDMARK_LINK_INPUT"), type="url", className="mb-3"),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        dbc.Label("Access latitude"),
+                        dbc.Input(id=getattr(ids, f"ADMIN_{prefix}_LANDMARK_ACCESS_LATITUDE_INPUT"), type="number"),
+                    ],
+                    style={"flex": "1 1 12rem"},
+                ),
+                html.Div(
+                    [
+                        dbc.Label("Access longitude"),
+                        dbc.Input(id=getattr(ids, f"ADMIN_{prefix}_LANDMARK_ACCESS_LONGITUDE_INPUT"), type="number"),
+                    ],
+                    style={"flex": "1 1 12rem"},
+                ),
+            ],
+            className="d-flex gap-3 mb-3",
+        ),
+    ]
+
+
+def create_landmarks_tab():
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.H4("Add landmark", className="mb-3"),
+                    dbc.Alert(id=ids.ADMIN_ADD_LANDMARK_ALERT, is_open=False, color="info"),
+                    *_create_landmark_fields("ADD"),
+                    dbc.Button(
+                        "Add landmark",
+                        id=ids.ADMIN_ADD_LANDMARK_BUTTON,
+                        color="primary",
+                    ),
+                ],
+                className="border rounded p-3",
+                style={"flex": "1 1 30rem", "minWidth": "22rem"},
+            ),
+            html.Div(
+                [
+                    html.H4("Edit landmark", className="mb-3"),
+                    dbc.Alert(id=ids.ADMIN_EDIT_LANDMARK_ALERT, is_open=False, color="info"),
+                    dbc.InputGroup(
+                        [
+                            dbc.Input(
+                                id=ids.ADMIN_EDIT_LANDMARK_SEARCH_INPUT,
+                                placeholder="Landmark ID",
+                                type="number",
+                                min=1,
+                                step=1,
+                            ),
+                            dbc.Button(
+                                "Load",
+                                id=ids.ADMIN_EDIT_LANDMARK_SEARCH_BUTTON,
+                                color="primary",
+                            ),
+                        ],
+                        className="mb-3",
+                    ),
+                    *_create_landmark_fields("EDIT"),
+                    dbc.Button(
+                        "Save changes",
+                        id=ids.ADMIN_UPDATE_LANDMARK_BUTTON,
+                        color="primary",
+                    ),
+                ],
+                className="border rounded p-3",
+                style={"flex": "1 1 30rem", "minWidth": "22rem"},
+            ),
+        ],
+        className="d-flex flex-wrap gap-3",
+    )
+
+
 def create_admin_layout(role="regular"):
     tabs = [
         dbc.Tab(
@@ -215,14 +317,26 @@ def create_admin_layout(role="regular"):
             className="pt-3",
         ),
     ]
-    if role == "admin":
+    if role in {"admin", "moderator"}:
         tabs.append(
             dbc.Tab(
-                create_user_roles_tab(),
-                label="Users",
-                tab_id="users",
+                create_landmarks_tab(),
+                label="Landmarks",
+                tab_id="landmarks",
                 className="pt-3",
             )
+        )
+
+    if role == "admin":
+        tabs.extend(
+            [
+                dbc.Tab(
+                    create_user_roles_tab(),
+                    label="User control panel",
+                    tab_id="users",
+                    className="pt-3",
+                ),
+            ]
         )
 
     return html.Div(
