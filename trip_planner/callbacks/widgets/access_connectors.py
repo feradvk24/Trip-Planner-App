@@ -6,7 +6,7 @@ def build_access_connector_polylines(landmarks, id_prefix="access-connector"):
     connectors = []
     seen_landmark_ids = set()
     for landmark in landmarks:
-        if not _has_access_point(landmark) or landmark.id in seen_landmark_ids:
+        if not landmark.has_access_point or landmark.id in seen_landmark_ids:
             continue
         seen_landmark_ids.add(landmark.id)
         connectors.append(
@@ -25,12 +25,3 @@ def build_access_connector_polylines(landmarks, id_prefix="access-connector"):
             )
         )
     return connectors
-
-
-def _has_access_point(landmark):
-    return (
-        getattr(landmark, "access_point", None)
-        and isinstance(landmark.access_point, dict)
-        and landmark.access_point.get("lat") is not None
-        and landmark.access_point.get("lon") is not None
-    )

@@ -12,12 +12,16 @@ class Landmark:
     link: str = "#"
     access_point: Optional[dict] = None
 
-    def routing_coordinates(self):
-        if (
-            self.access_point
+    @property
+    def has_access_point(self):
+        return (
+            isinstance(self.access_point, dict)
             and self.access_point.get("lat") is not None
             and self.access_point.get("lon") is not None
-        ):
+        )
+
+    def routing_coordinates(self):
+        if self.has_access_point:
             return self.access_point["lat"], self.access_point["lon"]
         return self.lat, self.lon
 
