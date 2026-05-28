@@ -5,6 +5,7 @@ import dash_leaflet as dl
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 
+from callbacks.utils import trip_state
 from callbacks.utils.routing import decode_route_polyline
 from callbacks.widgets.access_connectors import build_access_connector_polylines
 from i18n import t
@@ -30,11 +31,10 @@ def build_explore_route_layers(registry, trip_data, lang="bg"):
     visit_order = []
     for index, landmark_id in enumerate(visit_order_ids):
         if landmark_id == -1:
-            location = (
-                trip_data.get("user_location_start")
-                if index == 0 else
-                trip_data.get("user_location_end")
-            )
+            if index == 0:
+                location = trip_data.get("custom_start_location")
+            else:
+                location = trip_data.get("custom_end_location")
             if location:
                 visit_order.append(SimpleNamespace(
                     id=-1,

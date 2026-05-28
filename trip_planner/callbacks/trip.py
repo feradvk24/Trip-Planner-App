@@ -6,16 +6,10 @@ from flask_login import current_user
 import ids
 from backend.crud import create_trip_completion, update_trip_progress
 from services.landmark_registry import LandmarkRegistry
+from callbacks.utils import trip_state
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import format_distance, get_route_legs
-from callbacks.utils.trip_state import (
-    active_route_leg_index,
-    clamp_stop_index,
-    next_action_stop_index,
-    trip_complete,
-    trip_point_summary,
-    visit_stop,
-)
+from callbacks.utils.trip_state import trip_point_summary, visit_stop
 from callbacks.widgets.review_widgets import review_pane_state, trip_completion_review_pane_state
 from callbacks.widgets.trip_rendering import build_trip_content
 from i18n import t
@@ -28,6 +22,54 @@ def hidden_next_visit_button(lang="bg"):
         disabled=True,
         style={"display": "none"},
     )
+
+
+def _trip_progress_summary(active_trip):
+    route_legs = active_trip.get("route_legs") or []
+    visit_order = active_trip.get("visit_order") or []
+    custom_start = active_trip.get("custom_start_location")
+    custom_end = active_trip.get("custom_end_location")
+    start_offset = int(bool(custom_start))
+    last_route_index = (
+        int(bool(custom_end))
+        if not visit_order else
+        start_offset + len(visit_order) - 1 + int(bool(custom_end))
+    )
+    progress_legs = [
+        leg for leg in route_legs
+        if leg.get("to_index", 0) <= last_route_index
+    ]
+
+    active_index = trip_state.active_leg_index(active_trip)
+    distance_to_next = None
+    if active_index is not None:
+        for fallback_index, leg in enumerate(route_legs):
+            if leg.get("from_index") == active_index or fallback_index == active_index:
+                distance_to_next = leg.get("distance_m", 0)
+                break
+
+    if trip_state.is_complete(active_trip):
+        passed = sum(leg.get("distance_m", 0) for leg in progress_legs)
+        remaining = 0
+    else:
+        passed = sum(
+            leg.get("distance_m", 0)
+            for leg in progress_legs
+            if active_index is not None and leg.get("from_index", 0) < active_index
+        )
+        remaining = sum(
+            leg.get("distance_m", 0)
+            for leg in progress_legs
+            if active_index is None or leg.get("from_index", 0) >= active_index
+        )
+
+    total = passed + remaining
+    return {
+        "distance_to_next_m": distance_to_next,
+        "passed_distance_m": passed,
+        "remaining_distance_m": remaining,
+        "progress_percent": round((passed / total) * 100) if total else 0,
+    }
 
 
 def register_trip_callbacks(app):
@@ -47,59 +89,30 @@ def register_trip_callbacks(app):
                 hidden_next_visit_button(lang=lang),
             ])
 
-        stop_ids = active_trip.get("visit_order") or []
-        if not stop_ids:
+        visit_order = active_trip.get("visit_order") or []
+        if not visit_order:
             return html.Div([
                 html.Div(t("trip_status.no_destinations", lang=lang), className="text-muted small"),
                 hidden_next_visit_button(lang=lang),
             ])
 
-        current_idx = clamp_stop_index(active_trip)
-        is_trip_complete = trip_complete(active_trip)
-        next_action_idx = next_action_stop_index(active_trip)
-        current_point = trip_point_summary(registry, stop_ids, current_idx, active_trip, lang=lang)
-        custom_start = active_trip.get("custom_start_location")
         show_current_point = bool(active_trip.get("visited_indices"))
+        route_legs = get_route_legs(registry, active_trip)
+        active_trip = {**active_trip, "route_legs": list(route_legs or [])}
+        stop_count = len(visit_order) + int(bool(active_trip.get("custom_end_location")))
+        current_idx = max(0, min(active_trip.get("current_point_index", 0), stop_count - 1)) if stop_count else 0
+        current_point = trip_point_summary(registry, visit_order, current_idx, active_trip, lang=lang)
+        is_trip_complete = trip_state.is_complete(active_trip)
+        next_action_idx = trip_state.next_action_index(active_trip)
         if show_current_point:
-            visited = set(active_trip.get("visited_indices") or [])
-            next_idx = next((i for i in range(current_idx + 1, len(stop_ids)) if i not in visited), None)
+            visited = trip_state.visited_set(active_trip)
+            next_idx = next((i for i in range(current_idx + 1, len(visit_order)) if i not in visited), None)
             if next_idx is None:
                 next_idx = next_action_idx
         else:
             next_idx = next_action_idx
-        next_point = trip_point_summary(registry, stop_ids, next_idx, active_trip, lang=lang) if next_idx is not None else None
-        route_legs = get_route_legs(registry, active_trip)
-
-        distance_to_next = None
-        active_leg_idx = active_route_leg_index(active_trip)
-        if active_leg_idx is not None:
-            for fallback_index, leg in enumerate(route_legs):
-                if leg.get("from_index") == active_leg_idx or fallback_index == active_leg_idx:
-                    distance_to_next = leg.get("distance_m", 0)
-                    break
-
-        start_offset = 1 if custom_start else 0
-        last_stop_route_idx = start_offset + len(stop_ids) - 1 + int(bool(active_trip.get("custom_end_location")))
-        progress_legs = [
-            leg for leg in route_legs
-            if leg.get("to_index", 0) <= last_stop_route_idx
-        ]
-        if is_trip_complete:
-            passed_distance = sum(leg.get("distance_m", 0) for leg in progress_legs)
-            remaining_distance = 0
-        else:
-            passed_distance = sum(
-                leg.get("distance_m", 0)
-                for leg in progress_legs
-                if active_leg_idx is not None and leg.get("from_index", 0) < active_leg_idx
-            )
-            remaining_distance = sum(
-                leg.get("distance_m", 0)
-                for leg in progress_legs
-                if active_leg_idx is None or leg.get("from_index", 0) >= active_leg_idx
-            )
-        total_distance = passed_distance + remaining_distance
-        progress_pct = round((passed_distance / total_distance) * 100) if total_distance else 0
+        next_point = trip_point_summary(registry, visit_order, next_idx, active_trip, lang=lang) if next_idx is not None else None
+        progress = _trip_progress_summary(active_trip)
 
         def point_block(label, point):
             if not point:
@@ -136,7 +149,7 @@ def register_trip_callbacks(app):
                     [
                         html.Div(t("trip_status.distance_to_next", lang=lang), className="text-muted small"),
                         html.Div(
-                            format_distance(distance_to_next) if next_point else "0 m",
+                            format_distance(progress["distance_to_next_m"]) if next_point else "0 m",
                             style={"fontWeight": "600"},
                         ),
                     ],
@@ -147,16 +160,16 @@ def register_trip_callbacks(app):
                     [
                         html.Div([
                             html.Div(t("trip_status.passed", lang=lang), className="text-muted small"),
-                            html.Div(format_distance(passed_distance), style={"fontWeight": "600"}),
+                            html.Div(format_distance(progress["passed_distance_m"]), style={"fontWeight": "600"}),
                         ]),
                         html.Div([
                             html.Div(t("trip_status.remaining", lang=lang), className="text-muted small"),
-                            html.Div(format_distance(remaining_distance), style={"fontWeight": "600"}),
+                            html.Div(format_distance(progress["remaining_distance_m"]), style={"fontWeight": "600"}),
                         ], style={"textAlign": "right"}),
                     ],
                     style={"display": "flex", "justifyContent": "space-between", "gap": "0.75rem"},
                 ),
-                dbc.Progress(value=progress_pct, className="mt-2", style={"height": "0.5rem"}),
+                dbc.Progress(value=progress["progress_percent"], className="mt-2", style={"height": "0.5rem"}),
             ]
         )
 
@@ -191,16 +204,16 @@ def register_trip_callbacks(app):
         if ctx.triggered_id == ids.TRIP_NEXT_VISIT_BTN:
             if not progress_clicks:
                 raise PreventUpdate
-            clicked_index = next_action_stop_index(active_trip)
+            clicked_index = trip_state.next_action_index(active_trip)
         else:
             if not any(n for n in n_clicks_list if n):
                 raise PreventUpdate
             clicked_index = ctx.triggered_id["index"]
 
         updated_trip = visit_stop(active_trip, clicked_index, update_trip_progress)
-        trip_was_completed = trip_complete(updated_trip)
+        trip_was_completed = trip_state.is_complete(updated_trip)
         completion_review_state = trip_completion_review_pane_state(updated_trip) if trip_was_completed else None
-        if trip_was_completed and not trip_complete(active_trip):
+        if trip_was_completed and not trip_state.is_complete(active_trip):
             create_trip_completion(
                 username=current_user.id,
                 trip_id=updated_trip["trip_id"],

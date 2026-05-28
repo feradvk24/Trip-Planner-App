@@ -2,6 +2,7 @@ from dash import html
 from dash.exceptions import PreventUpdate
 
 from i18n import t
+from callbacks.utils import trip_state
 
 def landmark_review_pane_style(display="none"):
     return {
@@ -38,13 +39,8 @@ def landmark_review_star_buttons(rating=None, lang="bg"):
 
 
 def review_pane_state(registry, active_trip, visited_index):
-    stop_ids = active_trip.get("visit_order") or []
-    if visited_index is None or visited_index < 0 or visited_index >= len(stop_ids):
-        raise PreventUpdate
-    landmark_id = stop_ids[visited_index]
-    if landmark_id == -1:
-        raise PreventUpdate
-    landmark = registry.get_landmark(landmark_id)
+    landmark_id = trip_state.landmark_id_at(active_trip, visited_index)
+    landmark = registry.get_landmark(landmark_id) if landmark_id is not None else None
     if not landmark:
         raise PreventUpdate
     return {

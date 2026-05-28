@@ -8,6 +8,7 @@ import ids
 from backend.crud import get_user_visited_landmark_ids, save_trip, user_trip_name_exists
 from services.landmark_registry import LandmarkRegistry
 from services.trip_optimization import fetch_route_steps, optimize_visit_order
+from callbacks.utils import trip_state
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import (
     build_route_legs,
@@ -139,12 +140,11 @@ def register_explore_callbacks(app):
         end_landmark = resolve_endpoint(registry, end_point_id, position)
         visit_order = optimize_visit_order(landmarks, start_point=start_landmark, end_point=end_landmark)
         result = fetch_route_steps(visit_order)
-
         optimized_trip_data = {
             "visit_order": tuple(lm.id for lm in visit_order),
             "route_legs": build_route_legs(len(visit_order), result),
-            "user_location_start": {"lat": position["lat"], "lon": position["lon"]} if start_point_id == "my_location" and position else None,
-            "user_location_end": {"lat": position["lat"], "lon": position["lon"]} if end_point_id == "my_location" and position else None,
+            "custom_start_location": {"lat": position["lat"], "lon": position["lon"]} if start_point_id == "my_location" and position else None,
+            "custom_end_location": {"lat": position["lat"], "lon": position["lon"]} if end_point_id == "my_location" and position else None,
             "total_distance_m": result.distance_m,
             "total_duration_s": result.duration_s,
         }
@@ -378,10 +378,10 @@ def register_explore_callbacks(app):
         if not optimized_trip:
             return True, t("warn_modal.message", lang=lang), True
 
-        custom_start_location = optimized_trip.get("user_location_start")
-        custom_end_location = optimized_trip.get("user_location_end")
+        custom_start_location = optimized_trip.get("custom_start_location")
+        custom_end_location = optimized_trip.get("custom_end_location")
         saved_user_location = custom_start_location or custom_end_location
-        stop_ids = [lid for lid in (optimized_trip.get("visit_order") or []) if lid != -1]
+        stop_ids = trip_state.destination_ids(optimized_trip)
         try:
             save_trip(
                 username=current_user.id,

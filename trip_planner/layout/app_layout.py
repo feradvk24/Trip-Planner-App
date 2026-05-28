@@ -7,7 +7,8 @@ from flask_login import current_user
 import ids
 from backend.crud import get_active_user_trip, get_public_trip
 from services.landmark_registry import LandmarkRegistry
-from callbacks.utils.trip_state import next_action_stop_index, optimized_trip_from_trip, sanitize_shared_trip
+from callbacks.utils import trip_state
+from callbacks.utils.trip_state import optimized_trip_from_trip, sanitize_shared_trip
 from layout.info_sidebar import create_info_sidebar
 from layout.map import create_map
 from layout.overlays import create_landmark_review_pane
@@ -19,16 +20,8 @@ def initial_active_info(active_trip=None):
     if not active_trip:
         return None
 
-    stop_ids = active_trip.get("visit_order") or []
-    next_stop_index = next_action_stop_index(active_trip)
-    if next_stop_index is None:
-        return None
-
-    if next_stop_index >= len(stop_ids):
-        return None
-
-    landmark_id = stop_ids[next_stop_index]
-    if landmark_id == -1:
+    landmark_id = trip_state.next_landmark_id(active_trip)
+    if landmark_id is None:
         return None
 
     return {
@@ -50,14 +43,12 @@ def resolve_pending_browse_trip(pending_browse_trip, registry=None):
         return None
 
     shared_trip = sanitize_shared_trip(shared_trip)
-    destination_ids = shared_trip.get("landmark_ids") or shared_trip.get("visit_order") or []
-    visit_order = shared_trip.get("visit_order") or destination_ids
     return {
         "active_trip": None,
         "mode": "explore",
-        "destination_ids": destination_ids,
-        "visit_order": visit_order,
-        "optimized_trip": optimized_trip_from_trip(shared_trip, registry=registry),
+        "destination_ids": trip_state.destination_ids(shared_trip),
+        "visit_order": shared_trip.get("visit_order") or shared_trip.get("landmark_ids") or [],
+        "optimized_trip": optimized_trip_from_trip(shared_trip),
     }
 
 

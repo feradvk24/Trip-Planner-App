@@ -3,6 +3,7 @@ from dash import html
 
 import ids
 from i18n import t
+from callbacks.utils import trip_state
 
 
 def _stars(rating, lang="bg"):
@@ -112,9 +113,9 @@ def build_landmark_info(landmark, review_summary, reviews, lang="bg"):
 
 
 def build_trip_info(trip, registry, lang="bg"):
-    destination_ids = [lid for lid in (trip.get("visit_order") or trip.get("landmark_ids") or []) if lid != -1]
-    destinations = registry.landmarks_by_ids(destination_ids)
     route_legs = trip.get("route_legs") or []
+    destination_ids = trip_state.destination_ids(trip)
+    destinations = registry.landmarks_by_ids(destination_ids)
     distance_m = sum(leg.get("distance_m", 0) for leg in route_legs)
     distance_text = f"{distance_m / 1000:.1f} km" if distance_m >= 1000 else f"{int(round(distance_m))} m"
     owner = trip.get("owner_name") or trip.get("owner_username")
@@ -147,7 +148,7 @@ def build_trip_info(trip, registry, lang="bg"):
                     html.Div(
                         [
                             html.Div(t("info_sidebar.distance", lang=lang), className="text-muted", style={"fontSize": "0.8rem"}),
-                            html.Div(distance_text if route_legs else t("generic.unknown", lang=lang), style={"fontWeight": "700"}),
+                            html.Div(distance_text, style={"fontWeight": "700"}),
                         ],
                     ),
                 ],

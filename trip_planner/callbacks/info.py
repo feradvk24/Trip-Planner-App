@@ -4,8 +4,8 @@ from dash.exceptions import PreventUpdate
 import ids
 from backend.crud import get_landmark_image, get_landmark_review_summary, get_landmark_reviews
 from services.landmark_registry import LandmarkRegistry
+from callbacks.utils import trip_state
 from callbacks.utils.get_language import get_language_from_url
-from callbacks.utils.trip_state import next_action_stop_index
 from callbacks.widgets.info_widgets import build_empty_info, build_landmark_info, build_trip_info
 from i18n import t
 
@@ -79,18 +79,15 @@ def register_info_callbacks(app):
                 raise PreventUpdate
             if not trip_data:
                 raise PreventUpdate
-            stop_ids = trip_data.get("visit_order") or []
-            next_stop_index = next_action_stop_index(trip_data)
-            if next_stop_index is None:
+            landmark_id = trip_state.next_landmark_id(trip_data)
+            if landmark_id is None:
                 return {
                     "type": "trip",
                     "content": None,
                 }
-            if next_stop_index >= len(stop_ids):
-                raise PreventUpdate
             return {
                 "type": "trip",
-                "content": stop_ids[next_stop_index],
+                "content": landmark_id,
             }
         if isinstance(triggered_id, dict) and triggered_id.get("type") in ("marker", "route-marker"):
             if not triggered_value:
