@@ -83,53 +83,14 @@ def nearest_neighbor(
     return route
 
 
-def two_opt(route, distance_func, fix_start=True, fix_end=False):
+def two_opt(route, distance_func=haversine, fix_start=True, fix_end=False):
     """
-    Improve a route using the 2-opt heuristic.
+    Improve an open route using the 2-opt heuristic.
 
     route: list of nodes (Monument objects)
     distance_func: function(a, b) -> distance
     fix_start: keep first node fixed
     fix_end: keep last node fixed
-    """
-    improved = True
-    n = len(route)
-
-    while improved:
-        improved = False
-
-        i_start = 1 if fix_start else 0
-        j_end = n - 1 if fix_end else n
-
-        for i in range(i_start, n - 2):
-            for j in range(i + 1, j_end):
-
-                a = route[i - 1]
-                b = route[i]
-                c = route[j]
-                d = route[j + 1] if j + 1 < n else None
-
-                if d is None:
-                    continue
-
-                d1 = distance_func(a, b) + distance_func(c, d)
-                d2 = distance_func(a, c) + distance_func(b, d)
-
-                if d2 < d1:
-                    route[i:j + 1] = reversed(route[i:j + 1])
-                    improved = True
-
-    return route
-
-
-def route_distance(route: List[Landmark]) -> float:
-    return sum(haversine(route[i], route[i + 1]) for i in range(len(route) - 1))
-
-
-def two_opt_by_distance(route: List[Landmark], fix_start=True, fix_end=False) -> List[Landmark]:
-    """
-    2-opt variant for open routes. It recomputes total route distance for each
-    candidate reversal, which lets automatic routes improve their first stop.
     """
     route = route.copy()
     improved = True
@@ -137,7 +98,7 @@ def two_opt_by_distance(route: List[Landmark], fix_start=True, fix_end=False) ->
 
     while improved:
         improved = False
-        best_distance = route_distance(route)
+        best_distance = route_distance(route, distance_func)
         first_index = 1 if fix_start else 0
         last_index = len(route) - 2 if fix_end else len(route) - 1
 
@@ -147,7 +108,7 @@ def two_opt_by_distance(route: List[Landmark], fix_start=True, fix_end=False) ->
                     continue
 
                 candidate = route[:i] + list(reversed(route[i:j + 1])) + route[j + 1:]
-                candidate_distance = route_distance(candidate)
+                candidate_distance = route_distance(candidate, distance_func)
                 if candidate_distance + epsilon < best_distance:
                     route = candidate
                     best_distance = candidate_distance
@@ -159,3 +120,5 @@ def two_opt_by_distance(route: List[Landmark], fix_start=True, fix_end=False) ->
     return route
 
 
+def route_distance(route: List[Landmark], distance_func=haversine) -> float:
+    return sum(distance_func(route[i], route[i + 1]) for i in range(len(route) - 1))

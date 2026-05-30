@@ -10,7 +10,6 @@ from services.trip_optimization.tsp_formulas import (
     nearest_neighbor,
     route_distance,
     two_opt,
-    two_opt_by_distance,
 )
 
 
@@ -135,7 +134,7 @@ def optimize_visit_order(
     if not use_multistart:
         route = nearest_neighbor(points, end_point=end_point)
         if use_two_opt:
-            route = two_opt_by_distance(route, fix_start=False, fix_end=bool(end_point))
+            route = two_opt(route, haversine, fix_start=False, fix_end=bool(end_point))
         return route
 
     best_route = None
@@ -143,7 +142,7 @@ def optimize_visit_order(
     for candidate_start in points:
         route = nearest_neighbor(points, candidate_start, end_point)
         if use_two_opt:
-            route = two_opt_by_distance(route, fix_start=False, fix_end=bool(end_point))
+            route = two_opt(route, haversine, fix_start=False, fix_end=bool(end_point))
         distance = route_distance(route)
         if distance < best_distance:
             best_distance = distance

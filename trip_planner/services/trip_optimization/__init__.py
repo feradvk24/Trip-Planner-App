@@ -10,5 +10,4 @@ from services.trip_optimization.tsp_formulas import (
     nearest_neighbor,
     route_distance,
     two_opt,
-    two_opt_by_distance,
 )
