@@ -1,7 +1,7 @@
 import polyline
 
 from services.landmark_registry import Landmark
-from callbacks.utils import trip_state
+from services.trip_route import TripRoute
 from services.trip_optimization import fetch_route_steps
 
 
@@ -56,13 +56,14 @@ def get_route_legs(registry, active_trip):
     try:
         custom_start = active_trip.get("custom_start_location")
         custom_end = active_trip.get("custom_end_location")
+        store = TripRoute.handle_trip_store(active_trip)
         route_result = fetch_route_steps(
-            registry.landmarks_by_ids(trip_state.destination_ids(active_trip)),
+            registry.landmarks_by_ids(store["destination_ids"]),
             start_point=location_tuple(custom_start),
             end_point=location_tuple(custom_end),
         )
         route_point_count = (
-            len(trip_state.destination_ids(active_trip))
+            len(store["destination_ids"])
             + int(bool(custom_start))
             + int(bool(custom_end))
         )

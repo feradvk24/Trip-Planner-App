@@ -6,7 +6,7 @@ from flask_login import current_user
 import ids
 from backend.crud import create_trip_completion, update_trip_progress
 from services.landmark_registry import LandmarkRegistry
-from callbacks.utils import trip_state
+from services.trip_route import TripRoute
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import format_distance, get_route_legs
 from callbacks.utils.trip_state import trip_point_summary, visit_stop
@@ -22,54 +22,6 @@ def hidden_next_visit_button(lang="bg"):
         disabled=True,
         style={"display": "none"},
     )
-
-
-def _trip_progress_summary(active_trip):
-    route_legs = active_trip.get("route_legs") or []
-    visit_order = active_trip.get("visit_order") or []
-    custom_start = active_trip.get("custom_start_location")
-    custom_end = active_trip.get("custom_end_location")
-    start_offset = int(bool(custom_start))
-    last_route_index = (
-        int(bool(custom_end))
-        if not visit_order else
-        start_offset + len(visit_order) - 1 + int(bool(custom_end))
-    )
-    progress_legs = [
-        leg for leg in route_legs
-        if leg.get("to_index", 0) <= last_route_index
-    ]
-
-    active_index = trip_state.active_leg_index(active_trip)
-    distance_to_next = None
-    if active_index is not None:
-        for fallback_index, leg in enumerate(route_legs):
-            if leg.get("from_index") == active_index or fallback_index == active_index:
-                distance_to_next = leg.get("distance_m", 0)
-                break
-
-    if trip_state.is_complete(active_trip):
-        passed = sum(leg.get("distance_m", 0) for leg in progress_legs)
-        remaining = 0
-    else:
-        passed = sum(
-            leg.get("distance_m", 0)
-            for leg in progress_legs
-            if active_index is not None and leg.get("from_index", 0) < active_index
-        )
-        remaining = sum(
-            leg.get("distance_m", 0)
-            for leg in progress_legs
-            if active_index is None or leg.get("from_index", 0) >= active_index
-        )
-
-    total = passed + remaining
-    return {
-        "distance_to_next_m": distance_to_next,
-        "passed_distance_m": passed,
-        "remaining_distance_m": remaining,
-        "progress_percent": round((passed / total) * 100) if total else 0,
-    }
 
 
 def register_trip_callbacks(app):
@@ -99,20 +51,20 @@ def register_trip_callbacks(app):
         show_current_point = bool(active_trip.get("visited_indices"))
         route_legs = get_route_legs(registry, active_trip)
         active_trip = {**active_trip, "route_legs": list(route_legs or [])}
-        stop_count = len(visit_order) + int(bool(active_trip.get("custom_end_location")))
+        trip_route = TripRoute.from_store(active_trip)
+        stop_count = trip_route.action_stop_count
         current_idx = max(0, min(active_trip.get("current_point_index", 0), stop_count - 1)) if stop_count else 0
         current_point = trip_point_summary(registry, visit_order, current_idx, active_trip, lang=lang)
-        is_trip_complete = trip_state.is_complete(active_trip)
-        next_action_idx = trip_state.next_action_index(active_trip)
+        next_action_idx = trip_route.next_action_index()
         if show_current_point:
-            visited = trip_state.visited_set(active_trip)
+            visited = trip_route.visited_indices
             next_idx = next((i for i in range(current_idx + 1, len(visit_order)) if i not in visited), None)
             if next_idx is None:
                 next_idx = next_action_idx
         else:
             next_idx = next_action_idx
         next_point = trip_point_summary(registry, visit_order, next_idx, active_trip, lang=lang) if next_idx is not None else None
-        progress = _trip_progress_summary(active_trip)
+        progress = trip_route.progress_summary()
 
         def point_block(label, point):
             if not point:
@@ -201,19 +153,21 @@ def register_trip_callbacks(app):
     def handle_visit_btn(n_clicks_list, progress_clicks, active_trip):
         if not ctx.triggered_id:
             raise PreventUpdate
+        active_route = TripRoute.from_store(active_trip)
+        trip_was_already_complete = active_route.is_complete
         if ctx.triggered_id == ids.TRIP_NEXT_VISIT_BTN:
             if not progress_clicks:
                 raise PreventUpdate
-            clicked_index = trip_state.next_action_index(active_trip)
+            clicked_index = active_route.next_action_index()
         else:
             if not any(n for n in n_clicks_list if n):
                 raise PreventUpdate
             clicked_index = ctx.triggered_id["index"]
 
-        updated_trip = visit_stop(active_trip, clicked_index, update_trip_progress)
-        trip_was_completed = trip_state.is_complete(updated_trip)
+        updated_trip = visit_stop(active_trip, clicked_index, update_trip_progress, route=active_route)
+        trip_was_completed = active_route.is_complete
         completion_review_state = trip_completion_review_pane_state(updated_trip) if trip_was_completed else None
-        if trip_was_completed and not trip_state.is_complete(active_trip):
+        if trip_was_completed and not trip_was_already_complete:
             create_trip_completion(
                 username=current_user.id,
                 trip_id=updated_trip["trip_id"],

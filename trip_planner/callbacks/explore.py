@@ -7,13 +7,9 @@ from flask_login import current_user
 import ids
 from backend.crud import get_user_visited_landmark_ids, save_trip, user_trip_name_exists
 from services.landmark_registry import LandmarkRegistry
-from services.trip_optimization import fetch_route_steps, optimize_visit_order
-from callbacks.utils import trip_state
+from services.trip_route import TripRoute
 from callbacks.utils.get_language import get_language_from_url
-from callbacks.utils.routing import (
-    build_route_legs,
-    resolve_endpoint,
-)
+from callbacks.utils.routing import resolve_endpoint
 from callbacks.widgets.callback_widgets import (
     build_all_markers,
     build_selected_object_items,
@@ -138,16 +134,11 @@ def register_explore_callbacks(app):
         landmarks = registry.landmarks_by_ids(destination_ids)
         start_landmark = resolve_endpoint(registry, start_point_id, position)
         end_landmark = resolve_endpoint(registry, end_point_id, position)
-        visit_order = optimize_visit_order(landmarks, start_point=start_landmark, end_point=end_landmark)
-        result = fetch_route_steps(visit_order)
-        optimized_trip_data = {
-            "visit_order": tuple(lm.id for lm in visit_order),
-            "route_legs": build_route_legs(len(visit_order), result),
-            "custom_start_location": {"lat": position["lat"], "lon": position["lon"]} if start_point_id == "my_location" and position else None,
-            "custom_end_location": {"lat": position["lat"], "lon": position["lon"]} if end_point_id == "my_location" and position else None,
-            "total_distance_m": result.distance_m,
-            "total_duration_s": result.duration_s,
-        }
+        optimized_trip_data = TripRoute.optimized(
+            landmarks,
+            start_point=start_landmark,
+            end_point=end_landmark,
+        ).to_store_dict()
 
         return False, optimized_trip_data
     
@@ -381,7 +372,7 @@ def register_explore_callbacks(app):
         custom_start_location = optimized_trip.get("custom_start_location")
         custom_end_location = optimized_trip.get("custom_end_location")
         saved_user_location = custom_start_location or custom_end_location
-        stop_ids = trip_state.destination_ids(optimized_trip)
+        stop_ids = TripRoute.handle_trip_store(optimized_trip)["destination_ids"]
         try:
             save_trip(
                 username=current_user.id,

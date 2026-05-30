@@ -7,8 +7,8 @@ from flask_login import current_user
 import ids
 from backend.crud import get_active_user_trip, get_public_trip
 from services.landmark_registry import LandmarkRegistry
-from callbacks.utils import trip_state
-from callbacks.utils.trip_state import optimized_trip_from_trip, sanitize_shared_trip
+from services.trip_route import TripRoute
+from callbacks.utils.trip_state import sanitize_shared_trip
 from layout.info_sidebar import create_info_sidebar
 from layout.map import create_map
 from layout.overlays import create_landmark_review_pane
@@ -20,7 +20,12 @@ def initial_active_info(active_trip=None):
     if not active_trip:
         return None
 
-    landmark_id = trip_state.next_landmark_id(active_trip)
+    store = TripRoute.handle_trip_store(active_trip)
+    next_index = next(
+        (index for index in range(len(store["visit_order"])) if index not in store["visited_set"]),
+        None,
+    )
+    landmark_id = store["visit_order"][next_index] if next_index is not None else None
     if landmark_id is None:
         return None
 
@@ -43,12 +48,20 @@ def resolve_pending_browse_trip(pending_browse_trip, registry=None):
         return None
 
     shared_trip = sanitize_shared_trip(shared_trip)
+    shared_store = TripRoute.handle_trip_store(shared_trip)
     return {
         "active_trip": None,
         "mode": "explore",
-        "destination_ids": trip_state.destination_ids(shared_trip),
+        "destination_ids": shared_store["destination_ids"],
         "visit_order": shared_trip.get("visit_order") or shared_trip.get("landmark_ids") or [],
-        "optimized_trip": optimized_trip_from_trip(shared_trip),
+        "optimized_trip": {
+            "visit_order": shared_store["visit_order"],
+            "route_legs": shared_store["route_legs"],
+            "custom_start_location": shared_store["custom_start_location"],
+            "custom_end_location": shared_store["custom_end_location"],
+            "total_distance_m": shared_store["total_distance_m"],
+            "total_duration_s": shared_store["total_duration_s"],
+        },
     }
 
 

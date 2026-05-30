@@ -4,7 +4,7 @@ from dash.exceptions import PreventUpdate
 import ids
 from backend.crud import get_landmark_image, get_landmark_review_summary, get_landmark_reviews
 from services.landmark_registry import LandmarkRegistry
-from callbacks.utils import trip_state
+from services.trip_route import TripRoute
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.widgets.info_widgets import build_empty_info, build_landmark_info, build_trip_info
 from i18n import t
@@ -79,7 +79,12 @@ def register_info_callbacks(app):
                 raise PreventUpdate
             if not trip_data:
                 raise PreventUpdate
-            landmark_id = trip_state.next_landmark_id(trip_data)
+            store = TripRoute.handle_trip_store(trip_data)
+            next_index = next(
+                (index for index in range(len(store["visit_order"])) if index not in store["visited_set"]),
+                None,
+            )
+            landmark_id = store["visit_order"][next_index] if next_index is not None else None
             if landmark_id is None:
                 return {
                     "type": "trip",

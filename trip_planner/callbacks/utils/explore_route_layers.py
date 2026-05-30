@@ -5,16 +5,19 @@ import dash_leaflet as dl
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 
-from callbacks.utils import trip_state
 from callbacks.utils.routing import decode_route_polyline
 from callbacks.widgets.access_connectors import build_access_connector_polylines
 from i18n import t
+from services.trip_route import TripRoute
 from styles import number_icon
 
 
 def build_explore_route_layers(registry, trip_data, lang="bg"):
-    visit_order_ids = trip_data.get("visit_order") or []
-    route_legs = trip_data.get("route_legs") or []
+    store = TripRoute.handle_trip_store(trip_data)
+    visit_order_ids = store["visit_order"]
+    route_legs = store["route_legs"]
+    custom_start = store["custom_start_location"]
+    custom_end = store["custom_end_location"]
 
     route_segments = [
         segment
@@ -28,43 +31,39 @@ def build_explore_route_layers(registry, trip_data, lang="bg"):
         for segment, color in zip(route_segments, colors)
     ]
 
-    visit_order = []
-    for index, landmark_id in enumerate(visit_order_ids):
-        if landmark_id == -1:
-            if index == 0:
-                location = trip_data.get("custom_start_location")
-            else:
-                location = trip_data.get("custom_end_location")
-            if location:
-                visit_order.append(SimpleNamespace(
-                    id=-1,
-                    name=t("route.my_location", lang=lang),
-                    location="",
-                    lat=location["lat"],
-                    lon=location["lon"],
-                    link=None,
-                ))
-            continue
+    route_points = []
+    if custom_start:
+        route_points.append(SimpleNamespace(
+            id=-1,
+            name=t("route.my_location", lang=lang),
+            location="",
+            lat=custom_start["lat"],
+            lon=custom_start["lon"],
+            link=None,
+        ))
+    for landmark_id in visit_order_ids:
         landmark = registry.get_landmark(landmark_id)
         if landmark:
-            visit_order.append(landmark)
+            route_points.append(landmark)
+    if custom_end:
+        route_points.append(SimpleNamespace(
+            id=-1,
+            name=t("route.my_location", lang=lang),
+            location="",
+            lat=custom_end["lat"],
+            lon=custom_end["lon"],
+            link=None,
+        ))
 
     access_connectors = build_access_connector_polylines(
-        (lm for lm in visit_order if lm.id != -1),
+        (lm for lm in route_points if lm.id != -1),
         id_prefix="planned-access-connector",
     )
     route_lines = polylines + access_connectors
 
-    start_is_my_location = bool(visit_order_ids and visit_order_ids[0] == -1)
-    visit_num = {}
-    for i, lm in enumerate(visit_order):
-        if lm.id not in visit_num:
-            visit_num[lm.id] = i if start_is_my_location else i + 1
-
     tour_markers = []
-    for i, lm in enumerate(visit_order):
-        if lm.id not in visit_num:
-            continue
+    for i, lm in enumerate(route_points):
+        marker_number = i if custom_start else i + 1
         marker_props = {}
         if lm.id != -1:
             marker_props["id"] = {"type": "route-marker", "index": i, "landmark_id": lm.id}
@@ -84,7 +83,7 @@ def build_explore_route_layers(registry, trip_data, lang="bg"):
                         ) if lm.link else None,
                     ])),
                 ],
-                icon=number_icon(visit_num[lm.id]),
+                icon=number_icon(marker_number),
                 **marker_props,
             )
         )

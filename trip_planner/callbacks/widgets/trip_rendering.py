@@ -2,7 +2,7 @@ from dash import html
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 
-from callbacks.utils import trip_state
+from services.trip_route import TripRoute
 from services.trip_optimization import fetch_route_steps
 from callbacks.utils.routing import decode_route_polyline, location_tuple
 from callbacks.widgets.access_connectors import build_access_connector_polylines
@@ -13,7 +13,8 @@ from styles import current_point_icon, grayed_number_icon, house_icon, number_ic
 def build_trip_content(registry, active_trip, lang="bg"):
     """Returns (trip_markers, polylines) for a given active_trip dict."""
     stop_ids = active_trip.get("visit_order") or []
-    visited = trip_state.visited_set(active_trip)
+    trip_route = TripRoute.from_store(active_trip)
+    visited = trip_route.visited_indices
     custom_start = active_trip.get("custom_start_location")
     custom_end = active_trip.get("custom_end_location")
 
@@ -32,10 +33,9 @@ def build_trip_content(registry, active_trip, lang="bg"):
         )
         route_segments = [decode_route_polyline(leg.polyline) for leg in result.legs]
 
-    active_trip = {**active_trip, "route_legs": list(route_legs or [])}
-    active_leg_idx = trip_state.active_leg_index(active_trip)
-    is_trip_complete = trip_state.is_complete(active_trip)
-    next_action_idx = trip_state.next_action_index(active_trip)
+    active_leg_idx = trip_route.active_leg_index()
+    is_trip_complete = trip_route.is_complete
+    next_action_idx = trip_route.next_action_index()
     passed_coords = []
     current_coords = []
     remaining_coords = []
