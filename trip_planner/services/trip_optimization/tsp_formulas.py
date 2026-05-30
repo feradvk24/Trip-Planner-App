@@ -159,26 +159,3 @@ def two_opt_by_distance(route: List[Landmark], fix_start=True, fix_end=False) ->
     return route
 
 
-def solve_tsp(
-    points: List[Landmark],
-    start_point: Optional[Landmark] = None,
-    end_point: Optional[Landmark] = None
-) -> List[Landmark]:
-    if not points:
-        return []
-
-    if start_point:
-        route = nearest_neighbor(points, start_point, end_point)
-        return two_opt(route, haversine, fix_start=True, fix_end=bool(end_point))
-
-    best_route = None
-    best_distance = float("inf")
-    for candidate_start in points:
-        route = nearest_neighbor(points, candidate_start, end_point)
-        route = two_opt_by_distance(route, fix_start=False, fix_end=bool(end_point))
-        distance = route_distance(route)
-        if distance < best_distance:
-            best_distance = distance
-            best_route = route
-
-    return best_route or []

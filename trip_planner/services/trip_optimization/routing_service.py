@@ -5,7 +5,13 @@ from typing import List, NamedTuple, Optional, Tuple
 import polyline
 
 from services.landmark_registry import Landmark
-from services.trip_optimization.tsp_formulas import solve_tsp
+from services.trip_optimization.tsp_formulas import (
+    haversine,
+    nearest_neighbor,
+    route_distance,
+    two_opt,
+    two_opt_by_distance,
+)
 
 
 class RouteLeg(NamedTuple):
@@ -77,20 +83,36 @@ def fetch_route_steps(
     waypoints: List[Landmark],
     start_point: Optional[Tuple[float, float]] = None,
     end_point: Optional[Tuple[float, float]] = None,
+    fetch_route_steps: bool = True,
 ) -> RouteResult:
-    coord_pairs = []
+    route_points = []
     if start_point:
-        coord_pairs.append(start_point)
-    coord_pairs.extend(w.routing_coordinates() for w in waypoints)
+        route_points.append(Landmark(id=-1, name="", location="", lat=start_point[0], lon=start_point[1]))
+    route_points.extend(waypoints)
     if end_point:
-        coord_pairs.append(end_point)
+        route_points.append(Landmark(id=-1, name="", location="", lat=end_point[0], lon=end_point[1]))
 
-    if len(coord_pairs) < 2:
+    if len(route_points) < 2:
         return RouteResult(distance_m=0, duration_s=0, legs=[])
 
-    coord_pairs = tuple((float(lat), float(lon)) for lat, lon in coord_pairs)
-    if len(coord_pairs) < 2:
-        return RouteResult(distance_m=0, duration_s=0, legs=[])
+    coord_pairs = tuple(
+        (float(lat), float(lon))
+        for lat, lon in (point.routing_coordinates() for point in route_points)
+    )
+    if not fetch_route_steps:
+        legs = [
+            RouteLeg(
+                polyline=polyline.encode([coord_pairs[i], coord_pairs[i + 1]]),
+                distance_m=haversine(route_points[i], route_points[i + 1]) * 1000,
+                duration_s=0,
+            )
+            for i in range(len(route_points) - 1)
+        ]
+        return RouteResult(
+            distance_m=sum(leg.distance_m for leg in legs),
+            duration_s=0,
+            legs=legs,
+        )
     return fetch_route_from_coordinates(coord_pairs)
 
 
@@ -98,6 +120,33 @@ def optimize_visit_order(
     points: List[Landmark],
     start_point: Optional[Landmark] = None,
     end_point: Optional[Landmark] = None,
+    use_multistart: bool = True,
+    use_two_opt: bool = True,
 ) -> List[Landmark]:
-    ordered_landmarks = solve_tsp(points, start_point, end_point)
-    return ordered_landmarks
+    if not points:
+        return []
+
+    if start_point:
+        route = nearest_neighbor(points, start_point, end_point)
+        if use_two_opt:
+            route = two_opt(route, haversine, fix_start=True, fix_end=bool(end_point))
+        return route
+
+    if not use_multistart:
+        route = nearest_neighbor(points, end_point=end_point)
+        if use_two_opt:
+            route = two_opt_by_distance(route, fix_start=False, fix_end=bool(end_point))
+        return route
+
+    best_route = None
+    best_distance = float("inf")
+    for candidate_start in points:
+        route = nearest_neighbor(points, candidate_start, end_point)
+        if use_two_opt:
+            route = two_opt_by_distance(route, fix_start=False, fix_end=bool(end_point))
+        distance = route_distance(route)
+        if distance < best_distance:
+            best_distance = distance
+            best_route = route
+
+    return best_route or []

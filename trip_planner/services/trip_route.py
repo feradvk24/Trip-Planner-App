@@ -68,20 +68,30 @@ class TripRoute:
         landmarks: list[Landmark],
         start_point: Optional[Landmark] = None,
         end_point: Optional[Landmark] = None,
+        use_multistart: bool = True,
+        use_two_opt: bool = True,
+        fetch_route_steps: bool = True,
     ):
-        from services.trip_optimization.routing_service import fetch_route_steps, optimize_visit_order
+        from services.trip_optimization.routing_service import fetch_route_steps as get_route_steps, optimize_visit_order
 
         custom_start = _custom_location(start_point)
         custom_end = _custom_location(end_point)
         visit_order = [
             landmark
-            for landmark in optimize_visit_order(landmarks, start_point=start_point, end_point=end_point)
+            for landmark in optimize_visit_order(
+                landmarks,
+                start_point=start_point,
+                end_point=end_point,
+                use_multistart=use_multistart,
+                use_two_opt=use_two_opt,
+            )
             if landmark.id != -1
         ]
-        route_result = fetch_route_steps(
+        route_result = get_route_steps(
             visit_order,
             start_point=_location_tuple(custom_start),
             end_point=_location_tuple(custom_end),
+            fetch_route_steps=fetch_route_steps,
         )
         nodes = [
             *([RouteNode.custom_start(custom_start)] if custom_start else []),

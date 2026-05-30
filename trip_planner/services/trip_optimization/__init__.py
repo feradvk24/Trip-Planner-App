@@ -9,7 +9,6 @@ from services.trip_optimization.tsp_formulas import (
     haversine,
     nearest_neighbor,
     route_distance,
-    solve_tsp,
     two_opt,
     two_opt_by_distance,
 )
