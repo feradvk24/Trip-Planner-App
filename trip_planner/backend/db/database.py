@@ -44,3 +44,8 @@ def init_db():
     """Create all tables that are defined in models (safe to call on startup)."""
     import backend.db.models  # noqa: F401 — registers ORM models with Base
     Base.metadata.create_all(bind=engine)
+
+
+def shutdown_session(exception=None):
+    """Remove the current scoped session at the end of a Flask app context."""
+    SessionLocal.remove()
