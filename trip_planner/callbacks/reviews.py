@@ -7,7 +7,7 @@ from services.trip_workflows import submit_trip_or_landmark_review_for_user
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.widgets.review_widgets import landmark_review_pane_style, landmark_review_star_buttons
 from i18n import t
-from schemas.stores import ActiveTripStore, ReviewStateStore
+from dash_store_schemas.stores import ActiveTripStore, ReviewStateStore
 
 
 def _next_review_state_or_close(review_state: ReviewStateStore | None) -> ReviewStateStore:

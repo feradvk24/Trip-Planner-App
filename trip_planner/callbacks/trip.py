@@ -13,7 +13,7 @@ from callbacks.utils.trip_state import trip_point_summary
 from callbacks.widgets.review_widgets import review_pane_state, trip_completion_review_pane_state
 from callbacks.widgets.trip_rendering import build_trip_content
 from i18n import t
-from schemas.stores import ActiveTripStore
+from dash_store_schemas.stores import ActiveTripStore
 
 
 def hidden_next_visit_button(lang="bg"):

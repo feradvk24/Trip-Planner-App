@@ -2,7 +2,7 @@ from dash import html
 from dash.exceptions import PreventUpdate
 
 from i18n import t
-from schemas.stores import ActiveTripStore, ReviewStateStore
+from dash_store_schemas.stores import ActiveTripStore, ReviewStateStore
 from services.trip_route import TripRoute
 
 def landmark_review_pane_style(display="none"):

@@ -10,7 +10,7 @@ from backend.db.crud import (
     update_trip_progress,
     user_trip_name_exists,
 )
-from schemas.stores import (
+from dash_store_schemas.stores import (
     ActiveTripStore,
     OptimizedTripStore,
     ReviewStateStore,

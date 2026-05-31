@@ -18,7 +18,7 @@ from callbacks.widgets.callback_widgets import (
 )
 from i18n import t
 from layout.markers import create_marker
-from schemas.stores import OptimizedTripStore
+from dash_store_schemas.stores import OptimizedTripStore
 from styles import checkbox_icon, pin_icon
 
 

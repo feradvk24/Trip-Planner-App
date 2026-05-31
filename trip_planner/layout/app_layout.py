@@ -8,7 +8,7 @@ import ids
 from backend.db.crud import get_active_user_trip, get_public_trip
 from services.landmark_registry import LandmarkRegistry
 from services.trip_route import TripRoute
-from schemas.stores import ActiveInfoStore, ActiveTripStore, PendingBrowseTripStore
+from dash_store_schemas.stores import ActiveInfoStore, ActiveTripStore, PendingBrowseTripStore
 from callbacks.utils.trip_state import sanitize_shared_trip
 from layout.info_sidebar import create_info_sidebar
 from layout.map import create_map

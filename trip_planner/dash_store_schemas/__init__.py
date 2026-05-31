@@ -1,4 +1,4 @@
-from schemas.stores import (
+from dash_store_schemas.stores import (
     ActiveInfoStore,
     ActiveTripStore,
     LocationStore,

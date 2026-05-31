@@ -1,5 +1,5 @@
 from i18n import t
-from schemas.stores import ActiveTripStore, SelectedTripStore
+from dash_store_schemas.stores import ActiveTripStore, SelectedTripStore
 from services.trip_route import TripRoute
 
 

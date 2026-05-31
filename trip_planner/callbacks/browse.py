@@ -14,7 +14,7 @@ from callbacks.utils.trip_state import sanitize_shared_trip
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.widgets.callback_widgets import build_load_trip_items
 from i18n import t
-from schemas.stores import ActiveTripStore, SelectedTripStore
+from dash_store_schemas.stores import ActiveTripStore, SelectedTripStore
 
 
 def is_browse_path(pathname):

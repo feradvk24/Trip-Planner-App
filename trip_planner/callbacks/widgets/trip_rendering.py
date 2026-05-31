@@ -7,7 +7,7 @@ from services.trip_optimization import fetch_route_steps
 from callbacks.utils.routing import decode_route_polyline, location_tuple
 from callbacks.widgets.access_connectors import build_access_connector_polylines
 from i18n import t
-from schemas.stores import ActiveTripStore
+from dash_store_schemas.stores import ActiveTripStore
 from styles import current_point_icon, grayed_number_icon, house_icon, number_icon
 
 

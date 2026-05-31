@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
-from schemas.stores import ActiveTripStore, LocationStore, OptimizedTripStore, RouteLegStore
+from dash_store_schemas.stores import ActiveTripStore, LocationStore, OptimizedTripStore, RouteLegStore
 from services.landmark_registry import Landmark
 
 
