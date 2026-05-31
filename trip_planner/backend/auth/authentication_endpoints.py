@@ -1,11 +1,12 @@
 import hashlib
 
 from flask import redirect
+from flask_login import logout_user
 
 from backend.db.crud import EmailVerificationStatus, verify_user_email_token
 
 
-def register_email_verification_routes(server):
+def register_authentication_endpoints(server):
     @server.route("/verify-email/<token>")
     def verify_email(token):
         token_hash = hashlib.sha256(token.encode()).hexdigest()
@@ -14,3 +15,8 @@ def register_email_verification_routes(server):
             return redirect("/login?verified=1")
 
         return redirect("/login?verified=0")
+
+    @server.route("/logout", methods=["POST"])
+    def logout():
+        logout_user()
+        return redirect("/login")

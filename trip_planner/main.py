@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
 from dash import Dash
 from flask import redirect, request
-from flask_login import current_user, logout_user
+from flask_login import current_user
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from backend.auth import init_login_manager
-from backend.auth.email_verification_routes import register_email_verification_routes
+from backend.auth.authentication_endpoints import register_authentication_endpoints
 from backend.db.database import create_database_if_missing, init_db, shutdown_session
 from callbacks import register_callbacks
 from layout.app_layout import create_app_layout
@@ -49,13 +49,7 @@ def require_login():
         return redirect("/login")
 
 
-@server.route("/logout", methods=["POST"])
-def logout():
-    logout_user()
-    return redirect("/login")
-
-
-register_email_verification_routes(server)
+register_authentication_endpoints(server)
 
 app.layout = create_app_layout
 
