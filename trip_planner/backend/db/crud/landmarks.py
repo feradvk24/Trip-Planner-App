@@ -1,5 +1,5 @@
-from backend.database import SessionLocal
-from backend.models import Landmark as LandmarkModel, LandmarkImage, Review
+from backend.db.database import SessionLocal
+from backend.db.models import Landmark as LandmarkModel, LandmarkImage, Review
 
 
 def get_landmarks() -> list[dict]:

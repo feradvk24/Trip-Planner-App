@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from backend.crud import (
+from backend.db.crud import (
     clear_active_user_trip,
     create_landmark_review,
     create_trip_completion,

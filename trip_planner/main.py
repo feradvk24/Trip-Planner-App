@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from backend.auth import init_login_manager
-from backend.database import create_database_if_missing, init_db, shutdown_session
-from backend.routes import register_auth_routes
+from backend.auth.email_verification_routes import register_email_verification_routes
+from backend.db.database import create_database_if_missing, init_db, shutdown_session
 from callbacks import register_callbacks
 from layout.app_layout import create_app_layout
 
@@ -55,7 +55,7 @@ def logout():
     return redirect("/login")
 
 
-register_auth_routes(server)
+register_email_verification_routes(server)
 
 app.layout = create_app_layout
 

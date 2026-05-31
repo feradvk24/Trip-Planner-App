@@ -42,7 +42,7 @@ Base = declarative_base()
 
 def init_db():
     """Create all tables that are defined in models (safe to call on startup)."""
-    import backend.models  # noqa: F401 — registers ORM models with Base
+    import backend.db.models  # noqa: F401 — registers ORM models with Base
     Base.metadata.create_all(bind=engine)
     _migrate_landmarks()
     _migrate_users()

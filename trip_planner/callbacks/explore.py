@@ -5,7 +5,7 @@ import dash_leaflet as dl
 from flask_login import current_user
 
 import ids
-from backend.crud import get_user_visited_landmark_ids
+from backend.db.crud import get_user_visited_landmark_ids
 from services.landmark_registry import LandmarkRegistry
 from services.trip_route import TripRoute
 from services.trip_workflows import save_optimized_trip_for_user

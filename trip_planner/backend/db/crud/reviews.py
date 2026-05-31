@@ -1,5 +1,5 @@
-from backend.database import SessionLocal
-from backend.models import Landmark as LandmarkModel, Review, TripCompletion, User, UserTrip
+from backend.db.database import SessionLocal
+from backend.db.models import Landmark as LandmarkModel, Review, TripCompletion, User, UserTrip
 
 
 def get_landmark_reviews(landmark_id: int) -> list[dict]:

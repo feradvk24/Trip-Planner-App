@@ -4,7 +4,7 @@ from flask import session
 from flask_login import current_user
 
 import ids
-from backend.crud import (
+from backend.db.crud import (
     delete_trip,
     get_public_trips,
     get_user_trips,

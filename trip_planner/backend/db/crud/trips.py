@@ -1,7 +1,7 @@
 from typing import Optional
 
-from backend.database import SessionLocal
-from backend.models import TripCompletion, User, UserLandmarkVisit, UserTrip
+from backend.db.database import SessionLocal
+from backend.db.models import TripCompletion, User, UserLandmarkVisit, UserTrip
 
 
 def _normalize_trip_name(name: str) -> str:

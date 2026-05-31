@@ -2,10 +2,10 @@ import hashlib
 
 from flask import redirect
 
-from backend.crud import EmailVerificationStatus, verify_user_email_token
+from backend.db.crud import EmailVerificationStatus, verify_user_email_token
 
 
-def register_auth_routes(server):
+def register_email_verification_routes(server):
     @server.route("/verify-email/<token>")
     def verify_email(token):
         token_hash = hashlib.sha256(token.encode()).hexdigest()

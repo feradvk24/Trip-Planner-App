@@ -7,7 +7,7 @@ from flask_login import login_user
 
 import ids
 from backend.auth import AuthStatus, User, authenticate_user, create_user
-from backend.crud import get_user_auth_record
+from backend.db.crud import get_user_auth_record
 from i18n import DEFAULT_LANGUAGE
 
 

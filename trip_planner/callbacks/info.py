@@ -2,7 +2,7 @@ from dash import ALL, Input, Output, ctx, html
 from dash.exceptions import PreventUpdate
 
 import ids
-from backend.crud import get_landmark_image, get_landmark_review_summary, get_landmark_reviews
+from backend.db.crud import get_landmark_image, get_landmark_review_summary, get_landmark_reviews
 from services.landmark_registry import LandmarkRegistry
 from services.trip_route import TripRoute
 from callbacks.utils.get_language import get_language_from_url

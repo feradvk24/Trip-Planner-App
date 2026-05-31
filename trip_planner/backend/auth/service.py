@@ -33,8 +33,8 @@ def _hash_password(password: str, salt: str) -> str:
 
 def create_user(username: str, email: str, password: str, first_name: str, last_name: str) -> bool:
     """Register a new user in the DB. Returns True on success, False if username/email taken."""
-    from backend.database import SessionLocal
-    from backend.models import User as UserModel
+    from backend.db.database import SessionLocal
+    from backend.db.models import User as UserModel
     db = SessionLocal()
     try:
         email = email.strip().lower()
@@ -73,7 +73,7 @@ def verify_user(username: str, password: str) -> bool:
 
 def authenticate_user(username: str, password: str) -> AuthStatus:
     """Check credentials and email verification status."""
-    from backend.crud import get_user_auth_record
+    from backend.db.crud import get_user_auth_record
 
     user = get_user_auth_record(username)
     if not user:
@@ -102,8 +102,8 @@ def init_login_manager(server):
 
     @login_manager.user_loader
     def load_user(username):
-        from backend.database import SessionLocal
-        from backend.models import User as UserModel
+        from backend.db.database import SessionLocal
+        from backend.db.models import User as UserModel
         db = SessionLocal()
         try:
             user = db.query(UserModel).filter(UserModel.username == username).first()

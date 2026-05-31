@@ -1,5 +1,5 @@
-from backend.database import SessionLocal
-from backend.models import Landmark, Review, User
+from backend.db.database import SessionLocal
+from backend.db.models import Landmark, Review, User
 
 
 def _build_access_point(access_latitude, access_longitude) -> dict | None:

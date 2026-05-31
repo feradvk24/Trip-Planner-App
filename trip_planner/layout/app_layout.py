@@ -5,7 +5,7 @@ from flask import session
 from flask_login import current_user
 
 import ids
-from backend.crud import get_active_user_trip, get_public_trip
+from backend.db.crud import get_active_user_trip, get_public_trip
 from services.landmark_registry import LandmarkRegistry
 from services.trip_route import TripRoute
 from schemas.stores import ActiveInfoStore, ActiveTripStore, PendingBrowseTripStore

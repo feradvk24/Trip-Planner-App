@@ -56,7 +56,7 @@ class LandmarkRegistry:
     @classmethod
     def get_landmarks(cls):
         if cls._instance is None:
-            from backend.crud import get_landmarks
+            from backend.db.crud import get_landmarks
 
             cls._instance = cls.from_records(get_landmarks())
         return cls._instance

@@ -3,7 +3,7 @@ from dash import dcc, html
 from flask_login import current_user
 
 import ids
-from backend.crud import get_user_email
+from backend.db.crud import get_user_email
 from styles import SIDEBAR_STYLE
 from i18n import t
 

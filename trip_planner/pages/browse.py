@@ -4,7 +4,7 @@ from dash import dcc, html
 from flask_login import current_user
 
 import ids
-from backend.crud import get_user_trips
+from backend.db.crud import get_user_trips
 from callbacks.widgets.callback_widgets import build_load_trip_items
 from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
 from i18n import t
