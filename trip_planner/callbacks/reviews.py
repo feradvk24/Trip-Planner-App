@@ -7,9 +7,10 @@ from services.trip_workflows import submit_trip_or_landmark_review_for_user
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.widgets.review_widgets import landmark_review_pane_style, landmark_review_star_buttons
 from i18n import t
+from schemas.stores import ActiveTripStore, ReviewStateStore
 
 
-def _next_review_state_or_close(review_state):
+def _next_review_state_or_close(review_state: ReviewStateStore | None) -> ReviewStateStore:
     next_review_state = (review_state or {}).get("next_review_state")
     if next_review_state:
         return next_review_state
@@ -25,7 +26,7 @@ def register_review_callbacks(app):
         State(ids.LANDMARK_REVIEW_STATE_STORE, "data"),
         prevent_initial_call=True,
     )
-    def close_landmark_review_pane(close_clicks, skip_clicks, review_state):
+    def close_landmark_review_pane(close_clicks, skip_clicks, review_state: ReviewStateStore | None):
         if not close_clicks and not skip_clicks:
             raise PreventUpdate
         return _next_review_state_or_close(review_state), ""
@@ -36,7 +37,7 @@ def register_review_callbacks(app):
         State(ids.LANDMARK_REVIEW_STATE_STORE, "data"),
         prevent_initial_call=True,
     )
-    def select_landmark_review_rating(star_clicks, review_state):
+    def select_landmark_review_rating(star_clicks, review_state: ReviewStateStore | None):
         if not ctx.triggered_id or not any(n for n in star_clicks if n):
             raise PreventUpdate
         return {**(review_state or {}), "rating": ctx.triggered_id["index"]}
@@ -53,7 +54,7 @@ def register_review_callbacks(app):
         Input(ids.LANDMARK_REVIEW_STATE_STORE, "data"),
         State("url", "href"),
     )
-    def render_landmark_review_pane(review_state, href):
+    def render_landmark_review_pane(review_state: ReviewStateStore | None, href):
         lang = get_language_from_url(href)
         review_state = review_state or {}
         display = "flex" if review_state.get("is_open") else "none"
@@ -93,7 +94,13 @@ def register_review_callbacks(app):
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def submit_landmark_review(n_clicks, review_state, review_text, active_trip, href):
+    def submit_landmark_review(
+        n_clicks,
+        review_state: ReviewStateStore | None,
+        review_text,
+        active_trip: ActiveTripStore | None,
+        href,
+    ):
         if not n_clicks:
             raise PreventUpdate
         lang = get_language_from_url(href)

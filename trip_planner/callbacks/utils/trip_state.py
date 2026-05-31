@@ -1,16 +1,17 @@
 from i18n import t
+from schemas.stores import ActiveTripStore, SelectedTripStore
 from services.trip_route import TripRoute
 
 
-def _custom_start_location(trip_data):
+def _custom_start_location(trip_data: ActiveTripStore | None):
     return TripRoute.handle_trip_store(trip_data)["custom_start_location"]
 
 
-def _custom_end_location(trip_data):
+def _custom_end_location(trip_data: ActiveTripStore | None):
     return TripRoute.handle_trip_store(trip_data)["custom_end_location"]
 
 
-def sanitize_shared_trip(trip):
+def sanitize_shared_trip(trip: SelectedTripStore) -> SelectedTripStore:
     store = TripRoute.handle_trip_store(trip)
     route_legs = store["route_legs"]
     if store["custom_start_location"]:
@@ -36,7 +37,13 @@ def sanitize_shared_trip(trip):
     }
 
 
-def trip_point_summary(registry, visit_order_ids, index, active_trip=None, lang="bg"):
+def trip_point_summary(
+    registry,
+    visit_order_ids: list[int],
+    index: int | None,
+    active_trip: ActiveTripStore | None = None,
+    lang="bg",
+):
     active_trip = active_trip or {}
     visit_order = list(visit_order_ids or [])
     if index is None or index < 0:

@@ -8,6 +8,7 @@ import ids
 from backend.crud import get_active_user_trip, get_public_trip
 from services.landmark_registry import LandmarkRegistry
 from services.trip_route import TripRoute
+from schemas.stores import ActiveInfoStore, ActiveTripStore, PendingBrowseTripStore
 from callbacks.utils.trip_state import sanitize_shared_trip
 from layout.info_sidebar import create_info_sidebar
 from layout.map import create_map
@@ -16,7 +17,7 @@ from layout.sidebar import create_sidebar, create_user_menu
 from styles import CONTENT_STYLE
 from i18n import t
 
-def initial_active_info(active_trip=None):
+def initial_active_info(active_trip: ActiveTripStore | None = None) -> ActiveInfoStore | None:
     if not active_trip:
         return None
 
@@ -35,7 +36,10 @@ def initial_active_info(active_trip=None):
     }
 
 
-def resolve_pending_browse_trip(pending_browse_trip, registry=None):
+def resolve_pending_browse_trip(
+    pending_browse_trip: PendingBrowseTripStore | None,
+    registry=None,
+) -> PendingBrowseTripStore | None:
     if not pending_browse_trip:
         return None
 
@@ -65,7 +69,11 @@ def resolve_pending_browse_trip(pending_browse_trip, registry=None):
     }
 
 
-def create_stores(active_trip=None, pending_browse_trip=None, focused_landmark_id=None):
+def create_stores(
+    active_trip: ActiveTripStore | None = None,
+    pending_browse_trip: PendingBrowseTripStore | None = None,
+    focused_landmark_id: int | None = None,
+):
     if pending_browse_trip:
         initial_mode = pending_browse_trip.get("mode") or "explore"
         initial_destinations = pending_browse_trip.get("destination_ids") or []

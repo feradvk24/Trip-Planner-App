@@ -13,6 +13,7 @@ from callbacks.utils.trip_state import trip_point_summary
 from callbacks.widgets.review_widgets import review_pane_state, trip_completion_review_pane_state
 from callbacks.widgets.trip_rendering import build_trip_content
 from i18n import t
+from schemas.stores import ActiveTripStore
 
 
 def hidden_next_visit_button(lang="bg"):
@@ -33,7 +34,7 @@ def register_trip_callbacks(app):
         Input(ids.GEOLOCATION, "position"),
         State("url", "href"),
     )
-    def render_trip_status(active_trip, position, href):
+    def render_trip_status(active_trip: ActiveTripStore | None, position, href):
         lang = get_language_from_url(href)
         if not active_trip:
             return html.Div([
@@ -133,7 +134,7 @@ def register_trip_callbacks(app):
         Input(ids.MODE_STORE, "data"),
         State("url", "href"),
     )
-    def render_trip_markers(active_trip, mode, href):
+    def render_trip_markers(active_trip: ActiveTripStore | None, mode, href):
         if mode != "trip" or not active_trip:
             return [], [], []
         lang = get_language_from_url(href)
@@ -150,7 +151,7 @@ def register_trip_callbacks(app):
         State(ids.ACTIVE_TRIP_STORE, "data"),
         prevent_initial_call=True,
     )
-    def handle_visit_btn(n_clicks_list, progress_clicks, active_trip):
+    def handle_visit_btn(n_clicks_list, progress_clicks, active_trip: ActiveTripStore | None):
         if not ctx.triggered_id:
             raise PreventUpdate
         active_route = TripRoute.from_store(active_trip)

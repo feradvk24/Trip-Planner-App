@@ -18,6 +18,7 @@ from callbacks.widgets.callback_widgets import (
 )
 from i18n import t
 from layout.markers import create_marker
+from schemas.stores import OptimizedTripStore
 from styles import checkbox_icon, pin_icon
 
 
@@ -74,7 +75,7 @@ def register_explore_callbacks(app):
         Input(ids.OPTIMIZED_TRIP_STORE, "data"),
         State("url", "href"),
     )
-    def sync_route_lock_state(optimized_trip, href):
+    def sync_route_lock_state(optimized_trip: OptimizedTripStore | None, href):
         route_is_locked = bool(optimized_trip)
         lang = get_language_from_url(href)
         hide_visited_options = [{
@@ -96,7 +97,7 @@ def register_explore_callbacks(app):
         State("url", "href"),
         prevent_initial_call="initial_duplicate",
     )
-    def hydrate_selected_objects(mode, destination_ids, optimized_trip, href):
+    def hydrate_selected_objects(mode, destination_ids, optimized_trip: OptimizedTripStore | None, href):
         if mode != "explore":
             raise PreventUpdate
         lang = get_language_from_url(href)
@@ -127,7 +128,15 @@ def register_explore_callbacks(app):
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def compute_route(n_clicks, destination_ids, start_point_id, end_point_id, optimized_trip, position, href):
+    def compute_route(
+        n_clicks,
+        destination_ids,
+        start_point_id,
+        end_point_id,
+        optimized_trip: OptimizedTripStore | None,
+        position,
+        href,
+    ):
         if optimized_trip:
             raise PreventUpdate
         if not destination_ids or len(destination_ids) < 2:
@@ -182,7 +191,7 @@ def register_explore_callbacks(app):
             ),
         ],
     )
-    def render_route(trip_data, href):
+    def render_route(trip_data: OptimizedTripStore | None, href):
         if not trip_data:
             raise PreventUpdate
         lang = get_language_from_url(href)
@@ -209,7 +218,7 @@ def register_explore_callbacks(app):
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def modify_route(n_clicks, optimized_trip, href):
+    def modify_route(n_clicks, optimized_trip: OptimizedTripStore | None, href):
         lang = get_language_from_url(href)
         if not optimized_trip:
             raise PreventUpdate
@@ -360,7 +369,7 @@ def register_explore_callbacks(app):
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def confirm_save_trip(n_clicks, name, landmark_ids, optimized_trip, href):
+    def confirm_save_trip(n_clicks, name, landmark_ids, optimized_trip: OptimizedTripStore | None, href):
         lang = get_language_from_url(href)
         result = save_optimized_trip_for_user(
             current_user.id,

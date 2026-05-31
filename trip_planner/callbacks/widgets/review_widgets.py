@@ -2,6 +2,7 @@ from dash import html
 from dash.exceptions import PreventUpdate
 
 from i18n import t
+from schemas.stores import ActiveTripStore, ReviewStateStore
 from services.trip_route import TripRoute
 
 def landmark_review_pane_style(display="none"):
@@ -38,7 +39,11 @@ def landmark_review_star_buttons(rating=None, lang="bg"):
     ]
 
 
-def review_pane_state(registry, active_trip, visited_index):
+def review_pane_state(
+    registry,
+    active_trip: ActiveTripStore,
+    visited_index: int | None,
+) -> ReviewStateStore:
     visit_order = TripRoute.handle_trip_store(active_trip)["visit_order"]
     if visited_index is None or visited_index < 0 or visited_index >= len(visit_order):
         landmark_id = None
@@ -57,7 +62,7 @@ def review_pane_state(registry, active_trip, visited_index):
     }
 
 
-def trip_completion_review_pane_state(active_trip):
+def trip_completion_review_pane_state(active_trip: ActiveTripStore) -> ReviewStateStore:
     trip_name = active_trip.get("name") or active_trip.get("trip_name") or active_trip.get("title") or "Trip"
     return {
         "is_open": True,

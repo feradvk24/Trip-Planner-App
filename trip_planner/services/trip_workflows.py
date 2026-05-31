@@ -10,6 +10,13 @@ from backend.crud import (
     update_trip_progress,
     user_trip_name_exists,
 )
+from schemas.stores import (
+    ActiveTripStore,
+    OptimizedTripStore,
+    ReviewStateStore,
+    SelectedTripStore,
+    ServiceResultData,
+)
 from services.trip_route import TripRoute
 
 
@@ -17,11 +24,16 @@ from services.trip_route import TripRoute
 class ServiceResult:
     ok: bool
     code: str = "ok"
-    data: dict | None = None
+    data: ServiceResultData | None = None
     error: str | None = None
 
 
-def save_optimized_trip_for_user(username, name, landmark_ids, optimized_trip):
+def save_optimized_trip_for_user(
+    username: str,
+    name: str | None,
+    landmark_ids: list[int] | None,
+    optimized_trip: OptimizedTripStore | None,
+) -> ServiceResult:
     trip_name = (name or "").strip()
     if not trip_name:
         return ServiceResult(False, "missing_name")
@@ -52,7 +64,7 @@ def save_optimized_trip_for_user(username, name, landmark_ids, optimized_trip):
     return ServiceResult(True)
 
 
-def load_selected_trip_for_user(username, trip):
+def load_selected_trip_for_user(username: str, trip: SelectedTripStore) -> ServiceResult:
     if trip.get("source") == "shared":
         clear_active_user_trip(username)
         return ServiceResult(
@@ -68,7 +80,7 @@ def load_selected_trip_for_user(username, trip):
     return ServiceResult(True)
 
 
-def share_active_trip_for_user(username, active_trip):
+def share_active_trip_for_user(username: str, active_trip: ActiveTripStore | None) -> ServiceResult:
     if not active_trip or not active_trip.get("trip_id"):
         return ServiceResult(False, "not_loaded")
     if active_trip.get("is_public"):
@@ -82,7 +94,12 @@ def share_active_trip_for_user(username, active_trip):
     return ServiceResult(True, data={"updated_trip": {**active_trip, "is_public": True}})
 
 
-def visit_trip_stop_for_user(username, active_trip, clicked_index, route=None):
+def visit_trip_stop_for_user(
+    username: str,
+    active_trip: ActiveTripStore | None,
+    clicked_index: int | None,
+    route: TripRoute | None = None,
+) -> ServiceResult:
     if not active_trip or clicked_index is None:
         raise ValueError("A trip and stop index are required.")
 
@@ -117,7 +134,12 @@ def visit_trip_stop_for_user(username, active_trip, clicked_index, route=None):
     )
 
 
-def submit_trip_or_landmark_review_for_user(username, active_trip, review_state, review_text):
+def submit_trip_or_landmark_review_for_user(
+    username: str,
+    active_trip: ActiveTripStore | None,
+    review_state: ReviewStateStore | None,
+    review_text: str | None,
+) -> ServiceResult:
     review_state = review_state or {}
     is_trip_completion_review = review_state.get("review_type") == "trip_completion"
     landmark_id = review_state.get("landmark_id")

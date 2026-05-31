@@ -14,6 +14,7 @@ from callbacks.utils.trip_state import sanitize_shared_trip
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.widgets.callback_widgets import build_load_trip_items
 from i18n import t
+from schemas.stores import ActiveTripStore, SelectedTripStore
 
 
 def is_browse_path(pathname):
@@ -32,7 +33,12 @@ def register_browse_callbacks(app):
         State(ids.SELECTED_TRIP_STORE, "data"),
         prevent_initial_call=True,
     )
-    def refresh_browse_saved_trips(active_tab, delete_clicks_list, pathname, selected_trip):
+    def refresh_browse_saved_trips(
+        active_tab,
+        delete_clicks_list,
+        pathname,
+        selected_trip: SelectedTripStore | None,
+    ):
         lang = get_language_from_url(pathname)
         on_browse_page = is_browse_path(pathname)
         active_tab = active_tab or "my-saved-trips"
@@ -71,7 +77,11 @@ def register_browse_callbacks(app):
         State(ids.BROWSE_SHARED_TRIPS_STORE, "data"),
         prevent_initial_call=True,
     )
-    def preview_selected_trip(n_clicks_list, saved_trips, shared_trips):
+    def preview_selected_trip(
+        n_clicks_list,
+        saved_trips: list[SelectedTripStore] | None,
+        shared_trips: list[SelectedTripStore] | None,
+    ) -> SelectedTripStore:
         triggered_value = ctx.triggered[0].get("value") if ctx.triggered else None
         if not ctx.triggered_id or not triggered_value:
             raise PreventUpdate
@@ -92,7 +102,7 @@ def register_browse_callbacks(app):
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def load_selected_trip(n_clicks, trip, href):
+    def load_selected_trip(n_clicks, trip: SelectedTripStore | None, href):
         if not n_clicks or not trip:
             raise PreventUpdate
         lang = get_language_from_url(href)
@@ -114,7 +124,7 @@ def register_browse_callbacks(app):
         State("url", "href"),
         prevent_initial_call=True,
     )
-    def share_trip(sidebar_clicks, completion_clicks, active_trip, href):
+    def share_trip(sidebar_clicks, completion_clicks, active_trip: ActiveTripStore | None, href):
         if not sidebar_clicks and not completion_clicks:
             raise PreventUpdate
         lang = get_language_from_url(href)

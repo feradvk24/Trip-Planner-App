@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
+from schemas.stores import ActiveTripStore, LocationStore, OptimizedTripStore, RouteLegStore
 from services.landmark_registry import Landmark
 
 
@@ -8,7 +9,7 @@ from services.landmark_registry import Landmark
 class RouteNode:
     kind: str
     landmark_id: Optional[int] = None
-    location: Optional[dict] = None
+    location: Optional[LocationStore] = None
 
     @classmethod
     def landmark(cls, landmark_id):
@@ -34,11 +35,11 @@ class RouteNode:
 @dataclass
 class TripRoute:
     nodes: list[RouteNode]
-    route_legs: list[dict] = field(default_factory=list)
+    route_legs: list[RouteLegStore] = field(default_factory=list)
     visited_indices: set[int] = field(default_factory=set)
 
     @classmethod
-    def handle_trip_store(cls, trip_data):
+    def handle_trip_store(cls, trip_data: ActiveTripStore | OptimizedTripStore | None) -> dict:
         trip_data = trip_data or {}
         visit_order = [
             landmark_id
@@ -104,7 +105,7 @@ class TripRoute:
         )
 
     @classmethod
-    def from_store(cls, trip_data):
+    def from_store(cls, trip_data: ActiveTripStore | OptimizedTripStore | None):
         store = cls.handle_trip_store(trip_data)
         nodes = [
             *([RouteNode.custom_start(store["custom_start_location"])] if store["custom_start_location"] else []),
@@ -222,7 +223,7 @@ class TripRoute:
             "progress_percent": round((passed / total) * 100) if total else 0,
         }
 
-    def to_store_dict(self):
+    def to_store_dict(self) -> OptimizedTripStore:
         return {
             "visit_order": self.visit_order,
             "route_legs": self.route_legs,
