@@ -5,13 +5,11 @@ from flask_login import current_user
 
 import ids
 from backend.crud import (
-    clear_active_user_trip,
     delete_trip,
     get_public_trips,
     get_user_trips,
-    set_active_user_trip,
-    set_trip_public_status,
 )
+from services.trip_workflows import load_selected_trip_for_user, share_active_trip_for_user
 from callbacks.utils.trip_state import sanitize_shared_trip
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.widgets.callback_widgets import build_load_trip_items
@@ -98,15 +96,10 @@ def register_browse_callbacks(app):
         if not n_clicks or not trip:
             raise PreventUpdate
         lang = get_language_from_url(href)
-        shared_trip = trip.get("source") == "shared"
-        if shared_trip:
-            clear_active_user_trip(current_user.id)
-            session["pending_browse_trip"] = {
-                "shared_trip_id": trip["id"],
-            }
-            return f"/{lang}"
-
-        set_active_user_trip(current_user.id, trip["id"])
+        result = load_selected_trip_for_user(current_user.id, trip)
+        pending_browse_trip = (result.data or {}).get("pending_browse_trip")
+        if pending_browse_trip:
+            session["pending_browse_trip"] = pending_browse_trip
         return f"/{lang}"
 
     @app.callback(
@@ -125,16 +118,11 @@ def register_browse_callbacks(app):
         if not sidebar_clicks and not completion_clicks:
             raise PreventUpdate
         lang = get_language_from_url(href)
-        if not active_trip or not active_trip.get("trip_id"):
+        result = share_active_trip_for_user(current_user.id, active_trip)
+        if result.code == "not_loaded":
             return no_update, t("share_trip.load_before_sharing", lang=lang), t("share_trip.not_loaded", lang=lang), "warning", True
-        if active_trip.get("is_public"):
+        if result.code == "already_shared":
             return no_update, t("share_trip.already_shared_message", lang=lang), t("share_trip.already_shared", lang=lang), "info", True
-
-        trip_id = active_trip["trip_id"]
-        username = current_user.id
-        try:
-            set_trip_public_status(username, trip_id, True)
-        except Exception as e:
-            return no_update, f"{t('share_trip.failed_message', lang=lang)}: {e}", t("share_trip.failed", lang=lang), "danger", True
-
-        return {**active_trip, "is_public": True}, t("share_trip.success_message", lang=lang), t("share_trip.shared", lang=lang), "success", True
+        if result.code == "failed":
+            return no_update, f"{t('share_trip.failed_message', lang=lang)}: {result.error}", t("share_trip.failed", lang=lang), "danger", True
+        return (result.data or {}).get("updated_trip"), t("share_trip.success_message", lang=lang), t("share_trip.shared", lang=lang), "success", True

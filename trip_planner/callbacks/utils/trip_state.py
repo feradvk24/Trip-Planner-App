@@ -1,5 +1,3 @@
-from dash.exceptions import PreventUpdate
-
 from i18n import t
 from services.trip_route import TripRoute
 
@@ -55,23 +53,3 @@ def trip_point_summary(registry, visit_order_ids, index, active_trip=None, lang=
         return {"name": t("trip_status.unknown_destination", lang=lang), "location": ""}
     return {"name": landmark.name, "location": landmark.location}
 
-
-def visit_stop(active_trip, clicked_index, update_progress, route=None):
-    if not active_trip or clicked_index is None:
-        raise PreventUpdate
-    route = route or TripRoute.from_store(active_trip)
-    try:
-        route.visit(clicked_index)
-    except ValueError:
-        raise PreventUpdate
-
-    update_progress(
-        trip_id=active_trip["trip_id"],
-        new_current_index=clicked_index,
-        newly_visited_index=clicked_index,
-    )
-    return {
-        **active_trip,
-        "current_point_index": clicked_index,
-        "visited_indices": sorted(route.visited_indices),
-    }

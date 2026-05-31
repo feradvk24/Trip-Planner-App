@@ -5,9 +5,10 @@ import dash_leaflet as dl
 from flask_login import current_user
 
 import ids
-from backend.crud import get_user_visited_landmark_ids, save_trip, user_trip_name_exists
+from backend.crud import get_user_visited_landmark_ids
 from services.landmark_registry import LandmarkRegistry
 from services.trip_route import TripRoute
+from services.trip_workflows import save_optimized_trip_for_user
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import resolve_endpoint
 from callbacks.widgets.callback_widgets import (
@@ -361,32 +362,22 @@ def register_explore_callbacks(app):
     )
     def confirm_save_trip(n_clicks, name, landmark_ids, optimized_trip, href):
         lang = get_language_from_url(href)
-        if not name or not name.strip():
-            return True, t("save_trip_modal.enter_name", lang=lang), True
-        trip_name = name.strip()
-        if user_trip_name_exists(current_user.id, trip_name):
-            return True, t("save_trip_modal.name_exists", lang=lang), True
-        if not optimized_trip:
-            return True, t("warn_modal.message", lang=lang), True
+        result = save_optimized_trip_for_user(
+            current_user.id,
+            name,
+            landmark_ids,
+            optimized_trip,
+        )
+        if result.ok:
+            return False, "", False
 
-        custom_start_location = optimized_trip.get("custom_start_location")
-        custom_end_location = optimized_trip.get("custom_end_location")
-        saved_user_location = custom_start_location or custom_end_location
-        stop_ids = TripRoute.handle_trip_store(optimized_trip)["destination_ids"]
-        try:
-            save_trip(
-                username=current_user.id,
-                name=trip_name,
-                landmark_ids=landmark_ids or [],
-                visit_order=stop_ids,
-                route_legs=optimized_trip.get("route_legs") or [],
-                custom_start_location=custom_start_location,
-                custom_end_location=custom_end_location,
-                saved_user_location=saved_user_location,
-            )
-        except Exception as e:
-            return True, f"{t('save_trip_modal.failed', lang=lang)}: {e}", True
-        return False, "", False
+        if result.code == "missing_name":
+            return True, t("save_trip_modal.enter_name", lang=lang), True
+        if result.code == "name_exists":
+            return True, t("save_trip_modal.name_exists", lang=lang), True
+        if result.code == "missing_route":
+            return True, t("warn_modal.message", lang=lang), True
+        return True, f"{t('save_trip_modal.failed', lang=lang)}: {result.error}", True
 
     @app.callback(
         Output(ids.LANDMARK_SEARCH_DROPDOWN, "options"),

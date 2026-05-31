@@ -3,7 +3,7 @@ from dash.exceptions import PreventUpdate
 from flask_login import current_user
 
 import ids
-from backend.crud import create_landmark_review, create_trip_completion
+from services.trip_workflows import submit_trip_or_landmark_review_for_user
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.widgets.review_widgets import landmark_review_pane_style, landmark_review_star_buttons
 from i18n import t
@@ -98,10 +98,16 @@ def register_review_callbacks(app):
             raise PreventUpdate
         lang = get_language_from_url(href)
         review_state = review_state or {}
-        is_trip_completion_review = review_state.get("review_type") == "trip_completion"
-        landmark_id = review_state.get("landmark_id")
-        rating = review_state.get("rating")
-        if not active_trip or not active_trip.get("trip_id") or (not is_trip_completion_review and not landmark_id):
+        result = submit_trip_or_landmark_review_for_user(
+            current_user.id,
+            active_trip,
+            review_state,
+            review_text,
+        )
+        if result.ok:
+            return _next_review_state_or_close(review_state), "", "success", False, ""
+
+        if result.code == "missing_target":
             return (
                 {**review_state, "is_open": True},
                 t("landmark_review.missing_target", lang=lang),
@@ -109,7 +115,7 @@ def register_review_callbacks(app):
                 True,
                 review_text,
             )
-        if rating is None:
+        if result.code == "missing_rating":
             return (
                 {**review_state, "is_open": True},
                 t("landmark_review.choose_rating", lang=lang),
@@ -117,30 +123,10 @@ def register_review_callbacks(app):
                 True,
                 review_text,
             )
-
-        try:
-            if is_trip_completion_review:
-                create_trip_completion(
-                    username=current_user.id,
-                    trip_id=active_trip["trip_id"],
-                    rating=int(rating),
-                    review_text=review_text,
-                )
-            else:
-                create_landmark_review(
-                    username=current_user.id,
-                    trip_id=active_trip["trip_id"],
-                    landmark_id=int(landmark_id),
-                    rating=int(rating),
-                    review_text=review_text,
-                )
-        except Exception as e:
-            return (
-                {**review_state, "is_open": True},
-                f"{t('landmark_review.save_failed', lang=lang)}: {e}",
-                "danger",
-                True,
-                review_text,
-            )
-
-        return _next_review_state_or_close(review_state), "", "success", False, ""
+        return (
+            {**review_state, "is_open": True},
+            f"{t('landmark_review.save_failed', lang=lang)}: {result.error}",
+            "danger",
+            True,
+            review_text,
+        )

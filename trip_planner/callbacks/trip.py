@@ -4,12 +4,12 @@ import dash_bootstrap_components as dbc
 from flask_login import current_user
 
 import ids
-from backend.crud import create_trip_completion, update_trip_progress
 from services.landmark_registry import LandmarkRegistry
 from services.trip_route import TripRoute
+from services.trip_workflows import visit_trip_stop_for_user
 from callbacks.utils.get_language import get_language_from_url
 from callbacks.utils.routing import format_distance, get_route_legs
-from callbacks.utils.trip_state import trip_point_summary, visit_stop
+from callbacks.utils.trip_state import trip_point_summary
 from callbacks.widgets.review_widgets import review_pane_state, trip_completion_review_pane_state
 from callbacks.widgets.trip_rendering import build_trip_content
 from i18n import t
@@ -154,7 +154,6 @@ def register_trip_callbacks(app):
         if not ctx.triggered_id:
             raise PreventUpdate
         active_route = TripRoute.from_store(active_trip)
-        trip_was_already_complete = active_route.is_complete
         if ctx.triggered_id == ids.TRIP_NEXT_VISIT_BTN:
             if not progress_clicks:
                 raise PreventUpdate
@@ -164,14 +163,17 @@ def register_trip_callbacks(app):
                 raise PreventUpdate
             clicked_index = ctx.triggered_id["index"]
 
-        updated_trip = visit_stop(active_trip, clicked_index, update_trip_progress, route=active_route)
-        trip_was_completed = active_route.is_complete
-        completion_review_state = trip_completion_review_pane_state(updated_trip) if trip_was_completed else None
-        if trip_was_completed and not trip_was_already_complete:
-            create_trip_completion(
-                username=current_user.id,
-                trip_id=updated_trip["trip_id"],
-            )
+        try:
+            result = visit_trip_stop_for_user(current_user.id, active_trip, clicked_index, route=active_route)
+        except ValueError:
+            raise PreventUpdate
+
+        updated_trip = result.data["updated_trip"]
+        completion_review_state = (
+            trip_completion_review_pane_state(updated_trip)
+            if result.data["is_now_complete"]
+            else None
+        )
 
         try:
             review_state = review_pane_state(registry, active_trip, clicked_index)
