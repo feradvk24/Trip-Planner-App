@@ -7,7 +7,7 @@ import ids
 def create_login_layout():
     return html.Div(
         dbc.Container([
-            dbc.Row(dbc.Col(html.H2("Trip Planner Login", className="text-center mb-4"), width=12)),
+            dbc.Row(dbc.Col(html.H2("Login", className="text-center mb-4"), width=12)),
             dbc.Row(dbc.Col(
                 dbc.Card(dbc.CardBody([
                     dbc.Alert(id=ids.LOGIN_ALERT, is_open=False, color="danger", duration=4000),
@@ -44,7 +44,7 @@ def create_login_layout():
 def create_register_layout():
     return html.Div(
         dbc.Container([
-            dbc.Row(dbc.Col(html.H2("Create Trip Planner Account", className="text-center mb-4"), width=12)),
+            dbc.Row(dbc.Col(html.H2("Create Account", className="text-center mb-4"), width=12)),
             dbc.Row(dbc.Col(
                 dbc.Card(dbc.CardBody([
                     dbc.Alert(id=ids.REGISTER_ALERT, is_open=False, color="danger", duration=4000),
