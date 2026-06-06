@@ -6,7 +6,7 @@ from i18n import t
 
 def create_info_sidebar(lang="bg", guest=False):
     if guest:
-        return html.Aside(
+        return html.Div(
             [
                 html.Div(id=ids.INFO_SIDEBAR_TITLE),
                 html.Div(id=ids.INFO_SIDEBAR_SUBTITLE),
@@ -22,7 +22,7 @@ def create_info_sidebar(lang="bg", guest=False):
                 html.Div(id=ids.INFO_SIDEBAR_BODY),
             ],
             id=ids.INFO_SIDEBAR,
-            style={**INFO_SIDEBAR_STYLE, "fontSize": 0},
+            style={"display": "none"},
         )
 
     default_body_text = t("info_sidebar.details", lang=lang)

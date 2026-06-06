@@ -157,7 +157,7 @@ def create_share_trip_toast(lang="bg"):
     )
 
 
-def create_main_content(markers, active_trip=None, focused_landmark=None, lang="bg"):
+def create_main_content(markers, active_trip=None, focused_landmark=None, lang="bg", guest=False):
     initial_markers = [] if active_trip else markers
     initial_viewport = None
     if focused_landmark:
@@ -169,7 +169,7 @@ def create_main_content(markers, active_trip=None, focused_landmark=None, lang="
 
     return html.Div(
         id=ids.MAIN_CONTENT,
-        style=CONTENT_STYLE,
+        style={**CONTENT_STYLE, "marginRight": 0} if guest else CONTENT_STYLE,
         children=[
             dbc.Container(fluid=True, className="h-100 d-flex flex-column p-0", children=[
                 dbc.Row(className="h-100 flex-grow-1 p-0", children=[
@@ -216,9 +216,9 @@ def create_authenticated_layout(markers, include_location=True, focused_landmark
         dcc.Geolocation(id=ids.GEOLOCATION, high_accuracy=True, maximum_age=0, update_now=True, timeout=10000),
         create_sidebar(active_trip, lang=lang, guest=guest),
         create_info_sidebar(lang=lang, guest=guest),
-        create_main_content(markers, active_trip, focused_landmark, lang=lang),
+        create_main_content(markers, active_trip, focused_landmark, lang=lang, guest=guest),
         create_landmark_review_pane(lang=lang),
-        create_user_menu(lang=lang, guest=guest),
+        create_user_menu(fix_to_right=guest, lang=lang, guest=guest),
         *create_stores(active_trip, pending_browse_trip, focused_landmark.id if focused_landmark else None),
         create_warn_modal(lang=lang),
         create_success_toast(lang=lang),
