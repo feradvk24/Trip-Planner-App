@@ -136,6 +136,7 @@ TRANSLATIONS = {
     "statistics.title": "Statistics",
     "statistics.subtitle": "Your trip statistics will live here.",
     "statistics.total_landmark_visits": "Total Landmark Visits",
+    "statistics.visited_landmarks_progress": "Visited Landmarks",
     "statistics.landmark_visits": "Landmark Visits",
     "statistics.visit_history": "Visit History",
     "statistics.no_visited_landmarks": "No visited landmarks yet.",

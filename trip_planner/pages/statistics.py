@@ -4,7 +4,12 @@ from dash import dcc, html
 from flask_login import current_user
 
 import ids
-from backend.db.crud import get_user_landmark_visit_history, get_user_monthly_landmark_visit_counts, total_landmark_visits_for_user
+from backend.db.crud import (
+    get_user_landmark_visit_history,
+    get_user_monthly_landmark_visit_counts,
+    get_user_visited_landmark_ids,
+    total_landmark_visits_for_user,
+)
 from services.landmark_registry import LandmarkRegistry
 from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, t
 from layout.sidebar import create_user_menu
@@ -94,18 +99,29 @@ def build_monthly_visit_figure(monthly_visits):
     }
 
 
-def build_total_visits(total_visits, lang="bg"):
+def build_stat_card(label, value):
     return html.Div(
         [
-            html.Div(t("statistics.total_landmark_visits", lang=lang), className="text-muted small", style={"textAlign": "center"}),
+            html.Div(label, className="text-muted small", style={"textAlign": "center"}),
             html.Div(
-                f"{total_visits}",
+                f"{value}",
                 className="fs-4 fw-semibold",
                 style={"width": "100%", "textAlign": "center"},
             ),
         ],
         className="d-flex flex-column align-items-start gap-1 py-3 px-4 border rounded",
         style={"width": "10rem", "backgroundColor": "white"},
+    )
+
+
+def build_total_visits(total_visits, lang="bg"):
+    return build_stat_card(t("statistics.total_landmark_visits", lang=lang), total_visits)
+
+
+def build_visited_landmarks_progress(visited_landmarks, total_landmarks, lang="bg"):
+    return build_stat_card(
+        t("statistics.visited_landmarks_progress", lang=lang),
+        f"{visited_landmarks} / {total_landmarks}",
     )
 
 
@@ -123,8 +139,14 @@ def layout(lang="bg", **kwargs):
         if current_user.is_authenticated else
         []
     )
-    total_visits = total_landmark_visits_for_user(current_user.id) if current_user.is_authenticated else 0
     registry = LandmarkRegistry.get_landmarks()
+    total_visits = total_landmark_visits_for_user(current_user.id) if current_user.is_authenticated else 0
+    visited_landmarks = (
+        len(get_user_visited_landmark_ids(current_user.id))
+        if current_user.is_authenticated else
+        0
+    )
+    total_landmarks = len(registry.landmarks)
 
     return html.Div(
         [
@@ -150,7 +172,17 @@ def layout(lang="bg", **kwargs):
                         [
                             html.Div(
                                 [
-                                    build_total_visits(total_visits, lang=lang),
+                                    html.Div(
+                                        [
+                                            build_total_visits(total_visits, lang=lang),
+                                            build_visited_landmarks_progress(
+                                                visited_landmarks,
+                                                total_landmarks,
+                                                lang=lang,
+                                            ),
+                                        ],
+                                        className="d-flex flex-wrap gap-3",
+                                    ),
                                     html.H4(t("statistics.landmark_visits", lang=lang), className="mt-4 mb-3"),
                                     dcc.Graph(
                                         figure=build_monthly_visit_figure(monthly_visits),
