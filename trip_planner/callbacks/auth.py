@@ -1,4 +1,5 @@
 from urllib.parse import parse_qs
+import re
 
 from dash import Input, Output, State, no_update
 from dash.exceptions import PreventUpdate
@@ -9,6 +10,17 @@ import ids
 from backend.auth import AuthStatus, User, authenticate_user, create_user
 from backend.db.crud import get_user_auth_record
 from i18n import DEFAULT_LANGUAGE
+
+
+EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def has_number(value):
+    return any(character.isdigit() for character in value)
+
+
+def is_valid_email(value):
+    return bool(EMAIL_PATTERN.fullmatch(value))
 
 
 def register_auth_callbacks(app):
@@ -89,10 +101,16 @@ def register_auth_callbacks(app):
             return no_update, "Username must be at least 6 characters.", True
         if not email or not email.strip():
             return no_update, "Please enter your email.", True
+        if not is_valid_email(email.strip()):
+            return no_update, "Please enter a valid email address.", True
         if not first_name or not first_name.strip():
             return no_update, "Please enter your first name.", True
+        if has_number(first_name.strip()):
+            return no_update, "First name cannot contain numbers.", True
         if not last_name or not last_name.strip():
             return no_update, "Please enter your last name.", True
+        if has_number(last_name.strip()):
+            return no_update, "Last name cannot contain numbers.", True
         if len(password) < 6:
             return no_update, "Password must be at least 6 characters.", True
         if create_user(username.strip(), email.strip(), password, first_name.strip(), last_name.strip()):
