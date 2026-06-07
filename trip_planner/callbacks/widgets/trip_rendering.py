@@ -6,6 +6,7 @@ from services.trip_route import TripRoute
 from services.trip_optimization import fetch_route_steps
 from callbacks.utils.routing import decode_route_polyline, location_tuple
 from callbacks.widgets.access_connectors import build_access_connector_polylines
+import ids
 from i18n import t
 from dash_store_schemas.stores import ActiveTripStore
 from styles import current_point_icon, grayed_number_icon, house_icon, number_icon
@@ -57,6 +58,7 @@ def build_trip_content(registry, active_trip: ActiveTripStore, lang="bg"):
             color="#888888",
             weight=9,
             opacity=0.6,
+            pane=ids.TRIP_PASSED_ROUTE_PANE,
         ))
     if remaining_coords:
         status_polylines.append(dl.Polyline(
@@ -64,13 +66,15 @@ def build_trip_content(registry, active_trip: ActiveTripStore, lang="bg"):
             positions=remaining_coords,
             color="#333333",
             weight=10,
+            pane=ids.TRIP_REMAINING_ROUTE_PANE,
         ))
     if current_coords:
         status_polylines.append(dl.Polyline(
             id="trip-current-polyline",
             positions=current_coords,
             color="#1a6fcf",
-            weight=9,
+            weight=10,
+            pane=ids.TRIP_CURRENT_ROUTE_PANE,
         ))
     status_polylines.extend(
         build_access_connector_polylines(

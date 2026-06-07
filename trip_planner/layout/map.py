@@ -26,6 +26,18 @@ def create_map(markers, initial_viewport=None):
             ),
             dl.LayerGroup(id=ids.PLANNED_TRIP_POLYLINE_LAYER),
             dl.Pane(
+                name=ids.TRIP_PASSED_ROUTE_PANE,
+                style={"zIndex": 541},
+            ),
+            dl.Pane(
+                name=ids.TRIP_REMAINING_ROUTE_PANE,
+                style={"zIndex": 542},
+            ),
+            dl.Pane(
+                name=ids.TRIP_CURRENT_ROUTE_PANE,
+                style={"zIndex": 543},
+            ),
+            dl.Pane(
                 dl.LayerGroup(id=ids.LOADED_TRIP_POLYLINE_LAYER),
                 name="trip-route-pane",
                 style={"zIndex": 540},

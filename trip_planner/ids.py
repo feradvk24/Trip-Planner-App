@@ -99,5 +99,8 @@ PLANNED_TRIP_POLYLINE_LAYER = "planned-trip-polyline-layer"
 LOADED_TRIP_MARKERS_LAYER = "loaded-trip-markers-layer"
 LOADED_TRIP_POLYLINE_LAYER = "loaded-trip-polyline-layer"
 LOADED_TRIP_OVERVIEW_POLYLINE_LAYER = "loaded-trip-overview-polyline-layer"
+TRIP_PASSED_ROUTE_PANE = "trip-passed-route-pane"
+TRIP_REMAINING_ROUTE_PANE = "trip-remaining-route-pane"
+TRIP_CURRENT_ROUTE_PANE = "trip-current-route-pane"
 
 LANGUAGE_RADIO = "language-radio"
