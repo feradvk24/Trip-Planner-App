@@ -3,11 +3,10 @@ import re
 
 from dash import Input, Output, State, no_update
 from dash.exceptions import PreventUpdate
-from flask import session
 from flask_login import login_user
 
 import ids
-from backend.auth import AuthStatus, User, authenticate_user, create_user
+from backend.auth import AuthStatus, User, authenticate_user, create_user, is_admin_panel_role
 from backend.db.crud import get_user_auth_record
 from i18n import DEFAULT_LANGUAGE
 
@@ -70,8 +69,7 @@ def register_auth_callbacks(app):
             role = user_record["role"] if user_record else "regular"
             is_active = user_record["is_active"] if user_record else True
             login_user(User(username, role, is_active))
-            if role in {"admin", "moderator"}:
-                session["admin_entry_allowed"] = True
+            if is_admin_panel_role(role):
                 return "/admin_panel", "", False
             return f"/{DEFAULT_LANGUAGE}", "", False
         if auth_status == AuthStatus.INACTIVE:

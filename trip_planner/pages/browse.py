@@ -4,6 +4,7 @@ from dash import dcc, html
 from flask_login import current_user
 
 import ids
+from backend.auth import is_admin_panel_user
 from backend.db.crud import get_user_trips
 from callbacks.widgets.callback_widgets import build_load_trip_items
 from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
@@ -15,6 +16,9 @@ dash.register_page(__name__, path_template="/<lang>/browse", name="Browse", orde
 
 
 def layout(lang="bg", **kwargs):
+    if is_admin_panel_user(current_user):
+        return dcc.Location(id="browse-admin-redirect", href="/admin_panel")
+
     if lang not in SUPPORTED_LANGUAGES:
         lang = DEFAULT_LANGUAGE
 

@@ -9,6 +9,9 @@ from enum import Enum
 from flask_login import LoginManager, UserMixin
 
 
+ADMIN_PANEL_ROLES = {"admin", "moderator"}
+
+
 class AuthStatus(Enum):
     INVALID = "invalid"
     INACTIVE = "inactive"
@@ -25,6 +28,16 @@ class User(UserMixin):
     @property
     def is_active(self):
         return self._is_active
+
+
+def is_admin_panel_role(role) -> bool:
+    return role in ADMIN_PANEL_ROLES
+
+
+def is_admin_panel_user(user) -> bool:
+    return bool(getattr(user, "is_authenticated", False)) and is_admin_panel_role(
+        getattr(user, "role", "regular")
+    )
 
 
 def _hash_password(password: str, salt: str) -> str:

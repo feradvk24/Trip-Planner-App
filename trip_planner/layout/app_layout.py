@@ -5,6 +5,7 @@ from flask import session
 from flask_login import current_user
 
 import ids
+from backend.auth import is_admin_panel_user
 from backend.db.crud import get_active_user_trip, get_public_trip
 from services.landmark_registry import LandmarkRegistry
 from services.trip_route import TripRoute
@@ -193,6 +194,8 @@ def create_main_content(markers, active_trip=None, focused_landmark=None, lang="
 
 
 def create_authenticated_layout(markers, include_location=True, focused_landmark_id=None, lang="bg", guest=False):
+    if is_admin_panel_user(current_user):
+        return dcc.Location(id="admin-panel-redirect", href="/admin_panel")
     if not guest and not current_user.is_authenticated:
         return dcc.Location(id="auth-redirect", href="/login")
 

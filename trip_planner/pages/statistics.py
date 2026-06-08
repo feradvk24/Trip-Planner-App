@@ -4,6 +4,7 @@ from dash import dcc, html
 from flask_login import current_user
 
 import ids
+from backend.auth import is_admin_panel_user
 from backend.db.crud import (
     get_user_landmark_visit_history,
     get_user_monthly_landmark_visit_counts,
@@ -126,6 +127,9 @@ def build_visited_landmarks_progress(visited_landmarks, total_landmarks, lang="b
 
 
 def layout(lang="bg", **kwargs):
+    if is_admin_panel_user(current_user):
+        return dcc.Location(id="statistics-admin-redirect", href="/admin_panel")
+
     if lang not in SUPPORTED_LANGUAGES:
         lang = DEFAULT_LANGUAGE
 
