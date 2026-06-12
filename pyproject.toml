@@ -31,4 +31,11 @@ Repository = "https://github.com/yourusername/trip-planner-app.git"
 Issues = "https://github.com/yourusername/trip-planner-app/issues"
 
 [tool.setuptools]
-packages = ["trip_planner"]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["trip_planner*"]
+
+[tool.setuptools.package-data]
+trip_planner = ["assets/*"]
