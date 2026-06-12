@@ -15,6 +15,7 @@ dependencies = [
     "flask",
     "dash-leaflet",
     "dash-bootstrap-components",
+    "gunicorn",
     "matplotlib",
     "sqlalchemy",
     "psycopg2-binary",
