@@ -2,11 +2,11 @@ import dash
 from dash import dcc
 from flask_login import current_user
 
-from backend.auth import is_admin_panel_user
-from services.landmark_registry import LandmarkRegistry
-from layout.app_layout import create_authenticated_layout
-from layout.markers import create_markers
-from styles import pin_icon
+from trip_planner.backend.auth import is_admin_panel_user
+from trip_planner.services.landmark_registry import LandmarkRegistry
+from trip_planner.layout.app_layout import create_authenticated_layout
+from trip_planner.layout.markers import create_markers
+from trip_planner.styles import pin_icon
 
 
 dash.register_page(__name__, path="/guest", name="Guest", order=-90)

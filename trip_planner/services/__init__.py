@@ -1,1 +1,1 @@
-from services.landmark_registry import Landmark, LandmarkRegistry
+from trip_planner.services.landmark_registry import Landmark, LandmarkRegistry

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from backend.db.crud import (
+from trip_planner.backend.db.crud import (
     clear_active_user_trip,
     create_landmark_review,
     create_trip_completion,
@@ -10,14 +10,14 @@ from backend.db.crud import (
     update_trip_progress,
     user_trip_name_exists,
 )
-from dash_store_schemas.stores import (
+from trip_planner.dash_store_schemas.stores import (
     ActiveTripStore,
     OptimizedTripStore,
     ReviewStateStore,
     SelectedTripStore,
     ServiceResultData,
 )
-from services.trip_route import TripRoute
+from trip_planner.services.trip_route import TripRoute
 
 
 @dataclass(frozen=True)

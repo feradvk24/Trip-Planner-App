@@ -4,8 +4,8 @@ from typing import List, NamedTuple, Optional, Tuple
 
 import polyline
 
-from services.landmark_registry import Landmark
-from services.trip_optimization.tsp_formulas import (
+from trip_planner.services.landmark_registry import Landmark
+from trip_planner.services.trip_optimization.tsp_formulas import (
     haversine,
     nearest_neighbor,
     route_distance,

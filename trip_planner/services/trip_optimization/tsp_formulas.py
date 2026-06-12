@@ -1,7 +1,7 @@
 import math
 from typing import List, Optional
 
-from services.landmark_registry import Landmark
+from trip_planner.services.landmark_registry import Landmark
 
 
 def haversine(a: Landmark, b: Landmark) -> float:

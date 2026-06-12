@@ -1,4 +1,4 @@
-from backend.db.database import (
+from trip_planner.backend.db.database import (
     Base,
     SessionLocal,
     create_database_if_missing,

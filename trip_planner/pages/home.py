@@ -1,10 +1,10 @@
 import dash
 
-from services.landmark_registry import LandmarkRegistry
-from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
-from layout.app_layout import create_authenticated_layout
-from layout.markers import create_markers
-from styles import pin_icon
+from trip_planner.services.landmark_registry import LandmarkRegistry
+from trip_planner.i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
+from trip_planner.layout.app_layout import create_authenticated_layout
+from trip_planner.layout.markers import create_markers
+from trip_planner.styles import pin_icon
 
 
 dash.register_page(__name__, path_template="/<lang>", name="Map", order=100)

@@ -1,20 +1,20 @@
-from backend.db.crud.landmarks import (
+from trip_planner.backend.db.crud.landmarks import (
     get_landmark_image,
     get_landmark_review_summary,
     get_landmarks,
 )
-from backend.db.crud.reviews import (
+from trip_planner.backend.db.crud.reviews import (
     create_landmark_review,
     create_trip_completion,
     get_landmark_reviews,
 )
-from backend.db.crud.statistics import (
+from trip_planner.backend.db.crud.statistics import (
     get_user_landmark_visit_history,
     get_user_monthly_landmark_visit_counts,
     get_user_visited_landmark_ids,
     total_landmark_visits_for_user,
 )
-from backend.db.crud.trips import (
+from trip_planner.backend.db.crud.trips import (
     clear_active_user_trip,
     delete_trip,
     find_completed_trips,
@@ -28,7 +28,7 @@ from backend.db.crud.trips import (
     update_trip_progress,
     user_trip_name_exists,
 )
-from backend.db.crud.users import (
+from trip_planner.backend.db.crud.users import (
     EmailVerificationStatus,
     get_user_auth_record,
     get_user_email,

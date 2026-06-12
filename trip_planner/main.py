@@ -1,18 +1,23 @@
+import sys
+from pathlib import Path
+
 import dash_bootstrap_components as dbc
 from dash import Dash
 from flask import redirect, request
 from flask_login import current_user
-from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from backend.auth import init_login_manager, is_admin_panel_user
-from backend.auth.authentication_endpoints import register_authentication_endpoints
-from backend.db.database import create_database_if_missing, init_db, shutdown_session
-from callbacks import register_callbacks
-from layout.app_layout import create_app_layout
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from trip_planner.backend.auth import init_login_manager, is_admin_panel_user
+from trip_planner.backend.auth.authentication_endpoints import register_authentication_endpoints
+from trip_planner.backend.db.database import create_database_if_missing, init_db, shutdown_session
+from trip_planner.callbacks import register_callbacks
+from trip_planner.layout.app_layout import create_app_layout
 
 app = Dash(
     __name__,

@@ -3,14 +3,14 @@ from dash.exceptions import PreventUpdate
 import dash_leaflet as dl
 from flask_login import current_user
 
-import ids
-from backend.db.crud import get_user_visited_landmark_ids
-from services.landmark_registry import LandmarkRegistry
-from callbacks.utils.explore_route_layers import build_explore_route_layers
-from callbacks.utils.get_language import get_language_from_url
-from callbacks.widgets.callback_widgets import build_all_markers
-from styles import location_dot_icon
-from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
+from trip_planner import ids
+from trip_planner.backend.db.crud import get_user_visited_landmark_ids
+from trip_planner.services.landmark_registry import LandmarkRegistry
+from trip_planner.callbacks.utils.explore_route_layers import build_explore_route_layers
+from trip_planner.callbacks.utils.get_language import get_language_from_url
+from trip_planner.callbacks.widgets.callback_widgets import build_all_markers
+from trip_planner.styles import location_dot_icon
+from trip_planner.i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
 
 
 def get_language_from_path(pathname):

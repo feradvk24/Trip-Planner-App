@@ -4,19 +4,19 @@ from dash import dcc, html
 from flask import session
 from flask_login import current_user
 
-import ids
-from backend.auth import is_admin_panel_user
-from backend.db.crud import get_active_user_trip, get_public_trip
-from services.landmark_registry import LandmarkRegistry
-from services.trip_route import TripRoute
-from dash_store_schemas.stores import ActiveInfoStore, ActiveTripStore, PendingBrowseTripStore
-from callbacks.utils.trip_state import sanitize_shared_trip
-from layout.info_sidebar import create_info_sidebar
-from layout.map import create_map
-from layout.overlays import create_landmark_review_pane
-from layout.sidebar import create_sidebar, create_user_menu
-from styles import CONTENT_STYLE
-from i18n import t
+from trip_planner import ids
+from trip_planner.backend.auth import is_admin_panel_user
+from trip_planner.backend.db.crud import get_active_user_trip, get_public_trip
+from trip_planner.services.landmark_registry import LandmarkRegistry
+from trip_planner.services.trip_route import TripRoute
+from trip_planner.dash_store_schemas.stores import ActiveInfoStore, ActiveTripStore, PendingBrowseTripStore
+from trip_planner.callbacks.utils.trip_state import sanitize_shared_trip
+from trip_planner.layout.info_sidebar import create_info_sidebar
+from trip_planner.layout.map import create_map
+from trip_planner.layout.overlays import create_landmark_review_pane
+from trip_planner.layout.sidebar import create_sidebar, create_user_menu
+from trip_planner.styles import CONTENT_STYLE
+from trip_planner.i18n import t
 
 def initial_active_info(active_trip: ActiveTripStore | None = None) -> ActiveInfoStore | None:
     if not active_trip:

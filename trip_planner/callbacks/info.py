@@ -1,13 +1,13 @@
 from dash import ALL, Input, Output, ctx, html
 from dash.exceptions import PreventUpdate
 
-import ids
-from backend.db.crud import get_landmark_image, get_landmark_review_summary, get_landmark_reviews
-from services.landmark_registry import LandmarkRegistry
-from services.trip_route import TripRoute
-from callbacks.utils.get_language import get_language_from_url
-from callbacks.widgets.info_widgets import build_empty_info, build_landmark_info, build_trip_info
-from i18n import t
+from trip_planner import ids
+from trip_planner.backend.db.crud import get_landmark_image, get_landmark_review_summary, get_landmark_reviews
+from trip_planner.services.landmark_registry import LandmarkRegistry
+from trip_planner.services.trip_route import TripRoute
+from trip_planner.callbacks.utils.get_language import get_language_from_url
+from trip_planner.callbacks.widgets.info_widgets import build_empty_info, build_landmark_info, build_trip_info
+from trip_planner.i18n import t
 
 
 def _image_label(image, lang="bg"):

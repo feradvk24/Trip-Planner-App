@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
-from dash_store_schemas.stores import ActiveTripStore, LocationStore, OptimizedTripStore, RouteLegStore
-from services.landmark_registry import Landmark
+from trip_planner.dash_store_schemas.stores import ActiveTripStore, LocationStore, OptimizedTripStore, RouteLegStore
+from trip_planner.services.landmark_registry import Landmark
 
 
 @dataclass(frozen=True)
@@ -73,7 +73,7 @@ class TripRoute:
         use_two_opt: bool = True,
         fetch_route_steps: bool = True,
     ):
-        from services.trip_optimization.routing_service import fetch_route_steps as get_route_steps, optimize_visit_order
+        from trip_planner.services.trip_optimization.routing_service import fetch_route_steps as get_route_steps, optimize_visit_order
 
         custom_start = _custom_location(start_point)
         custom_end = _custom_location(end_point)

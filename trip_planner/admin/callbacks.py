@@ -3,9 +3,9 @@ from dash import Input, Output, State, ctx, no_update
 from dash.exceptions import PreventUpdate
 from flask_login import current_user
 
-from admin import ids
-from backend.auth import ADMIN_PANEL_ROLES
-from admin.crud import (
+from trip_planner.admin import ids
+from trip_planner.backend.auth import ADMIN_PANEL_ROLES
+from trip_planner.admin.crud import (
     create_landmark,
     delete_review,
     get_landmark,
@@ -16,7 +16,7 @@ from admin.crud import (
     set_user_role,
     update_landmark,
 )
-from admin.layout import _build_review_list, _build_user_role_details
+from trip_planner.admin.layout import _build_review_list, _build_user_role_details
 
 
 def _landmark_form_error(name, latitude, longitude, access_latitude=None, access_longitude=None):

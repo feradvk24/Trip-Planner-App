@@ -2,7 +2,7 @@ from dash import html
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 
-import ids
+from trip_planner import ids
 
 
 def create_map(markers, initial_viewport=None):

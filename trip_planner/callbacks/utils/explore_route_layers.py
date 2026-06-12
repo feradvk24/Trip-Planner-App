@@ -5,11 +5,11 @@ import dash_leaflet as dl
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 
-from callbacks.utils.routing import decode_route_polyline
-from callbacks.widgets.access_connectors import build_access_connector_polylines
-from i18n import t
-from services.trip_route import TripRoute
-from styles import number_icon
+from trip_planner.callbacks.utils.routing import decode_route_polyline
+from trip_planner.callbacks.widgets.access_connectors import build_access_connector_polylines
+from trip_planner.i18n import t
+from trip_planner.services.trip_route import TripRoute
+from trip_planner.styles import number_icon
 
 
 def build_explore_route_layers(registry, trip_data, lang="bg"):

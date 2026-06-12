@@ -1,5 +1,5 @@
-from backend.db.database import SessionLocal
-from backend.db.models import Landmark, Review, User
+from trip_planner.backend.db.database import SessionLocal
+from trip_planner.backend.db.models import Landmark, Review, User
 
 
 def _build_access_point(access_latitude, access_longitude) -> dict | None:
@@ -9,7 +9,7 @@ def _build_access_point(access_latitude, access_longitude) -> dict | None:
 
 
 def _refresh_landmark_registry():
-    from services.landmark_registry import LandmarkRegistry
+    from trip_planner.services.landmark_registry import LandmarkRegistry
 
     LandmarkRegistry._instance = None
 

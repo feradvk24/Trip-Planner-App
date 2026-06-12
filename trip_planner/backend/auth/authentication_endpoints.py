@@ -3,7 +3,7 @@ import hashlib
 from flask import redirect
 from flask_login import logout_user
 
-from backend.db.crud import EmailVerificationStatus, verify_user_email_token
+from trip_planner.backend.db.crud import EmailVerificationStatus, verify_user_email_token
 
 
 def register_authentication_endpoints(server):

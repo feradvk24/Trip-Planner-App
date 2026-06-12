@@ -2,9 +2,9 @@ import dash
 from dash import dcc
 from flask_login import current_user
 
-from admin.layout import create_admin_layout
-from backend.auth import is_admin_panel_user
-from i18n import DEFAULT_LANGUAGE
+from trip_planner.admin.layout import create_admin_layout
+from trip_planner.backend.auth import is_admin_panel_user
+from trip_planner.i18n import DEFAULT_LANGUAGE
 
 
 dash.register_page(__name__, path="/admin_panel", name="Admin Panel", order=0)

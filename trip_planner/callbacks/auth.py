@@ -5,10 +5,10 @@ from dash import Input, Output, State, no_update
 from dash.exceptions import PreventUpdate
 from flask_login import login_user
 
-import ids
-from backend.auth import AuthStatus, User, authenticate_user, create_user, is_admin_panel_role
-from backend.db.crud import get_user_auth_record
-from i18n import DEFAULT_LANGUAGE
+from trip_planner import ids
+from trip_planner.backend.auth import AuthStatus, User, authenticate_user, create_user, is_admin_panel_role
+from trip_planner.backend.db.crud import get_user_auth_record
+from trip_planner.i18n import DEFAULT_LANGUAGE
 
 
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")

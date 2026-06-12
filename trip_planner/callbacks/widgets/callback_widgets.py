@@ -1,9 +1,9 @@
 import dash_bootstrap_components as dbc
 from dash import html
 
-from i18n import t
-from layout.markers import create_markers
-from styles import checkbox_icon, pin_icon
+from trip_planner.i18n import t
+from trip_planner.layout.markers import create_markers
+from trip_planner.styles import checkbox_icon, pin_icon
 
 
 def optimize_route_button_children(label, is_modify=False):

@@ -3,17 +3,17 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 from flask_login import current_user
 
-import ids
-from backend.auth import is_admin_panel_user
-from backend.db.crud import (
+from trip_planner import ids
+from trip_planner.backend.auth import is_admin_panel_user
+from trip_planner.backend.db.crud import (
     get_user_landmark_visit_history,
     get_user_monthly_landmark_visit_counts,
     get_user_visited_landmark_ids,
     total_landmark_visits_for_user,
 )
-from services.landmark_registry import LandmarkRegistry
-from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, t
-from layout.sidebar import create_user_menu
+from trip_planner.services.landmark_registry import LandmarkRegistry
+from trip_planner.i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, t
+from trip_planner.layout.sidebar import create_user_menu
 
 
 dash.register_page(__name__, path_template="/<lang>/statistics", name="Statistics", order=2)

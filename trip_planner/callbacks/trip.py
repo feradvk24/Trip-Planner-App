@@ -3,17 +3,17 @@ from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from flask_login import current_user
 
-import ids
-from services.landmark_registry import LandmarkRegistry
-from services.trip_route import TripRoute
-from services.trip_workflows import visit_trip_stop_for_user
-from callbacks.utils.get_language import get_language_from_url
-from callbacks.utils.routing import format_distance, get_route_legs
-from callbacks.utils.trip_state import trip_point_summary
-from callbacks.widgets.review_widgets import review_pane_state, trip_completion_review_pane_state
-from callbacks.widgets.trip_rendering import build_trip_content
-from i18n import t
-from dash_store_schemas.stores import ActiveTripStore
+from trip_planner import ids
+from trip_planner.services.landmark_registry import LandmarkRegistry
+from trip_planner.services.trip_route import TripRoute
+from trip_planner.services.trip_workflows import visit_trip_stop_for_user
+from trip_planner.callbacks.utils.get_language import get_language_from_url
+from trip_planner.callbacks.utils.routing import format_distance, get_route_legs
+from trip_planner.callbacks.utils.trip_state import trip_point_summary
+from trip_planner.callbacks.widgets.review_widgets import review_pane_state, trip_completion_review_pane_state
+from trip_planner.callbacks.widgets.trip_rendering import build_trip_content
+from trip_planner.i18n import t
+from trip_planner.dash_store_schemas.stores import ActiveTripStore
 
 
 def hidden_next_visit_button(lang="bg"):

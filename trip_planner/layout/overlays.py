@@ -1,8 +1,8 @@
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
-import ids
-from i18n import t
+from trip_planner import ids
+from trip_planner.i18n import t
 
 def create_landmark_review_pane(lang="bg"):
     return html.Div(

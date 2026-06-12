@@ -1,4 +1,4 @@
-from backend.auth.authentication import (
+from trip_planner.backend.auth.authentication import (
     ADMIN_PANEL_ROLES,
     AuthStatus,
     User,

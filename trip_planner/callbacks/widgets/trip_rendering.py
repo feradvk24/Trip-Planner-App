@@ -2,14 +2,14 @@ from dash import html
 import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 
-from services.trip_route import TripRoute
-from services.trip_optimization import fetch_route_steps
-from callbacks.utils.routing import decode_route_polyline, location_tuple
-from callbacks.widgets.access_connectors import build_access_connector_polylines
-import ids
-from i18n import t
-from dash_store_schemas.stores import ActiveTripStore
-from styles import current_point_icon, grayed_number_icon, house_icon, number_icon
+from trip_planner.services.trip_route import TripRoute
+from trip_planner.services.trip_optimization import fetch_route_steps
+from trip_planner.callbacks.utils.routing import decode_route_polyline, location_tuple
+from trip_planner.callbacks.widgets.access_connectors import build_access_connector_polylines
+from trip_planner import ids
+from trip_planner.i18n import t
+from trip_planner.dash_store_schemas.stores import ActiveTripStore
+from trip_planner.styles import current_point_icon, grayed_number_icon, house_icon, number_icon
 
 
 def build_trip_content(registry, active_trip: ActiveTripStore, lang="bg"):

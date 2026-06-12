@@ -1,8 +1,8 @@
 import polyline
 
-from services.landmark_registry import Landmark
-from services.trip_route import TripRoute
-from services.trip_optimization import fetch_route_steps
+from trip_planner.services.landmark_registry import Landmark
+from trip_planner.services.trip_route import TripRoute
+from trip_planner.services.trip_optimization import fetch_route_steps
 
 
 def resolve_endpoint(registry, point_id, position):

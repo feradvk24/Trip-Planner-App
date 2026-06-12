@@ -1,6 +1,6 @@
-from i18n import t
-from dash_store_schemas.stores import ActiveTripStore, SelectedTripStore
-from services.trip_route import TripRoute
+from trip_planner.i18n import t
+from trip_planner.dash_store_schemas.stores import ActiveTripStore, SelectedTripStore
+from trip_planner.services.trip_route import TripRoute
 
 
 def _custom_start_location(trip_data: ActiveTripStore | None):

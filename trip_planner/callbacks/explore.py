@@ -4,22 +4,22 @@ import dash_bootstrap_components as dbc
 import dash_leaflet as dl
 from flask_login import current_user
 
-import ids
-from backend.db.crud import get_user_visited_landmark_ids
-from services.landmark_registry import LandmarkRegistry
-from services.trip_route import TripRoute
-from services.trip_workflows import save_optimized_trip_for_user
-from callbacks.utils.get_language import get_language_from_url
-from callbacks.utils.routing import resolve_endpoint
-from callbacks.widgets.callback_widgets import (
+from trip_planner import ids
+from trip_planner.backend.db.crud import get_user_visited_landmark_ids
+from trip_planner.services.landmark_registry import LandmarkRegistry
+from trip_planner.services.trip_route import TripRoute
+from trip_planner.services.trip_workflows import save_optimized_trip_for_user
+from trip_planner.callbacks.utils.get_language import get_language_from_url
+from trip_planner.callbacks.utils.routing import resolve_endpoint
+from trip_planner.callbacks.widgets.callback_widgets import (
     build_all_markers,
     build_selected_object_items,
     optimize_route_button_children,
 )
-from i18n import t
-from layout.markers import create_marker
-from dash_store_schemas.stores import OptimizedTripStore
-from styles import checkbox_icon, pin_icon
+from trip_planner.i18n import t
+from trip_planner.layout.markers import create_marker
+from trip_planner.dash_store_schemas.stores import OptimizedTripStore
+from trip_planner.styles import checkbox_icon, pin_icon
 
 
 CLEAR_ALL_STYLE = {

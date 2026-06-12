@@ -3,14 +3,14 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 from flask_login import current_user
 
-import ids
-from backend.auth import is_admin_panel_user
-from backend.db.crud import get_user_trips
-from callbacks.widgets.callback_widgets import build_load_trip_items
-from i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
-from i18n import t
-from layout.info_sidebar import create_info_sidebar
-from layout.sidebar import create_user_menu
+from trip_planner import ids
+from trip_planner.backend.auth import is_admin_panel_user
+from trip_planner.backend.db.crud import get_user_trips
+from trip_planner.callbacks.widgets.callback_widgets import build_load_trip_items
+from trip_planner.i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
+from trip_planner.i18n import t
+from trip_planner.layout.info_sidebar import create_info_sidebar
+from trip_planner.layout.sidebar import create_user_menu
 
 dash.register_page(__name__, path_template="/<lang>/browse", name="Browse", order=1)
 

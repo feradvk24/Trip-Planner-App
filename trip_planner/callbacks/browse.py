@@ -3,18 +3,18 @@ from dash.exceptions import PreventUpdate
 from flask import session
 from flask_login import current_user
 
-import ids
-from backend.db.crud import (
+from trip_planner import ids
+from trip_planner.backend.db.crud import (
     delete_trip,
     get_public_trips,
     get_user_trips,
 )
-from services.trip_workflows import load_selected_trip_for_user, share_active_trip_for_user
-from callbacks.utils.trip_state import sanitize_shared_trip
-from callbacks.utils.get_language import get_language_from_url
-from callbacks.widgets.callback_widgets import build_load_trip_items
-from i18n import t
-from dash_store_schemas.stores import ActiveTripStore, SelectedTripStore
+from trip_planner.services.trip_workflows import load_selected_trip_for_user, share_active_trip_for_user
+from trip_planner.callbacks.utils.trip_state import sanitize_shared_trip
+from trip_planner.callbacks.utils.get_language import get_language_from_url
+from trip_planner.callbacks.widgets.callback_widgets import build_load_trip_items
+from trip_planner.i18n import t
+from trip_planner.dash_store_schemas.stores import ActiveTripStore, SelectedTripStore
 
 
 def is_browse_path(pathname):

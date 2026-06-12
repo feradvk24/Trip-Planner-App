@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, Float, Integer, String, DateTime, ForeignKey, JSON, UniqueConstraint
 from datetime import datetime, timezone
 
-from backend.db.database import Base
+from trip_planner.backend.db.database import Base
 
 
 class User(Base):

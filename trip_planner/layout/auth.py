@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
-import ids
+from trip_planner import ids
 
 
 def create_login_layout():

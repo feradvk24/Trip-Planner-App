@@ -1,8 +1,8 @@
 from dash import dcc, html
 
-import ids
-from styles import INFO_SIDEBAR_STYLE
-from i18n import t
+from trip_planner import ids
+from trip_planner.styles import INFO_SIDEBAR_STYLE
+from trip_planner.i18n import t
 
 def create_info_sidebar(lang="bg", guest=False):
     if guest:

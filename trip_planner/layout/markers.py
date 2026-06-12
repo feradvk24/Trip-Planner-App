@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
 from dash import html
 import dash_leaflet as dl
-from i18n import t
+from trip_planner.i18n import t
 
 
 def create_marker(landmark, pin_icon, selected_ids=None, selected_icon=None, lang="bg", allow_add_to_trip=True):

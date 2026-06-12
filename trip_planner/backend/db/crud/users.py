@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 from enum import Enum
 
-from backend.db.database import SessionLocal
-from backend.db.models import User
+from trip_planner.backend.db.database import SessionLocal
+from trip_planner.backend.db.models import User
 
 
 class EmailVerificationStatus(Enum):

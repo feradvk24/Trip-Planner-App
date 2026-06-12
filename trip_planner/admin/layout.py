@@ -1,8 +1,8 @@
 import dash_bootstrap_components as dbc
 from dash import dcc, html
 
-from admin import ids
-from admin.crud import get_recent_reviews
+from trip_planner.admin import ids
+from trip_planner.admin.crud import get_recent_reviews
 
 
 def _build_review_item(review: dict):

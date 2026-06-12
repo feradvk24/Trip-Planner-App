@@ -1,4 +1,4 @@
-from dash_store_schemas.stores import (
+from trip_planner.dash_store_schemas.stores import (
     ActiveInfoStore,
     ActiveTripStore,
     LocationStore,

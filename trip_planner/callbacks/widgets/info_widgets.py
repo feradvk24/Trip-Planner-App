@@ -1,9 +1,9 @@
 import dash_bootstrap_components as dbc
 from dash import html
 
-import ids
-from i18n import t
-from services.trip_route import TripRoute
+from trip_planner import ids
+from trip_planner.i18n import t
+from trip_planner.services.trip_route import TripRoute
 
 
 def _stars(rating, lang="bg"):

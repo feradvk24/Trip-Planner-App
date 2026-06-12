@@ -2,10 +2,10 @@ import dash_bootstrap_components as dbc
 from dash import dcc, html
 from flask_login import current_user
 
-import ids
-from backend.db.crud import get_user_email
-from styles import SIDEBAR_STYLE
-from i18n import t
+from trip_planner import ids
+from trip_planner.backend.db.crud import get_user_email
+from trip_planner.styles import SIDEBAR_STYLE
+from trip_planner.i18n import t
 
 
 def create_selected_object_group():
