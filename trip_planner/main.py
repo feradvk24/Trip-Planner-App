@@ -32,7 +32,6 @@ server = app.server
 init_login_manager(server)
 
 # Initialize database (creates the DB and tables if they don't exist)
-create_database_if_missing()
 init_db()
 server.teardown_appcontext(shutdown_session)
 
