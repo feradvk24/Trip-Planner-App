@@ -11,7 +11,7 @@ def _build_access_point(access_latitude, access_longitude) -> dict | None:
 def _refresh_landmark_registry():
     from trip_planner.services.landmark_registry import LandmarkRegistry
 
-    LandmarkRegistry._instance = None
+    LandmarkRegistry.get_landmarks(LandmarkRegistry._language or "bg")
 
 
 def _format_landmark(landmark: Landmark) -> dict:

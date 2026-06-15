@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from trip_planner.i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
+
 
 @dataclass
 class Landmark:
@@ -31,6 +33,7 @@ class Landmark:
 
 class LandmarkRegistry:
     _instance = None
+    _language = None
 
     def __init__(self, landmarks=None):
         self._landmarks = {
@@ -54,11 +57,23 @@ class LandmarkRegistry:
         ])
 
     @classmethod
-    def get_landmarks(cls):
+    def get_landmarks(cls, language=None):
         if cls._instance is None:
+            language = language or DEFAULT_LANGUAGE
+
+        if language is not None:
+            if language not in SUPPORTED_LANGUAGES:
+                language = DEFAULT_LANGUAGE
+
             from trip_planner.backend.db.crud import get_landmarks
 
-            cls._instance = cls.from_records(get_landmarks())
+            localized_registry = cls.from_records(get_landmarks(language=language))
+            if cls._instance is None:
+                cls._instance = localized_registry
+            else:
+                cls._instance._landmarks = localized_registry._landmarks
+            cls._language = language
+
         return cls._instance
 
     def get_landmark(self, landmark_id):

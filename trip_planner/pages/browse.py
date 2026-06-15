@@ -11,6 +11,7 @@ from trip_planner.i18n import DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES
 from trip_planner.i18n import t
 from trip_planner.layout.info_sidebar import create_info_sidebar
 from trip_planner.layout.sidebar import create_user_menu
+from trip_planner.services.landmark_registry import LandmarkRegistry
 
 dash.register_page(__name__, path_template="/<lang>/browse", name="Browse", order=1)
 
@@ -21,6 +22,8 @@ def layout(lang="bg", **kwargs):
 
     if lang not in SUPPORTED_LANGUAGES:
         lang = DEFAULT_LANGUAGE
+
+    LandmarkRegistry.get_landmarks(lang)
 
     saved_trips = (
         get_user_trips(current_user.id, include_completion_status=True)

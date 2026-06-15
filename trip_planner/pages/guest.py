@@ -16,7 +16,7 @@ def layout(**kwargs):
     if is_admin_panel_user(current_user):
         return dcc.Location(id="guest-admin-redirect", href="/admin_panel")
 
-    registry = LandmarkRegistry.get_landmarks()
+    registry = LandmarkRegistry.get_landmarks("bg")
     markers = create_markers(registry.landmarks, pin_icon, lang="bg", allow_add_to_trip=False)
     return create_authenticated_layout(
         markers,

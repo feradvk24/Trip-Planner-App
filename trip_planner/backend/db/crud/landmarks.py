@@ -2,16 +2,21 @@ from trip_planner.backend.db.database import SessionLocal
 from trip_planner.backend.db.models import Landmark as LandmarkModel, LandmarkImage, Review
 
 
-def get_landmarks() -> list[dict]:
+def get_landmarks(language="bg") -> list[dict]:
     """Return all landmarks in the shape used by LandmarkRegistry."""
     db = SessionLocal()
     try:
         rows = db.query(LandmarkModel).all()
+        use_english = language == "en"
         return [
             {
                 "id": row.id,
-                "name": row.name,
-                "location": row.location or "Location",
+                "name": (row.en_name or row.name) if use_english else row.name,
+                "location": (
+                    (row.en_location or row.location or "Location")
+                    if use_english
+                    else (row.location or "Location")
+                ),
                 "lat": row.latitude,
                 "lon": row.longitude,
                 "link": row.link or "#",

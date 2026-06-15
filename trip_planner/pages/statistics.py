@@ -143,7 +143,7 @@ def layout(lang="bg", **kwargs):
         if current_user.is_authenticated else
         []
     )
-    registry = LandmarkRegistry.get_landmarks()
+    registry = LandmarkRegistry.get_landmarks(lang)
     total_visits = total_landmark_visits_for_user(current_user.id) if current_user.is_authenticated else 0
     visited_landmarks = (
         len(get_user_visited_landmark_ids(current_user.id))

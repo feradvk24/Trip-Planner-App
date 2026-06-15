@@ -31,6 +31,8 @@ class Landmark(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(300), nullable=False)
     location = Column(String(300), nullable=True)
+    en_name = Column(String(300), nullable=True)
+    en_location = Column(String(300), nullable=True)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     link = Column(String(500), nullable=True)

@@ -14,7 +14,7 @@ def layout(lang="bg", focus_landmark=None, **kwargs):
     if lang not in SUPPORTED_LANGUAGES:
         lang = DEFAULT_LANGUAGE
 
-    registry = LandmarkRegistry.get_landmarks()
+    registry = LandmarkRegistry.get_landmarks(lang)
     markers = create_markers(registry.landmarks, pin_icon, lang=lang)
     return create_authenticated_layout(
         markers,
