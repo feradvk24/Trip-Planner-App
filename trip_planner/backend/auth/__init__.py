@@ -1,23 +1,31 @@
 from trip_planner.backend.auth.authentication import (
     ADMIN_PANEL_ROLES,
     AuthStatus,
+    PasswordResetStatus,
     User,
     authenticate_user,
     create_user,
     init_login_manager,
+    is_valid_password_reset_token,
     is_admin_panel_role,
     is_admin_panel_user,
+    request_password_reset,
+    reset_password_with_token,
     verify_user,
 )
 
 __all__ = [
     "ADMIN_PANEL_ROLES",
     "AuthStatus",
+    "PasswordResetStatus",
     "User",
     "authenticate_user",
     "create_user",
     "init_login_manager",
+    "is_valid_password_reset_token",
     "is_admin_panel_role",
     "is_admin_panel_user",
+    "request_password_reset",
+    "reset_password_with_token",
     "verify_user",
 ]

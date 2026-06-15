@@ -3,10 +3,19 @@ import re
 
 from dash import Input, Output, State, no_update
 from dash.exceptions import PreventUpdate
-from flask_login import login_user
+from flask_login import login_user, logout_user
 
 from trip_planner import ids
-from trip_planner.backend.auth import AuthStatus, User, authenticate_user, create_user, is_admin_panel_role
+from trip_planner.backend.auth import (
+    AuthStatus,
+    PasswordResetStatus,
+    User,
+    authenticate_user,
+    create_user,
+    is_admin_panel_role,
+    request_password_reset,
+    reset_password_with_token,
+)
 from trip_planner.backend.db.crud import get_user_auth_record
 from trip_planner.i18n import DEFAULT_LANGUAGE
 
@@ -22,6 +31,12 @@ def is_valid_email(value):
     return bool(EMAIL_PATTERN.fullmatch(value))
 
 
+def get_query_value(search, key):
+    if not search:
+        return None
+    return parse_qs(search.lstrip("?")).get(key, [None])[0]
+
+
 def register_auth_callbacks(app):
     @app.callback(
         Output(ids.LOGIN_VERIFICATION_TOAST, "children"),
@@ -29,21 +44,88 @@ def register_auth_callbacks(app):
         Output(ids.LOGIN_VERIFICATION_TOAST, "icon"),
         Output(ids.LOGIN_VERIFICATION_TOAST, "is_open"),
         Input("url", "search"),
+        Input("url", "pathname"),
     )
-    def show_verification_toast(search):
-        if not search:
+    def show_verification_toast(search, pathname):
+        if pathname != "/login" or not search:
             raise PreventUpdate
 
-        verified = parse_qs(search.lstrip("?")).get("verified", [None])[0]
-        registered = parse_qs(search.lstrip("?")).get("registered", [None])[0]
+        verified = get_query_value(search, "verified")
+        registered = get_query_value(search, "registered")
+        password_reset = get_query_value(search, "password_reset")
         if verified == "1":
             return "Your email has been verified successfully.", "Email verified", "success", True
         if verified == "0":
             return "Failed to verify your email. The link may be invalid or expired.", "Verification failed", "danger", True
         if registered == "1":
             return "Account created. Please check your email to verify your account.", "Registration successful", "success", True
+        if password_reset == "1":
+            return "Password changed successfully. You can now log in.", "Password changed", "success", True
 
         raise PreventUpdate
+
+    @app.callback(
+        Output(ids.PASSWORD_RESET_REQUEST_COLLAPSE, "is_open"),
+        Input(ids.FORGOT_PASSWORD_BUTTON, "n_clicks"),
+        State(ids.PASSWORD_RESET_REQUEST_COLLAPSE, "is_open"),
+        prevent_initial_call=True,
+    )
+    def toggle_password_reset_request(n_clicks, is_open):
+        if not n_clicks:
+            raise PreventUpdate
+        return not is_open
+
+    @app.callback(
+        Output(ids.PASSWORD_RESET_REQUEST_ALERT, "children"),
+        Output(ids.PASSWORD_RESET_REQUEST_ALERT, "color"),
+        Output(ids.PASSWORD_RESET_REQUEST_ALERT, "is_open"),
+        Input(ids.PASSWORD_RESET_SEND_BUTTON, "n_clicks"),
+        State(ids.PASSWORD_RESET_EMAIL, "value"),
+        prevent_initial_call=True,
+    )
+    def handle_password_reset_request(n_clicks, email):
+        if not n_clicks:
+            raise PreventUpdate
+        if not email or not email.strip():
+            return "Please enter your email.", "danger", True
+        if not is_valid_email(email.strip()):
+            return "Please enter a valid email address.", "danger", True
+
+        try:
+            request_password_reset(email.strip())
+        except Exception:
+            return "Could not send the reset email. Please try again later.", "danger", True
+
+        return "If an account exists for that email, a reset link has been sent.", "success", True
+
+    @app.callback(
+        Output("url", "href", allow_duplicate=True),
+        Output(ids.PASSWORD_RESET_ALERT, "children", allow_duplicate=True),
+        Output(ids.PASSWORD_RESET_ALERT, "color", allow_duplicate=True),
+        Output(ids.PASSWORD_RESET_ALERT, "is_open", allow_duplicate=True),
+        Input(ids.PASSWORD_RESET_SUBMIT_BUTTON, "n_clicks"),
+        State(ids.PASSWORD_RESET_NEW_PASSWORD, "value"),
+        State(ids.PASSWORD_RESET_CONFIRM_PASSWORD, "value"),
+        State("url", "search"),
+        prevent_initial_call=True,
+    )
+    def handle_password_reset(n_clicks, new_password, confirm_password, search):
+        if not n_clicks:
+            raise PreventUpdate
+        if not new_password or not confirm_password:
+            return no_update, "Please enter and confirm your new password.", "danger", True
+        if len(new_password) < 6:
+            return no_update, "Password must be at least 6 characters.", "danger", True
+        if new_password != confirm_password:
+            return no_update, "Passwords do not match.", "danger", True
+
+        status = reset_password_with_token(get_query_value(search, "password_reset_token"), new_password)
+        if status == PasswordResetStatus.SUCCESS:
+            logout_user()
+            return "/login?password_reset=1", "", "success", False
+        if status == PasswordResetStatus.EXPIRED:
+            return no_update, "This password reset link has expired. Request a new reset link.", "danger", True
+        return no_update, "This password reset link is invalid. Request a new reset link.", "danger", True
 
     @app.callback(
         Output("url", "href", allow_duplicate=True),

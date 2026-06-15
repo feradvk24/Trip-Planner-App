@@ -21,6 +21,8 @@ class User(Base):
 
     verification_token_hash = Column(String(255), nullable=True)
     verification_token_expires_at = Column(DateTime, nullable=True)
+    password_reset_token_hash = Column(String(255), nullable=True, index=True)
+    password_reset_expires_at = Column(DateTime, nullable=True)
 
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
