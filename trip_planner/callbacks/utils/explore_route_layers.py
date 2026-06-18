@@ -5,6 +5,7 @@ import dash_leaflet as dl
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 
+from trip_planner import ids
 from trip_planner.callbacks.utils.routing import decode_route_polyline
 from trip_planner.callbacks.widgets.access_connectors import build_access_connector_polylines
 from trip_planner.i18n import t
@@ -27,8 +28,14 @@ def build_explore_route_layers(registry, trip_data, lang="bg"):
     colormap = cm.get_cmap("viridis", len(route_segments) or 1)
     colors = [mcolors.to_hex(colormap(i)) for i in range(len(route_segments))]
     polylines = [
-        html.Div(dl.Polyline(positions=segment, color=color, weight=5))
-        for segment, color in zip(route_segments, colors)
+        dl.Polyline(
+            id=f"planned-route-segment-{index}",
+            positions=segment,
+            color=color,
+            weight=5,
+            pane=ids.PLANNED_TRIP_ROUTE_PANE,
+        )
+        for index, (segment, color) in enumerate(zip(route_segments, colors))
     ]
 
     route_points = []
@@ -58,6 +65,7 @@ def build_explore_route_layers(registry, trip_data, lang="bg"):
     access_connectors = build_access_connector_polylines(
         (lm for lm in route_points if lm.id != -1),
         id_prefix="planned-access-connector",
+        pane=ids.PLANNED_TRIP_ROUTE_PANE,
     )
     route_lines = polylines + access_connectors
 
