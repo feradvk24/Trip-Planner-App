@@ -443,7 +443,7 @@ def register_explore_callbacks(app):
                             t("marker.learn_more", lang=lang),
                             href=landmark.link,
                             target="_blank",
-                            style={"display": "block", "text-align": "center"},
+                            style={"display": "block", "textAlign": "center"},
                         ),
                         dbc.Button(
                             t("marker.in_trip", lang=lang) if is_selected else t("marker.add_to_trip", lang=lang),

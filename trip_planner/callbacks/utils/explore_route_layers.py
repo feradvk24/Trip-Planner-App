@@ -2,8 +2,6 @@ from types import SimpleNamespace
 
 from dash import html
 import dash_leaflet as dl
-import matplotlib.cm as cm
-import matplotlib.colors as mcolors
 
 from trip_planner import ids
 from trip_planner.callbacks.utils.routing import decode_route_polyline
@@ -11,6 +9,9 @@ from trip_planner.callbacks.widgets.access_connectors import build_access_connec
 from trip_planner.i18n import t
 from trip_planner.services.trip_route import TripRoute
 from trip_planner.styles import number_icon
+
+
+PLANNED_ROUTE_COLOR = "#1a6fcf"
 
 
 def build_explore_route_layers(registry, trip_data, lang="bg"):
@@ -25,17 +26,15 @@ def build_explore_route_layers(registry, trip_data, lang="bg"):
         for segment in (decode_route_polyline(leg.get("polyline")) for leg in route_legs)
         if segment
     ]
-    colormap = cm.get_cmap("viridis", len(route_segments) or 1)
-    colors = [mcolors.to_hex(colormap(i)) for i in range(len(route_segments))]
     polylines = [
         dl.Polyline(
             id=f"planned-route-segment-{index}",
             positions=segment,
-            color=color,
+            color=PLANNED_ROUTE_COLOR,
             weight=5,
             pane=ids.PLANNED_TRIP_ROUTE_PANE,
         )
-        for index, (segment, color) in enumerate(zip(route_segments, colors))
+        for index, segment in enumerate(route_segments)
     ]
 
     route_points = []
@@ -87,7 +86,7 @@ def build_explore_route_layers(registry, trip_data, lang="bg"):
                             t("marker.learn_more", lang=lang),
                             href=lm.link,
                             target="_blank",
-                            style={"display": "block", "text-align": "center"},
+                            style={"display": "block", "textAlign": "center"},
                         ) if lm.link else None,
                     ])),
                 ],

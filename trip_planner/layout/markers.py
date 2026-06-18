@@ -19,7 +19,7 @@ def create_marker(landmark, pin_icon, selected_ids=None, selected_icon=None, lan
                     t("marker.learn_more", lang=lang),
                     href=landmark.link,
                     target="_blank",
-                    style={"display": "block", "text-align": "center"},
+                    style={"display": "block", "textAlign": "center"},
                 ),
                 dbc.Button(
                     t("marker.add_to_trip", lang=lang) if not is_selected else t("marker.in_trip", lang=lang),
