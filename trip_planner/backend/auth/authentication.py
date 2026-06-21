@@ -82,9 +82,9 @@ def create_user(username: str, email: str, password: str, first_name: str, last_
             verification_token_hash=verification_token_hash,
             verification_token_expires_at=verification_token_expires_at,
         )
+        send_verification_email(email, raw_verification_token)
         db.add(user)
         db.commit()
-        send_verification_email(email, raw_verification_token)
         return True
     except Exception:
         db.rollback()
