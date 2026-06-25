@@ -3,6 +3,7 @@ from dash import dcc, html
 
 from trip_planner.admin import ids
 from trip_planner.admin.crud import get_recent_reviews
+from trip_planner.layout.sidebar import create_user_menu
 
 
 def _build_review_item(review: dict):
@@ -341,6 +342,7 @@ def create_admin_layout(role="regular"):
 
     return html.Div(
         [
+            create_user_menu(fix_to_right=True, lang="en", minimal=True),
             html.H2("Admin Panel", className="mb-4"),
             dbc.Tabs(
                 tabs,

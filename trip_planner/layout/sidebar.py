@@ -196,9 +196,9 @@ def create_sidebar(active_trip=None, lang="bg", guest=False):
     ], style={**SIDEBAR_STYLE, "gap": "0.5rem"}, id=ids.SIDEBAR)
 
 
-def create_user_menu(fix_to_right=False, lang="bg", guest=False):
+def create_user_menu(fix_to_right=False, lang="bg", guest=False, minimal=False):
     username = "Guest" if guest else current_user.id if current_user.is_authenticated else "User"
-    email = None if guest else get_user_email(username)
+    email = None if guest or minimal else get_user_email(username)
     right_offset = "0.75rem" if fix_to_right else "21rem"
     return dbc.DropdownMenu(
         id=ids.USER_MENU,
@@ -212,11 +212,11 @@ def create_user_menu(fix_to_right=False, lang="bg", guest=False):
                 ],
                 header=True,
             ),
-            dbc.DropdownMenuItem(divider=True),
+            dbc.DropdownMenuItem(divider=True) if not guest and not minimal else None,
             dbc.DropdownMenuItem(
                 t("sidebar.statistics", lang=lang),
                 href=f"/{lang}/statistics",
-            ) if not guest else None,
+            ) if not guest and not minimal else None,
             dbc.DropdownMenuItem(divider=True),
             html.Div(
                 [
@@ -234,7 +234,7 @@ def create_user_menu(fix_to_right=False, lang="bg", guest=False):
                     ),
                 ],
                 style={"margin-left": "0.5rem"},
-            ) if not guest else None,
+            ) if not guest and not minimal else None,
             dbc.DropdownMenuItem(t("sidebar.logout", lang=lang), id=ids.LOGOUT_BUTTON, style={"color": "#dc3545"}),
         ],
         direction="down",
