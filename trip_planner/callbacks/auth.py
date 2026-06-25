@@ -150,7 +150,7 @@ def register_auth_callbacks(app):
             user_record = get_user_auth_record(username)
             role = user_record["role"] if user_record else "regular"
             is_active = user_record["is_active"] if user_record else True
-            login_user(User(username, role, is_active))
+            login_user(User(username, role, is_active), remember=False)
             if is_admin_panel_role(role):
                 return "/admin_panel", "", False
             return f"/{DEFAULT_LANGUAGE}", "", False

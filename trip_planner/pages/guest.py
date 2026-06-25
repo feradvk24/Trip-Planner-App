@@ -1,6 +1,5 @@
 import dash
-from dash import dcc
-from flask_login import current_user
+from flask_login import current_user, logout_user
 
 from trip_planner.backend.auth import is_admin_panel_user
 from trip_planner.services.landmark_registry import LandmarkRegistry
@@ -14,7 +13,7 @@ dash.register_page(__name__, path="/guest", name="Guest", order=-90)
 
 def layout(**kwargs):
     if is_admin_panel_user(current_user):
-        return dcc.Location(id="guest-admin-redirect", href="/admin_panel")
+        logout_user()
 
     registry = LandmarkRegistry.get_landmarks("bg")
     markers = create_markers(registry.landmarks, pin_icon, lang="bg", allow_add_to_trip=False)

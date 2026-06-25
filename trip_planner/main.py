@@ -4,7 +4,7 @@ from pathlib import Path
 import dash_bootstrap_components as dbc
 from dash import Dash
 from flask import redirect, request
-from flask_login import current_user
+from flask_login import current_user, logout_user
 
 from dotenv import load_dotenv
 
@@ -53,6 +53,9 @@ def require_login():
         return
 
     if is_admin_panel_user(current_user):
+        if request.path in {"/guest", "/register"}:
+            logout_user()
+            return
         if request.path not in admin_allowed_paths:
             return redirect("/admin_panel")
         return
