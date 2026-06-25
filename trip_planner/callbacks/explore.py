@@ -155,6 +155,8 @@ def register_explore_callbacks(app):
 
     @app.callback(
         Output(ids.SUCCESS_TOAST, "is_open"),
+        Output(ids.SUCCESS_TOAST, "children"),
+        Output(ids.SUCCESS_TOAST, "header"),
         Output(ids.OPTIMIZE_ROUTE_BTN, "children"),
         Output(ids.OPTIMIZE_ROUTE_BTN, "color"),
         Output(ids.OPTIMIZE_ROUTE_BTN, "outline"),
@@ -197,6 +199,8 @@ def register_explore_callbacks(app):
         lang = get_language_from_url(href)
         return (
             True,
+            t("success_toast.message", lang=lang),
+            t("success_toast.header", lang=lang),
             optimize_route_button_children(t("route.modify_route", lang=lang), is_modify=True),
             "success",
             True,
@@ -362,6 +366,9 @@ def register_explore_callbacks(app):
         Output(ids.SAVE_TRIP_MODAL, "is_open", allow_duplicate=True),
         Output(ids.SAVE_TRIP_ALERT, "children"),
         Output(ids.SAVE_TRIP_ALERT, "is_open"),
+        Output(ids.SUCCESS_TOAST, "is_open", allow_duplicate=True),
+        Output(ids.SUCCESS_TOAST, "children", allow_duplicate=True),
+        Output(ids.SUCCESS_TOAST, "header", allow_duplicate=True),
         Input(ids.SAVE_TRIP_CONFIRM_BTN, "n_clicks"),
         State(ids.SAVE_TRIP_NAME_INPUT, "value"),
         State(ids.DESTINATIONS_LIST, "data"),
@@ -378,15 +385,22 @@ def register_explore_callbacks(app):
             optimized_trip,
         )
         if result.ok:
-            return False, "", False
+            return (
+                False,
+                "",
+                False,
+                True,
+                t("success_toast.trip_saved_message", lang=lang),
+                t("success_toast.header", lang=lang),
+            )
 
         if result.code == "missing_name":
-            return True, t("save_trip_modal.enter_name", lang=lang), True
+            return True, t("save_trip_modal.enter_name", lang=lang), True, no_update, no_update, no_update
         if result.code == "name_exists":
-            return True, t("save_trip_modal.name_exists", lang=lang), True
+            return True, t("save_trip_modal.name_exists", lang=lang), True, no_update, no_update, no_update
         if result.code == "missing_route":
-            return True, t("warn_modal.message", lang=lang), True
-        return True, f"{t('save_trip_modal.failed', lang=lang)}: {result.error}", True
+            return True, t("warn_modal.message", lang=lang), True, no_update, no_update, no_update
+        return True, f"{t('save_trip_modal.failed', lang=lang)}: {result.error}", True, no_update, no_update, no_update
 
     @app.callback(
         Output(ids.LANDMARK_SEARCH_DROPDOWN, "options"),

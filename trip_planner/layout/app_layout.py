@@ -140,7 +140,7 @@ def create_success_toast(lang="bg"):
         icon="success",
         is_open=False,
         dismissable=True,
-        duration=2000,
+        duration=6500,
         style={"position": "fixed", "bottom": "1rem", "right": "1rem", "zIndex": 9999, "minWidth": "auto"},
     )
 

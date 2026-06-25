@@ -80,6 +80,7 @@ TRANSLATIONS = {
     "warn_modal.ok": "OK",
     "success_toast.header": "Success!",
     "success_toast.message": "Route Optimized",
+    "success_toast.trip_saved_message": "Trip saved successfully. Go to Trips to see your saved trip.",
     "marker.learn_more": "Learn more",
     "marker.add_to_trip": "Add to trip",
     "marker.in_trip": "Added to trip",

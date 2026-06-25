@@ -47,6 +47,7 @@ TRANSLATIONS = {
     "warn_modal.ok": "OK",
     "success_toast.header": "Успех!",
     "success_toast.message": "Маршрутът е създаден успешно.",
+    "success_toast.trip_saved_message": "Пътуването е запазено успешно. Отидете в страницата „Пътувания“, за да го видите.",
     "marker.learn_more": "Научи повече",
     "marker.add_to_trip": "Добави",
     "marker.in_trip": "Добавено",
