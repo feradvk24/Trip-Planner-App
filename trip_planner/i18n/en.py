@@ -4,6 +4,8 @@ TRANSLATIONS = {
     "generic.user": "User",
     "generic.unknown": "Unknown",
 
+    "navigation.back_to_map": "Back to map",
+
     "sidebar.start_point": "Start",
     "sidebar.end_point": "End",
     "sidebar.select_start_point": "Select a start point",

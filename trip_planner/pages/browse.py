@@ -43,7 +43,7 @@ def layout(lang="bg", **kwargs):
                     html.Div(
                         [
                             dcc.Link(
-                                [html.I(className="bi bi-arrow-left me-2"), "Back to map"],
+                                [html.I(className="bi bi-arrow-left me-2"), t("navigation.back_to_map", lang=lang)],
                                 href=f"/{lang}",
                                 className="btn btn-outline-secondary btn-sm",
                             ),

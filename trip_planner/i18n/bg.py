@@ -1,4 +1,5 @@
 TRANSLATIONS = {
+    "navigation.back_to_map": "Назад към картата",
     "app.name": "Обиколи България",
     "sidebar.start_point": "Начало",
     "sidebar.end_point": "Край",
