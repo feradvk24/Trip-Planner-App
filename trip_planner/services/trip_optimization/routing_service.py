@@ -140,6 +140,8 @@ def optimize_visit_order(
     best_route = None
     best_distance = float("inf")
     for candidate_start in points:
+        if end_point and candidate_start.id == end_point.id:
+            continue
         route = nearest_neighbor(points, candidate_start, end_point)
         if use_two_opt:
             route = two_opt(route, haversine, fix_start=False, fix_end=bool(end_point))
