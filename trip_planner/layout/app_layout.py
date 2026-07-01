@@ -98,7 +98,7 @@ def create_stores(
         initial_info = initial_active_info(initial_active_trip)
 
     return [
-        dcc.Store(id=ids.DESTINATIONS_LIST, data=initial_destinations),
+        dcc.Store(id=ids.DESTINATIONS_LIST, data=initial_destinations, storage_type="session"),
         dcc.Store(id=ids.MODE_STORE, data=initial_mode),
         dcc.Store(id=ids.BROWSE_SAVED_TRIPS_STORE, data=[]),
         dcc.Store(id=ids.BROWSE_SHARED_TRIPS_STORE, data=[]),
