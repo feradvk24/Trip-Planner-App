@@ -1,13 +1,15 @@
 pin_icon = {
     "iconUrl": "/assets/marker-pin.png",
-    "iconSize": [30, 30],      # size of the icon
-    # "iconAnchor": [15, 40],    # point of the icon which corresponds to marker location
+    "iconSize": [30, 30],
+    "iconAnchor": [15, 30],
+    "popupAnchor": [0, -30],
 }
 
 checkbox_icon = {
     "iconUrl": "/assets/marker-check.png",
     "iconSize": [30, 30],
-    # "iconAnchor": [12, 12],
+    "iconAnchor": [15, 30],
+    "popupAnchor": [0, -30],
 }
 
 import base64 as _b64
